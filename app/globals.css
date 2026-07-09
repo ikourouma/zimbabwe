@@ -1,0 +1,321 @@
+@import "tailwindcss";
+
+/* Sheet (slide-in drawer) enter/exit animations — plain CSS keyframes rather than the
+   tailwindcss-animate plugin (not installed), tied to Radix's data-state attribute so
+   Radix defers unmounting until the closing animation actually finishes. */
+@keyframes sheet-slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes sheet-slide-out {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+
+@keyframes sheet-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sheet-overlay-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@theme {
+  --color-zim-green: #006400;
+  --color-zim-green-light: #008000;
+  --color-zim-yellow: #ffd300;
+  --color-zim-yellow-light: #ffe566;
+  --color-zim-red: #d50000;
+  --color-zim-black: #000000;
+  --color-zim-white: #ffffff;
+  --color-zim-green-900: #006400;
+  --color-zim-green-700: #006400;
+  --color-zim-green-600: #008000;
+  --color-zim-gold: #ffd300;
+  --color-zim-gold-light: #ffe566;
+  --color-zim-off-white: #fafaf8;
+  --color-zim-charcoal: #2b2b2b;
+  --color-zim-muted: #6b7280;
+  --color-zim-border: #e5e7eb;
+  --color-zim-alert: #d50000;
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+:root {
+  /* Editorial ink & canvas — Stripe-aligned: never pure black/white */
+  --color-sovereign-black: #061820;
+  --color-sovereign-midnight: #071711;
+  --color-sovereign-deep: #0d1a0d;
+  --color-sovereign-panel: #111811;
+  --color-sovereign-border: rgba(0, 100, 0, 0.35);
+  --color-sovereign-muted: #3a4a3a;
+  --color-gold: #ffd300;
+  --color-gold-light: #ffe566;
+  --color-zim-accent: #008000;
+  --color-zim-accent-pale: #b8e0b8;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #c8d4c8;
+  --color-text-muted: #7a8f7a;
+
+  /* Solid nav & footer — no blur/transparency, shared across every page */
+  --color-nav-bg: #060d0a;
+  --color-nav-border: rgba(255, 255, 255, 0.07);
+  --color-footer-bg: #060d0a;
+
+  /* Light-shell canvas */
+  --color-canvas: #ffffff;
+  --color-canvas-subtle: #fafcfd;
+  --color-ink: #0d253d;
+
+  --max-width-sovereign: 1280px;
+  --max-width-executive: 900px;
+  --max-width-briefing: 680px;
+  --radius-sovereign: 0.25rem;
+  --radius-card: 0.5rem;
+  --radius-panel: 0.75rem;
+  --radius-badge: 0.25rem;
+  --radius-pill: 9999px;
+  --duration-sovereign: 300ms;
+  --duration-smooth: 500ms;
+  --ease-sovereign: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Stripe-aligned editorial type scale — negative tracking, light weight, tight leading */
+  --type-display-size: clamp(2.5rem, 5vw, 4rem);
+  --type-display-tracking: -0.02em;
+  --type-display-leading: 1.04;
+  --type-heading-tracking: -0.015em;
+  --type-heading-leading: 1.1;
+  --type-body-leading: 1.5;
+}
+
+@layer base {
+  * {
+    @apply border-zim-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    @apply antialiased;
+    font-family: var(--font-sans);
+  }
+
+  body[data-shell="dark"] {
+    background-color: var(--color-sovereign-midnight);
+    color: var(--color-text-primary);
+  }
+
+  body[data-shell="light"] {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+  }
+
+  h1 {
+    @apply text-3xl font-bold md:text-4xl;
+    letter-spacing: var(--type-display-tracking);
+    line-height: var(--type-heading-leading);
+  }
+
+  h2 {
+    @apply text-2xl font-semibold;
+    letter-spacing: var(--type-heading-tracking);
+    line-height: var(--type-heading-leading);
+  }
+
+  h3 {
+    @apply text-xl font-semibold;
+    letter-spacing: var(--type-heading-tracking);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+@layer components {
+  .sovereign-container,
+  .page-container {
+    @apply mx-auto w-full px-6;
+    max-width: var(--max-width-sovereign);
+  }
+
+  .executive-container {
+    @apply mx-auto w-full px-6;
+    max-width: var(--max-width-executive);
+  }
+
+  .sheet-overlay[data-state="open"] {
+    animation: sheet-overlay-in 200ms ease-out;
+  }
+
+  .sheet-overlay[data-state="closed"] {
+    animation: sheet-overlay-out 150ms ease-in;
+  }
+
+  .sheet-content[data-state="open"] {
+    animation: sheet-slide-in 280ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .sheet-content[data-state="closed"] {
+    animation: sheet-slide-out 200ms ease-in;
+  }
+
+  .section-overline {
+    @apply text-xs font-semibold tracking-widest uppercase;
+    color: var(--color-gold);
+    letter-spacing: 0.12em;
+  }
+
+  .sovereign-divider {
+    @apply border-t;
+    border-color: var(--color-sovereign-border);
+  }
+
+  .executive-card {
+    background-color: var(--color-sovereign-deep);
+    border: 1px solid var(--color-sovereign-border);
+    border-radius: var(--radius-card);
+    @apply p-6 transition-all;
+  }
+
+  .sovereign-panel {
+    background-color: var(--color-sovereign-panel);
+    border: 1px solid var(--color-sovereign-border);
+    border-radius: var(--radius-panel);
+    @apply p-8;
+  }
+
+  .gold-accent-line {
+    @apply block h-px w-12;
+    background: linear-gradient(90deg, var(--color-gold), transparent);
+  }
+
+  .btn-sovereign {
+    @apply inline-flex items-center gap-2 px-6 py-3 font-semibold text-sm transition-all;
+    background-color: var(--color-zim-green);
+    color: #ffffff;
+    border-radius: var(--radius-pill);
+  }
+
+  .btn-sovereign:hover {
+    background-color: var(--color-zim-green-light);
+    box-shadow: 0 0 30px 0 rgba(0, 100, 0, 0.3);
+    transform: translateY(-1px);
+  }
+
+  .btn-sovereign-ghost {
+    @apply inline-flex items-center gap-2 px-6 py-3 font-semibold text-sm transition-all;
+    background-color: transparent;
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-sovereign-border);
+    border-radius: var(--radius-pill);
+  }
+
+  .btn-sovereign-ghost:hover {
+    border-color: var(--color-zim-accent);
+    background-color: rgba(0, 100, 0, 0.15);
+  }
+
+  .nav-item {
+    @apply block px-3 py-2 rounded text-sm font-medium transition-colors;
+    color: var(--color-text-secondary);
+  }
+
+  .nav-item:hover {
+    color: var(--color-text-primary);
+    background-color: rgba(255, 255, 255, 0.06);
+  }
+
+  /* Top nav links — solid dark nav, always light text regardless of page shell.
+     .page-container caps out at --max-width-sovereign (1280px), so the row available to
+     the nav never grows past that no matter how wide the viewport gets — sizing here is
+     intentionally constant (no breakpoint upsizing) rather than "dynamic" per viewport,
+     because more viewport width never actually means more room for this row.
+     whitespace-nowrap + shrink-0 guarantee each link stays on one line and never gets
+     squeezed or wrapped by flexbox. */
+  .nav-link {
+    @apply px-2.5 py-2 rounded-full text-[13px] font-medium whitespace-nowrap shrink-0 transition-colors;
+    color: var(--color-text-secondary);
+  }
+
+  .nav-link:hover {
+    color: var(--color-text-primary);
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .footer-link {
+    color: var(--color-text-secondary);
+    transition: color var(--duration-sovereign) var(--ease-sovereign);
+  }
+
+  .footer-link:hover {
+    color: var(--color-text-primary);
+  }
+
+  .status-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded;
+  }
+
+  .status-badge-active {
+    background-color: rgba(0, 100, 0, 0.2);
+    color: #86efac;
+    border: 1px solid rgba(0, 100, 0, 0.35);
+  }
+
+  .status-badge-pending {
+    background-color: rgba(255, 211, 0, 0.15);
+    color: #fde047;
+    border: 1px solid rgba(255, 211, 0, 0.35);
+  }
+
+  .status-badge-info {
+    background-color: rgba(0, 100, 0, 0.15);
+    color: var(--color-zim-accent-pale);
+    border: 1px solid rgba(0, 100, 0, 0.3);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Stripe-style gradient mesh — sovereign palette wash for hero upper-third */
+  .mesh-gradient-hero {
+    background-color: var(--color-sovereign-midnight);
+    background-image:
+      radial-gradient(ellipse 60% 50% at 15% -10%, rgba(255, 211, 0, 0.16), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 85% -5%, rgba(0, 100, 0, 0.28), transparent 60%),
+      radial-gradient(ellipse 80% 60% at 50% -15%, rgba(0, 100, 0, 0.2), transparent 70%);
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.5s var(--ease-sovereign) forwards;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}

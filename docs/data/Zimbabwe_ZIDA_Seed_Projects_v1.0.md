@@ -1,0 +1,1132 @@
+# Zimbabwe Digital Investment & Economic Intelligence Platform
+## ZIDA 2025 Seed Projects v1.0 for Cursor MVP
+
+**Prepared for:** Afronovation MVP build folder  
+**Purpose:** Provide the first seeded investment-project dataset for the Zimbabwe Digital Investment & Economic Intelligence Platform showcase.  
+**Primary source:** `2025 PROJECTS 2 September (1).pdf` — ZIDA 2025 Projects deck.  
+**Status:** Demo seed data for July 10, 2026 showcase. All project data must be validated with ZIDA / Government of Zimbabwe before public or production use.  
+
+---
+
+## 1. Important Implementation Notes for Cursor
+
+This file should be used to seed the first MVP project registry. It intentionally reflects Zimbabwe's existing ZIDA project catalogue so the demo shows that Afronovation is paying attention to what Zimbabwe and ZIDA have already prepared.
+
+### Non-negotiable governance rules
+
+- Treat this as **seed/demo data**, not validated production data.
+- Every seeded project should enter the system with:
+  - `projectStatus: "published"` for demo display only, or `projectStatus: "approved"` if Cursor implements a review queue first.
+  - `dataVerificationStatus: "pending_review"`.
+  - `sourceReference: "ZIDA 2025 Projects deck"`.
+  - `visibilityLevel: "public"` for high-level cards, with deeper financial/document details gated behind registration or qualified-investor access.
+- Do **not** allow future project creation to bypass the standardized template, review, approval, and publishing workflow.
+- Sectors, pillars, SDGs, ministries/agencies, and contact reasons must be admin-managed taxonomies.
+- Beneficiary ministries and SDG mappings below are **Afronovation demo mappings pending official validation**. Do not represent them as official Government of Zimbabwe classifications until approved.
+
+---
+
+## 2. Seed Taxonomies
+
+### 2.1 Sectors from ZIDA deck
+
+```ts
+export const seedSectors = [
+  "Health",
+  "Agriculture",
+  "ICT",
+  "Manufacturing",
+  "Mining",
+  "Infrastructure",
+  "Renewable Energy",
+  "Tourism and Financial Services"
+];
+```
+
+### 2.2 Strategic pillars for MVP
+
+```ts
+export const seedStrategicPillars = [
+  "Investment Attraction & Private Sector Growth",
+  "Industrialization & Value Addition",
+  "Agriculture, Food Security & Agro-Processing",
+  "Mining, Beneficiation & Resource Development",
+  "Digital Economy & ICT Infrastructure",
+  "Energy Security & Renewable Transition",
+  "Infrastructure, Housing & Urban Development",
+  "Tourism, Culture & Destination Development",
+  "Health, Human Capital & Social Services",
+  "Climate Resilience & Sustainable Development",
+  "Diaspora, Trade & Global Partnerships",
+  "Public Sector Modernization & Digital Government"
+];
+```
+
+### 2.3 Beneficiary ministry placeholders
+
+Use these as **demo placeholders pending official validation**:
+
+```ts
+export const seedBeneficiaryMinistryPlaceholders = [
+  "Health portfolio — official beneficiary ministry to be validated",
+  "Agriculture portfolio — official beneficiary ministry to be validated",
+  "ICT / Digital Economy portfolio — official beneficiary ministry to be validated",
+  "Manufacturing / Industry portfolio — official beneficiary ministry to be validated",
+  "Mining portfolio — official beneficiary ministry to be validated",
+  "Infrastructure / Housing portfolio — official beneficiary ministry to be validated",
+  "Energy portfolio — official beneficiary ministry to be validated",
+  "Tourism / Financial Services portfolio — official beneficiary ministry to be validated",
+  "ZIDA / Investment Promotion Authority — role to be validated"
+];
+```
+
+### 2.4 SDG tags for demo mapping
+
+Use SDG labels as tags. Mappings are suggested by Afronovation for demo and DFI/impact-investor discoverability.
+
+```ts
+export const seedSdgs = [
+  "SDG 1: No Poverty",
+  "SDG 2: Zero Hunger",
+  "SDG 3: Good Health and Well-Being",
+  "SDG 4: Quality Education",
+  "SDG 5: Gender Equality",
+  "SDG 6: Clean Water and Sanitation",
+  "SDG 7: Affordable and Clean Energy",
+  "SDG 8: Decent Work and Economic Growth",
+  "SDG 9: Industry, Innovation and Infrastructure",
+  "SDG 10: Reduced Inequalities",
+  "SDG 11: Sustainable Cities and Communities",
+  "SDG 12: Responsible Consumption and Production",
+  "SDG 13: Climate Action",
+  "SDG 17: Partnerships for the Goals"
+];
+```
+
+---
+
+## 3. TypeScript Seed Data Model
+
+Cursor can convert the records below into `lib/data/zimbabwe-projects.ts` or a similar seed-data file.
+
+```ts
+type ProjectStatus =
+  | "draft"
+  | "submitted_for_review"
+  | "under_review"
+  | "changes_requested"
+  | "approved"
+  | "published"
+  | "archived";
+
+type VisibilityLevel =
+  | "public"
+  | "registered"
+  | "qualified_investor"
+  | "admin_only";
+
+type DataVerificationStatus =
+  | "unverified"
+  | "pending_review"
+  | "verified";
+
+type SeedProject = {
+  id: string;
+  title: string;
+  slug: string;
+  sector: string;
+  subsector?: string;
+  location: string;
+  province?: string;
+  district?: string;
+  projectOwner: string;
+  beneficiaryMinistryPlaceholder: string;
+  secondaryBeneficiaries?: string[];
+  strategicPillars: string[];
+  sdgs: string[];
+  capitalRequired?: string;
+  financingType?: string;
+  projectStatus: ProjectStatus;
+  readinessLevel?: string;
+  visibilityLevel: VisibilityLevel;
+  irr?: string;
+  npv?: string;
+  roi?: string;
+  paybackPeriod?: string;
+  projectedRevenue?: string;
+  opportunitySummary: string;
+  description: string;
+  scope: string[];
+  impact: string[];
+  documentPlaceholders: string[];
+  sourceReference: string;
+  dataVerificationStatus: DataVerificationStatus;
+};
+```
+
+---
+
+## 4. Seed Projects
+
+```ts
+export const zimbabweSeedProjects: SeedProject[] = [
+  {
+    id: "zim-zida-001",
+    title: "Masuwe International Medical Center Project",
+    slug: "masuwe-international-medical-center",
+    sector: "Health",
+    subsector: "Healthcare Infrastructure",
+    location: "Matabeleland North / Victoria Falls / Masuwe SEZ",
+    province: "Matabeleland North",
+    projectOwner: "Mosi Oa Tunya Development Company",
+    beneficiaryMinistryPlaceholder: "Health portfolio — official beneficiary ministry to be validated",
+    secondaryBeneficiaries: ["Tourism / SEZ portfolio — to be validated", "ZIDA / Investment Promotion Authority — role to be validated"],
+    strategicPillars: ["Health, Human Capital & Social Services", "Tourism, Culture & Destination Development", "Investment Attraction & Private Sector Growth"],
+    sdgs: ["SDG 3: Good Health and Well-Being", "SDG 8: Decent Work and Economic Growth", "SDG 9: Industry, Innovation and Infrastructure"],
+    capitalRequired: "US$15 million",
+    financingType: "Public-Private Partnership (PPP)",
+    projectStatus: "published",
+    readinessLevel: "Greenfield; SEZ-based; project details provided in ZIDA deck",
+    visibilityLevel: "public",
+    irr: "20.8%",
+    npv: "US$2,860,000 million as stated in source deck; requires validation",
+    paybackPeriod: "6.3 years",
+    opportunitySummary: "150-bed international medical center in the Masuwe SEZ near Victoria Falls, positioned to serve tourism, local demand, and reduce outbound medical travel.",
+    description: "The project proposes construction of a modern, fully equipped 150-bed international medical center in Victoria Falls, with general hospital and luxury medical facility compounds totaling 10 hectares.",
+    scope: ["Construct 150-bed international medical center", "Develop general hospital compound of 6 ha", "Develop luxury medical facility compound of 4 ha", "Serve over 60,000 patients annually", "Create over 200 direct skilled and unskilled jobs"],
+    impact: ["Healthcare access", "Medical tourism potential", "Job creation", "Reduced outbound medical travel"],
+    documentPlaceholders: ["Project Brief", "Feasibility Summary", "Investor Pack", "SEZ Incentives Summary"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 5–6",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-002",
+    title: "Agro Strong (Pvt) Ltd - Beef and Dairy Farming Venture",
+    slug: "agro-strong-beef-dairy-farming-venture",
+    sector: "Agriculture",
+    subsector: "Livestock and Dairy",
+    location: "Matabeleland South",
+    province: "Matabeleland South",
+    projectOwner: "Agro Strong (Pvt) Ltd",
+    beneficiaryMinistryPlaceholder: "Agriculture portfolio — official beneficiary ministry to be validated",
+    strategicPillars: ["Agriculture, Food Security & Agro-Processing", "Industrialization & Value Addition", "Investment Attraction & Private Sector Growth"],
+    sdgs: ["SDG 2: Zero Hunger", "SDG 8: Decent Work and Economic Growth", "SDG 9: Industry, Innovation and Infrastructure", "SDG 12: Responsible Consumption and Production"],
+    capitalRequired: "US$6 million",
+    financingType: "Investment structure to be validated",
+    projectStatus: "published",
+    readinessLevel: "Brownfield; operating since 2021",
+    visibilityLevel: "public",
+    roi: "14%/yr",
+    npv: "US$3.5 million",
+    paybackPeriod: "4 years",
+    projectedRevenue: "US$9.1 million over five years",
+    opportunitySummary: "Large-scale beef and dairy venture addressing national beef and milk supply deficits.",
+    description: "The venture operates on 5,500 hectares with cattle breeding and feedlot operations, with plans for 4,500–5,000 breeding cows, 3,000 calves annually, and long-term vertical integration into feed production and export-certified abattoirs.",
+    scope: ["Use 5,500 ha for cattle breeding and feedlot operations", "Acquire 4,500–5,000 breeding cows", "Target 3,000 calves annually", "Develop feed production and export-certified abattoirs"],
+    impact: ["Food security", "Livestock value chain development", "Export potential", "Rural economic development"],
+    documentPlaceholders: ["Project Brief", "Financial Model", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 8–9",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-003",
+    title: "Goromonzi Agro Processing Industrial Park (Special Economic Zone)",
+    slug: "goromonzi-agro-processing-industrial-park-sez",
+    sector: "Agriculture",
+    subsector: "Agro-Processing / Special Economic Zone",
+    location: "Mashonaland East",
+    province: "Mashonaland East",
+    projectOwner: "Goromonzi Agro Industrial Company (GAIC)",
+    beneficiaryMinistryPlaceholder: "Agriculture portfolio — official beneficiary ministry to be validated",
+    secondaryBeneficiaries: ["Manufacturing / Industry portfolio — to be validated", "ZIDA / Investment Promotion Authority — role to be validated"],
+    strategicPillars: ["Agriculture, Food Security & Agro-Processing", "Industrialization & Value Addition", "Investment Attraction & Private Sector Growth"],
+    sdgs: ["SDG 2: Zero Hunger", "SDG 8: Decent Work and Economic Growth", "SDG 9: Industry, Innovation and Infrastructure", "SDG 12: Responsible Consumption and Production"],
+    capitalRequired: "US$36.9 million total cost",
+    financingType: "EPC plus Finance model; SEZ opportunity",
+    projectStatus: "published",
+    readinessLevel: "Greenfield; feasibility study completed; positioned for immediate execution",
+    visibilityLevel: "public",
+    irr: "47%",
+    npv: "US$12.9 million",
+    paybackPeriod: "5 years",
+    opportunitySummary: "Agro-processing hub within a Special Economic Zone, designed for phased development across 1,718 hectares.",
+    description: "The project aims to establish a state-of-the-art agro-processing hub with farming units and agro-processing facilities, leveraging proximity to water, farming communities, and solar resources.",
+    scope: ["Phase 1 development of 1,025 hectares", "Full expansion to 1,718 hectares", "Lease farming units and agro-processing facilities", "Develop supporting infrastructure"],
+    impact: ["Agro-processing value addition", "SEZ-enabled investment", "Agricultural industrialization", "Local supply-chain development"],
+    documentPlaceholders: ["Project Brief", "Feasibility Study Summary", "SEZ Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 10–11",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-004",
+    title: "Mossfield Crop Production Farming Venture",
+    slug: "mossfield-crop-production-farming-venture",
+    sector: "Agriculture",
+    subsector: "Crop Production / Irrigation / Diversified Farming",
+    location: "Mashonaland East, Manicaland, Masvingo",
+    province: "Mashonaland East / Manicaland / Masvingo",
+    district: "Hwedza, Makoni, Chiredzi",
+    projectOwner: "Mossfield Farms (Pvt) Ltd / Mossfield Farm",
+    beneficiaryMinistryPlaceholder: "Agriculture portfolio — official beneficiary ministry to be validated",
+    strategicPillars: ["Agriculture, Food Security & Agro-Processing", "Climate Resilience & Sustainable Development", "Investment Attraction & Private Sector Growth"],
+    sdgs: ["SDG 2: Zero Hunger", "SDG 8: Decent Work and Economic Growth", "SDG 12: Responsible Consumption and Production", "SDG 13: Climate Action"],
+    capitalRequired: "US$10 million",
+    financingType: "Investment structure to be validated",
+    projectStatus: "published",
+    readinessLevel: "Existing farming operation; expansion opportunity",
+    visibilityLevel: "public",
+    roi: "20%",
+    npv: "US$130 million",
+    paybackPeriod: "6 years",
+    projectedRevenue: "US$1.2 billion",
+    opportunitySummary: "Expansion of a diversified crop-production operation across more than 15,000 hectares with irrigation, citrus, dairy, poultry, and green energy opportunities.",
+    description: "The project involves a well-established farming operation producing soybeans, maize, barley, sugar beans, with new ventures into sugar cane and citrus, and plans for irrigation and infrastructure expansion.",
+    scope: ["Expand farming operations beyond 15,000 hectares", "Develop additional farming ventures", "Develop irrigation systems, warehouses, and processing facilities"],
+    impact: ["Food security", "Agricultural productivity", "Rural employment", "Sustainable farming practices"],
+    documentPlaceholders: ["Project Brief", "Expansion Plan", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 12–13",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-005",
+    title: "CICADA Macadamia and Avocado Plantation Expansion Project",
+    slug: "cicada-macadamia-avocado-plantation-expansion",
+    sector: "Agriculture",
+    subsector: "Tree Crops / Export Agriculture",
+    location: "Midlands, Manicaland",
+    province: "Midlands / Manicaland",
+    projectOwner: "Cicada Group",
+    beneficiaryMinistryPlaceholder: "Agriculture portfolio — official beneficiary ministry to be validated",
+    strategicPillars: ["Agriculture, Food Security & Agro-Processing", "Diaspora, Trade & Global Partnerships", "Investment Attraction & Private Sector Growth"],
+    sdgs: ["SDG 2: Zero Hunger", "SDG 8: Decent Work and Economic Growth", "SDG 12: Responsible Consumption and Production", "SDG 13: Climate Action"],
+    capitalRequired: "US$39.5 million total raise referenced in project description; phase costs listed as US$19.5 million and US$15.0 million",
+    financingType: "Debt restructuring and expansion funding; structure to be validated",
+    projectStatus: "published",
+    readinessLevel: "Expansion of existing agricultural portfolio",
+    visibilityLevel: "public",
+    npv: "US$14.4 million",
+    paybackPeriod: "9 years",
+    projectedRevenue: "Projected 15-year revenue: US$386 million; projected 15-year EBITDA: US$96 million",
+    opportunitySummary: "Expansion of avocados and macadamia nuts with value-addition and export potential.",
+    description: "Cicada Holdings oversees about 2,200 ha for sustainable production of avocados, macadamia nuts, soya, wheat, and one of Zimbabwe’s largest banana plantations.",
+    scope: ["Develop 800 ha of irrigable land", "Nurture 1,200 ha of macadamia and avocado tree crops", "Expand small-scale farming programme from 800 to 6,500 households"],
+    impact: ["Export agriculture", "Smallholder inclusion", "Value addition", "Climate-smart agriculture"],
+    documentPlaceholders: ["Project Brief", "Investor Pack", "Expansion Programme Summary"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 14–15",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-006",
+    title: "Misty Mountains Coffee Production",
+    slug: "misty-mountains-coffee-production",
+    sector: "Agriculture",
+    subsector: "Coffee / Specialty Agriculture",
+    location: "Manicaland / Vumba / Eastern Highlands",
+    province: "Manicaland",
+    projectOwner: "Misty Mountains Coffee Company",
+    beneficiaryMinistryPlaceholder: "Agriculture portfolio — official beneficiary ministry to be validated",
+    strategicPillars: ["Agriculture, Food Security & Agro-Processing", "Diaspora, Trade & Global Partnerships", "Investment Attraction & Private Sector Growth"],
+    sdgs: ["SDG 2: Zero Hunger", "SDG 8: Decent Work and Economic Growth", "SDG 12: Responsible Consumption and Production"],
+    capitalRequired: "US$4.5 million",
+    financingType: "Preferably equity; debt can be considered",
+    projectStatus: "published",
+    readinessLevel: "Brownfield; licensed and shovel-ready as stated in source deck",
+    visibilityLevel: "public",
+    irr: "13.22%",
+    npv: "US$885,212.71",
+    paybackPeriod: "11 years",
+    projectedRevenue: "Projected 10-year revenue: US$8 million",
+    opportunitySummary: "Specialty Arabica coffee production in Vumba with expansion potential into passion fruit and macadamia nuts.",
+    description: "The project involves cultivation of 150 ha of coffee on a 520 ha farm under Vumba Agricultural Cooperative Society, with operations managed by Misty Mountains Coffee Company.",
+    scope: ["Cultivate 150 ha of coffee", "Scale to 20 ha of passion fruit", "Scale to 20 ha of macadamia nuts over 6 years"],
+    impact: ["Export-oriented agriculture", "Community-linked production", "Specialty value chain development"],
+    documentPlaceholders: ["Project Brief", "Investor Pack", "Cooperative Structure Summary"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 16–17",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-007",
+    title: "Fourways Livestock Production",
+    slug: "fourways-livestock-production",
+    sector: "Agriculture",
+    subsector: "Beef Feedlot / Livestock",
+    location: "Manicaland / Headlands",
+    province: "Manicaland",
+    projectOwner: "Fairway (Pvt) Ltd",
+    beneficiaryMinistryPlaceholder: "Agriculture portfolio — official beneficiary ministry to be validated",
+    strategicPillars: ["Agriculture, Food Security & Agro-Processing", "Investment Attraction & Private Sector Growth"],
+    sdgs: ["SDG 2: Zero Hunger", "SDG 8: Decent Work and Economic Growth", "SDG 12: Responsible Consumption and Production"],
+    capitalRequired: "US$2.5 million",
+    financingType: "49% equity stake proposed in source deck",
+    projectStatus: "published",
+    readinessLevel: "Greenfield with essential infrastructure already in place",
+    visibilityLevel: "public",
+    irr: "72%",
+    npv: "US$3.9 million",
+    paybackPeriod: "1 year and 5 months",
+    projectedRevenue: "US$4 million in year 1 growing to US$7 million in year 3",
+    opportunitySummary: "Cattle-fattening project targeting 10,000 cattle annually for super-grade beef production.",
+    description: "The project proposes purchasing cattle from rural areas and raising them in pens/feedlots for 90 days, with potential future dairy diversification and community outreach.",
+    scope: ["Fatten 10,000 cattle annually", "Support local farmers through community outreach centre", "Potential diversification into dairy farming"],
+    impact: ["Livestock productivity", "Food security", "Local farmer support", "Beef supply-chain development"],
+    documentPlaceholders: ["Project Brief", "Investor Pack", "Livestock Operations Plan"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 18–19",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-008",
+    title: "Kwesfontein Intensive Beef Feedlot Project",
+    slug: "kwesfontein-intensive-beef-feedlot-project",
+    sector: "Agriculture",
+    subsector: "Beef Feedlot / Livestock",
+    location: "Chikomba District, Mashonaland East Province",
+    province: "Mashonaland East",
+    district: "Chikomba",
+    projectOwner: "The Feedlot Project",
+    beneficiaryMinistryPlaceholder: "Agriculture portfolio — official beneficiary ministry to be validated",
+    strategicPillars: ["Agriculture, Food Security & Agro-Processing", "Investment Attraction & Private Sector Growth"],
+    sdgs: ["SDG 2: Zero Hunger", "SDG 8: Decent Work and Economic Growth", "SDG 12: Responsible Consumption and Production"],
+    capitalRequired: "US$498,062.27 debt capital required; US$644,602.39 total project cost",
+    financingType: "Debt financing; 6-year capital loan and 3-year operational loan referenced in source deck",
+    projectStatus: "published",
+    readinessLevel: "Greenfield agricultural venture",
+    visibilityLevel: "public",
+    irr: "39.17%",
+    npv: "US$390,380.96",
+    paybackPeriod: "4 years",
+    projectedRevenue: "US$5.82 million over six years",
+    opportunitySummary: "Semi-automated 250-herd beef feedlot on a 110-hectare farm designed to serve local and future regional markets.",
+    description: "The project is promoted by Idah Mutandwa and George Mushore and aims to establish a high-yield cattle feedlot with pens, drainage, feed mill, staff quarters, cattle procurement, feed inputs, and working capital.",
+    scope: ["Develop feedlot infrastructure", "Procure cattle and feed inputs", "Establish feed mill and staff quarters", "Leverage 90-day beef production cash cycle"],
+    impact: ["Beef industry revitalization", "Local market supply", "Potential export growth", "Rural enterprise development"],
+    documentPlaceholders: ["Project Brief", "Debt Financing Summary", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 20–21",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-009",
+    title: "Powertel Fibre Internet (GPON)",
+    slug: "powertel-fibre-internet-gpon",
+    sector: "ICT",
+    subsector: "Broadband Infrastructure / Fibre",
+    location: "Harare; metropolitan and rural areas around Zimbabwe",
+    province: "Harare / National",
+    projectOwner: "Powertel Communications (Pvt) Ltd",
+    beneficiaryMinistryPlaceholder: "ICT / Digital Economy portfolio — official beneficiary ministry to be validated",
+    strategicPillars: ["Digital Economy & ICT Infrastructure", "Public Sector Modernization & Digital Government", "Investment Attraction & Private Sector Growth"],
+    sdgs: ["SDG 9: Industry, Innovation and Infrastructure", "SDG 8: Decent Work and Economic Growth", "SDG 17: Partnerships for the Goals"],
+    capitalRequired: "US$26.9 million",
+    financingType: "Investment structure to be validated",
+    projectStatus: "published",
+    readinessLevel: "Infrastructure deployment opportunity",
+    visibilityLevel: "public",
+    roi: "56.94%",
+    npv: "US$36.3 million",
+    paybackPeriod: "10 years",
+    projectedRevenue: "US$231 million",
+    opportunitySummary: "GPON fibre internet project to provide broadband services using existing powerline infrastructure.",
+    description: "The project proposes deployment of optical fibre cables and GPON active equipment to connect more than 900,000 households and SMEs on the electricity grid.",
+    scope: ["Cover 900,000 households and SMEs", "Deploy optical fibre along existing powerline infrastructure", "Install GPON technology for broadband access"],
+    impact: ["Digital economy enablement", "Broadband access", "SME connectivity", "Rural/metropolitan ICT infrastructure"],
+    documentPlaceholders: ["Project Brief", "Technical Summary", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 23–24",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-010",
+    title: "TelOne Fibre to the Home (FTTH) Deployment",
+    slug: "telone-fibre-to-the-home-ftth-deployment",
+    sector: "ICT",
+    subsector: "Broadband Infrastructure / Last-Mile Connectivity",
+    location: "Harare / various locations in Zimbabwe",
+    province: "Harare / National",
+    projectOwner: "TelOne (Pvt) Ltd",
+    beneficiaryMinistryPlaceholder: "ICT / Digital Economy portfolio — official beneficiary ministry to be validated",
+    strategicPillars: ["Digital Economy & ICT Infrastructure", "Public Sector Modernization & Digital Government"],
+    sdgs: ["SDG 9: Industry, Innovation and Infrastructure", "SDG 8: Decent Work and Economic Growth", "SDG 10: Reduced Inequalities"],
+    capitalRequired: "US$50 million",
+    financingType: "Build, Lease, Maintain & Transfer (BLMT) PPP",
+    projectStatus: "published",
+    readinessLevel: "Brownfield broadband expansion",
+    visibilityLevel: "public",
+    roi: "47.1%",
+    npv: "US$98 million",
+    paybackPeriod: "4 years, 9 months",
+    projectedRevenue: "US$719 million",
+    opportunitySummary: "FTTH broadband infrastructure connecting approximately 114,000 homes across Zimbabwe.",
+    description: "The project extends last-mile broadband connectivity using GPON infrastructure, civil works, fibre termination, operating capital, and ESIA.",
+    scope: ["Deploy FTTH infrastructure to 114,000 homes", "Install GPON technology", "Extend high-speed internet provision"],
+    impact: ["Digital inclusion", "Home broadband access", "ICT infrastructure modernization"],
+    documentPlaceholders: ["Project Brief", "BLMT Structure Summary", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 25–26",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-011",
+    title: "TelOne Wireless Broadband Deployment",
+    slug: "telone-wireless-broadband-deployment",
+    sector: "ICT",
+    subsector: "Wireless Broadband / Rural Connectivity",
+    location: "Midlands, Matabeleland, Masvingo, Manicaland",
+    province: "Midlands / Matabeleland / Masvingo / Manicaland",
+    projectOwner: "TelOne (Pvt) Ltd",
+    beneficiaryMinistryPlaceholder: "ICT / Digital Economy portfolio — official beneficiary ministry to be validated",
+    strategicPillars: ["Digital Economy & ICT Infrastructure", "Public Sector Modernization & Digital Government", "Climate Resilience & Sustainable Development"],
+    sdgs: ["SDG 9: Industry, Innovation and Infrastructure", "SDG 10: Reduced Inequalities", "SDG 17: Partnerships for the Goals"],
+    capitalRequired: "US$263.2 million",
+    financingType: "Build, Lease, Maintain, and Transfer (BLMT) PPP",
+    projectStatus: "published",
+    readinessLevel: "Feasibility studies completed as stated in source deck",
+    visibilityLevel: "public",
+    roi: "60%",
+    npv: "US$576.6 million",
+    paybackPeriod: "5 years",
+    projectedRevenue: "US$2.9 billion",
+    opportunitySummary: "Wireless broadband expansion for 500,000 rural and peri-urban users through 1,600 base stations.",
+    description: "The project improves internet connectivity in underserved Southern and Eastern Zimbabwe, addressing the digital divide and fostering inclusion.",
+    scope: ["Deploy 1,600 wireless base stations", "Provide wireless broadband to 500,000 users", "Serve rural and peri-urban areas"],
+    impact: ["Digital inclusion", "Rural broadband access", "Social impact", "Economic participation"],
+    documentPlaceholders: ["Project Brief", "Feasibility Summary", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 27–28",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-012",
+    title: "TelOne Data Centres Project",
+    slug: "telone-data-centres-project",
+    sector: "ICT",
+    subsector: "Data Centres / Cloud Infrastructure",
+    location: "Harare, Mazowe, Bulawayo",
+    province: "Harare / Mashonaland Central / Bulawayo",
+    projectOwner: "TelOne (Pvt) Ltd",
+    beneficiaryMinistryPlaceholder: "ICT / Digital Economy portfolio — official beneficiary ministry to be validated",
+    strategicPillars: ["Digital Economy & ICT Infrastructure", "Public Sector Modernization & Digital Government", "Investment Attraction & Private Sector Growth"],
+    sdgs: ["SDG 9: Industry, Innovation and Infrastructure", "SDG 8: Decent Work and Economic Growth", "SDG 17: Partnerships for the Goals"],
+    capitalRequired: "USD29.97 million",
+    financingType: "PPP and debt structure required",
+    projectStatus: "published",
+    readinessLevel: "Preparation stage; feasibility study, business case, and EIA completed as stated in source deck",
+    visibilityLevel: "public",
+    roi: "29.23%",
+    npv: "US$8.4 million",
+    paybackPeriod: "11 years, 8 months",
+    projectedRevenue: "Projected 13-year revenues: US$181.61 million; projected 13-year profits: US$113.80 million",
+    opportunitySummary: "Data centre and cloud expansion across Harare, Mazowe, and Bulawayo to support colocation, cloud, disaster recovery, and managed hosting.",
+    description: "The project expands Harare Tier III colocation space, deploys PODs in Harare and Mazowe, and upgrades Bulawayo datacentre infrastructure.",
+    scope: ["Expand Harare data centre by 300m² Tier III space", "Deploy Performance Optimized Data Centres", "Upgrade Bulawayo cloud infrastructure", "Provide colocation, cloud hosting, managed hosting, DR, backup, connectivity, and network security services"],
+    impact: ["Digital sovereignty", "Cloud infrastructure", "Government and private-sector hosting", "Disaster recovery capability"],
+    documentPlaceholders: ["Project Brief", "Business Case Summary", "EIA Summary", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 29–30",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-013",
+    title: "Linkdef Soap Manufacturing Facility",
+    slug: "linkdef-soap-manufacturing-facility",
+    sector: "Manufacturing",
+    subsector: "Consumer Goods / Soap and Detergents",
+    location: "Harare",
+    province: "Harare",
+    projectOwner: "Linkdef Soap Manufacturing (Pvt) Ltd",
+    beneficiaryMinistryPlaceholder: "Manufacturing / Industry portfolio — official beneficiary ministry to be validated",
+    strategicPillars: ["Industrialization & Value Addition", "Investment Attraction & Private Sector Growth", "Diaspora, Trade & Global Partnerships"],
+    sdgs: ["SDG 8: Decent Work and Economic Growth", "SDG 9: Industry, Innovation and Infrastructure", "SDG 12: Responsible Consumption and Production"],
+    capitalRequired: "US$5.1 million",
+    financingType: "Investment structure to be validated",
+    projectStatus: "published",
+    readinessLevel: "Phased manufacturing facility project",
+    visibilityLevel: "public",
+    roi: "41% - 5 years",
+    npv: "US$1.4 million",
+    paybackPeriod: "1 year, 8 months",
+    projectedRevenue: "US$51.6 million",
+    opportunitySummary: "Soap and detergent manufacturing facility aimed at import substitution, regional expansion, and product diversification.",
+    description: "The project establishes a state-of-the-art soap and detergent facility, beginning with 64 tonnes of bath and bar soap annually using machinery imported from Italy and raw materials sourced from Malaysia.",
+    scope: ["Phase 1 facility for 64 tonnes of bath and bar soap", "Phase 2 production expansion and diversification"],
+    impact: ["Industrialization", "Import substitution", "Export potential", "Local manufacturing capacity"],
+    documentPlaceholders: ["Project Brief", "Manufacturing Plan", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 31–32",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-014",
+    title: "NRZ Concrete Manufacturing Plant Project",
+    slug: "nrz-concrete-manufacturing-plant-project",
+    sector: "Manufacturing",
+    subsector: "Railway Materials / Concrete Sleepers",
+    location: "Bulawayo",
+    province: "Bulawayo",
+    projectOwner: "National Railways of Zimbabwe",
+    beneficiaryMinistryPlaceholder: "Manufacturing / Industry portfolio — official beneficiary ministry to be validated",
+    secondaryBeneficiaries: ["Infrastructure / Transport portfolio — to be validated"],
+    strategicPillars: ["Industrialization & Value Addition", "Infrastructure, Housing & Urban Development", "Investment Attraction & Private Sector Growth"],
+    sdgs: ["SDG 8: Decent Work and Economic Growth", "SDG 9: Industry, Innovation and Infrastructure", "SDG 11: Sustainable Cities and Communities"],
+    capitalRequired: "US$2.426 million",
+    financingType: "Investment structure to be validated",
+    projectStatus: "published",
+    readinessLevel: "Manufacturing plant opportunity",
+    visibilityLevel: "public",
+    roi: "47.1%",
+    npv: "US$98 million as stated in source deck; requires validation",
+    paybackPeriod: "6 months",
+    projectedRevenue: "US$16.4 million",
+    opportunitySummary: "Concrete sleeper manufacturing plant to support NRZ railway rehabilitation and regional supply opportunities.",
+    description: "NRZ aims to establish a plant in Bulawayo producing pre-stressed monolithic concrete sleepers and other construction products, with annual capacity of 60,000 sleepers.",
+    scope: ["Establish concrete sleeper manufacturing plant", "Produce 60,000 sleepers annually", "Support NRZ infrastructure needs", "Pursue regional market expansion"],
+    impact: ["Rail infrastructure modernization", "Industrial capacity", "Regional exports", "Transport competitiveness"],
+    documentPlaceholders: ["Project Brief", "Technical Summary", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 33–34",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-015",
+    title: "Orangerose Solar Roof Tile Manufacturing Project",
+    slug: "orangerose-solar-roof-tile-manufacturing-project",
+    sector: "Manufacturing",
+    subsector: "Solar Manufacturing / Building Materials",
+    location: "Bulawayo",
+    province: "Bulawayo",
+    projectOwner: "Orangerose Investments",
+    beneficiaryMinistryPlaceholder: "Manufacturing / Industry portfolio — official beneficiary ministry to be validated",
+    secondaryBeneficiaries: ["Energy portfolio — to be validated"],
+    strategicPillars: ["Industrialization & Value Addition", "Energy Security & Renewable Transition", "Climate Resilience & Sustainable Development"],
+    sdgs: ["SDG 7: Affordable and Clean Energy", "SDG 8: Decent Work and Economic Growth", "SDG 9: Industry, Innovation and Infrastructure", "SDG 13: Climate Action"],
+    capitalRequired: "US$1 million",
+    financingType: "40% equity; remainder loans and/or grants as stated in source deck",
+    projectStatus: "published",
+    readinessLevel: "Manufacturing facility opportunity under franchise partnership",
+    visibilityLevel: "public",
+    roi: "53.3%",
+    npv: "US$98 million as stated in source deck; requires validation",
+    paybackPeriod: "6 months",
+    projectedRevenue: "US$8.4 million",
+    opportunitySummary: "Solar roof tile manufacturing facility with capacity of 600 solar roof tiles daily.",
+    description: "The project establishes a solar roof tile manufacturing facility under a franchise partnership with Giellenergy-Tile, integrating solar generation into building surfaces.",
+    scope: ["Establish manufacturing facility", "Produce 600 solar roof tiles daily", "Allocate capital expenditures and working capital"],
+    impact: ["Renewable energy manufacturing", "Power resilience", "Green building materials", "Industrial value addition"],
+    documentPlaceholders: ["Project Brief", "Franchise Partnership Summary", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 35–36",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-016",
+    title: "Foot and Mouth Disease (FMD) Vaccine Manufacturing",
+    slug: "fmd-vaccine-manufacturing",
+    sector: "Manufacturing",
+    subsector: "Biomanufacturing / Animal Health",
+    location: "Harare",
+    province: "Harare",
+    projectOwner: "SIRDC",
+    beneficiaryMinistryPlaceholder: "Manufacturing / Industry portfolio — official beneficiary ministry to be validated",
+    secondaryBeneficiaries: ["Agriculture portfolio — to be validated", "Health / biosecurity portfolio — to be validated"],
+    strategicPillars: ["Industrialization & Value Addition", "Agriculture, Food Security & Agro-Processing", "Health, Human Capital & Social Services"],
+    sdgs: ["SDG 2: Zero Hunger", "SDG 3: Good Health and Well-Being", "SDG 8: Decent Work and Economic Growth", "SDG 9: Industry, Innovation and Infrastructure"],
+    capitalRequired: "US$45 million",
+    financingType: "Investment structure to be validated",
+    projectStatus: "published",
+    readinessLevel: "Full feasibility study completed as stated in source deck",
+    visibilityLevel: "public",
+    roi: "9%",
+    npv: "US$7.1 million",
+    paybackPeriod: "9 years",
+    projectedRevenue: "US$638 million",
+    opportunitySummary: "FMD vaccine manufacturing facility to reduce import reliance and support regional supply.",
+    description: "The project establishes or refurbishes a facility to Biosafety Level 3 standards with single-use technology providers for domestic and regional vaccine production.",
+    scope: ["Establish FMD vaccine manufacturing plant", "Comply with BSL-3 standards", "Support regional supply expansion"],
+    impact: ["Animal health security", "Livestock productivity", "Regional vaccine supply", "Import substitution"],
+    documentPlaceholders: ["Project Brief", "Feasibility Summary", "BSL-3 Compliance Summary", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 37–38",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-017",
+    title: "Verify Coal-to-Fertiliser Plant with Net Zero Emission",
+    slug: "verify-coal-to-fertiliser-plant-net-zero-emission",
+    sector: "Manufacturing",
+    subsector: "Fertilizer / Industrial Chemicals",
+    location: "Mkwasine, Masvingo",
+    province: "Masvingo",
+    projectOwner: "Verify Engineering (Pvt) Ltd",
+    beneficiaryMinistryPlaceholder: "Manufacturing / Industry portfolio — official beneficiary ministry to be validated",
+    secondaryBeneficiaries: ["Agriculture portfolio — to be validated", "Climate / Environment portfolio — to be validated"],
+    strategicPillars: ["Industrialization & Value Addition", "Agriculture, Food Security & Agro-Processing", "Climate Resilience & Sustainable Development"],
+    sdgs: ["SDG 2: Zero Hunger", "SDG 8: Decent Work and Economic Growth", "SDG 9: Industry, Innovation and Infrastructure", "SDG 13: Climate Action"],
+    capitalRequired: "US$1.168 billion",
+    financingType: "Investment structure to be validated",
+    projectStatus: "published",
+    readinessLevel: "Industrial plant opportunity",
+    visibilityLevel: "public",
+    roi: "458%",
+    npv: "US$603 million",
+    paybackPeriod: "7.6 years",
+    projectedRevenue: "US$2.6 billion",
+    opportunitySummary: "Coal-to-fertilizer plant targeting 520,000 tonnes per annum of urea and ammonium nitrate with emissions-reduction measures.",
+    description: "The project aims to produce nitrogenous fertilizers and by-products including ammonia, oxygen, nitrogen, explosives, and sulphur, with carbon capture/utilisation and renewable solar energy elements.",
+    scope: ["Set up coal-to-fertilizer plant", "Produce 520,000 tonnes per annum of urea and ammonium nitrate", "Establish by-product manufacturing for ammonia, oxygen, nitrogen, explosives, and sulphur"],
+    impact: ["Fertilizer security", "Industrial value addition", "Agricultural productivity", "Reduced import dependency"],
+    documentPlaceholders: ["Project Brief", "Environmental Summary", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 39–40",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-018",
+    title: "SIRDC Integrated Foundry – Manhize Industrial Park",
+    slug: "sirdc-integrated-foundry-manhize-industrial-park",
+    sector: "Manufacturing",
+    subsector: "Foundry / Metal Fabrication",
+    location: "Manhize, Midlands Province",
+    province: "Midlands",
+    projectOwner: "Scientific and Industrial Research & Development Centre (SIRDC)",
+    beneficiaryMinistryPlaceholder: "Manufacturing / Industry portfolio — official beneficiary ministry to be validated",
+    secondaryBeneficiaries: ["Mining portfolio — to be validated", "Infrastructure / Transport portfolio — to be validated"],
+    strategicPillars: ["Industrialization & Value Addition", "Mining, Beneficiation & Resource Development", "Investment Attraction & Private Sector Growth"],
+    sdgs: ["SDG 8: Decent Work and Economic Growth", "SDG 9: Industry, Innovation and Infrastructure", "SDG 12: Responsible Consumption and Production"],
+    capitalRequired: "US$58 million equity; 25% equity and 75% debt sought as stated in source deck",
+    financingType: "25% equity / 75% debt",
+    projectStatus: "published",
+    readinessLevel: "Greenfield foundry project",
+    visibilityLevel: "public",
+    irr: "24.4%",
+    npv: "US$69.7 million",
+    paybackPeriod: "6 years",
+    projectedRevenue: "US$30 million in years 1 & 2; US$130 million peak year 16",
+    opportunitySummary: "Semi-automated foundry for cast and forged products serving mining, agriculture, transport, and construction sectors.",
+    description: "The project is located near Dinson Iron and Steel Company and includes production area, metallurgy lab, pattern shop, solar energy park, and residential facilities on a 30-hectare site.",
+    scope: ["Construct and operate foundry", "Produce cast and forged products", "Establish 30-hectare foundry site", "Serve mining, agriculture, transport, and construction sectors"],
+    impact: ["Import substitution", "Industrial value-chain development", "Mining-sector support", "Regional manufacturing competitiveness"],
+    documentPlaceholders: ["Project Brief", "Technical Summary", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 41–42",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-019",
+    title: "Buck Special Grant Gold Mining Project",
+    slug: "buck-special-grant-gold-mining-project",
+    sector: "Mining",
+    subsector: "Gold Mining / Exploration",
+    location: "Reserved Area MSC 002, Mazowe; Mashonaland Central",
+    province: "Mashonaland Central",
+    projectOwner: "Mining Promotion Corporation",
+    beneficiaryMinistryPlaceholder: "Mining portfolio — official beneficiary ministry to be validated",
+    strategicPillars: ["Mining, Beneficiation & Resource Development", "Investment Attraction & Private Sector Growth", "Diaspora, Trade & Global Partnerships"],
+    sdgs: ["SDG 8: Decent Work and Economic Growth", "SDG 9: Industry, Innovation and Infrastructure", "SDG 12: Responsible Consumption and Production", "SDG 17: Partnerships for the Goals"],
+    capitalRequired: "US$2,249,000; exploration and drilling US$349,000",
+    financingType: "Investment structure to be validated",
+    projectStatus: "published",
+    readinessLevel: "Exploration and mining development opportunity",
+    visibilityLevel: "public",
+    irr: "26.7%",
+    npv: "US$1,585,148",
+    paybackPeriod: "3 years",
+    projectedRevenue: "US$5,565,000 over five years",
+    opportunitySummary: "Gold project on the Harare-Shamva Greenstone Belt with historical production and confirmed orebody indicators.",
+    description: "The project targets a historically productive shear zone associated with Buck Mine, with inferred resource estimates and potential open-cast mining for a portion of the resource.",
+    scope: ["Undertake further exploration and drilling", "Proceed with mine development", "Assess open-cast potential"],
+    impact: ["Mining-sector development", "Export earnings", "Resource exploration", "Private investment"],
+    documentPlaceholders: ["Project Brief", "Exploration Summary", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 45–46",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-020",
+    title: "Fort Rixon Gold Exploration Project",
+    slug: "fort-rixon-gold-exploration-project",
+    sector: "Mining",
+    subsector: "Gold Exploration",
+    location: "Fort Rixon; approximately 100 km east of Bulawayo and 60 km west of Gweru",
+    province: "Bulawayo / Midlands corridor",
+    projectOwner: "Mining Promotion Corporation",
+    beneficiaryMinistryPlaceholder: "Mining portfolio — official beneficiary ministry to be validated",
+    strategicPillars: ["Mining, Beneficiation & Resource Development", "Investment Attraction & Private Sector Growth"],
+    sdgs: ["SDG 8: Decent Work and Economic Growth", "SDG 9: Industry, Innovation and Infrastructure", "SDG 17: Partnerships for the Goals"],
+    capitalRequired: "USD2.940 million as interpreted from source deck; source text shows 'USD2,940 million' and requires validation",
+    financingType: "Investment structure to be validated",
+    projectStatus: "published",
+    readinessLevel: "Exploration opportunity with historical deposits",
+    visibilityLevel: "public",
+    roi: "56%",
+    npv: "US$101,273",
+    paybackPeriod: "4 years",
+    projectedRevenue: "US$8.232 million as interpreted from source deck; source text shows 'US$8,232 million' and requires validation",
+    opportunitySummary: "Gold exploration on Reserved Area MTS 003 covering 63,000 hectares with proximity to highway and railway infrastructure.",
+    description: "The area hosts historical deposits including Rainy Day, Sent, Robertson Dee, and Sun Tor mines, primarily shear-zone-hosted quartz veins and stockwork mineralisation within BIF units.",
+    scope: ["Explore Reserved Area MTS 003", "Assess historical gold deposits", "Leverage proximity to Harare-Bulawayo highway and railway"],
+    impact: ["Mining exploration", "Potential exports", "Regional infrastructure leverage"],
+    documentPlaceholders: ["Project Brief", "Exploration Summary", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 47–48",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-021",
+    title: "MNHSA Livingstone Flats Project",
+    slug: "mnhsa-livingstone-flats-project",
+    sector: "Infrastructure",
+    subsector: "Housing / Urban Regeneration",
+    location: "Harare CBD, David Livingstone Street",
+    province: "Harare",
+    projectOwner: "Ministry of National Housing and Social Amenities",
+    beneficiaryMinistryPlaceholder: "Infrastructure / Housing portfolio — official beneficiary ministry to be validated",
+    strategicPillars: ["Infrastructure, Housing & Urban Development", "Investment Attraction & Private Sector Growth", "Climate Resilience & Sustainable Development"],
+    sdgs: ["SDG 8: Decent Work and Economic Growth", "SDG 9: Industry, Innovation and Infrastructure", "SDG 11: Sustainable Cities and Communities"],
+    capitalRequired: "US$27.84 million",
+    financingType: "Investment structure to be validated; ministry contribution referenced in source deck",
+    projectStatus: "published",
+    readinessLevel: "Urban regeneration / housing project",
+    visibilityLevel: "public",
+    roi: "13%",
+    npv: "US$22.5 million",
+    paybackPeriod: "10 years, 6 months",
+    opportunitySummary: "Redevelopment of government pool properties into three ten-storey residential blocks accommodating 300 families.",
+    description: "The project redevelops three properties in Harare CBD into 300 residential units on 6,000m², addressing housing needs for civil servants.",
+    scope: ["Construct three ten-storey flats", "Develop 300 residential units", "Accommodate 300 families"],
+    impact: ["Urban regeneration", "Housing supply", "Civil servant accommodation", "CBD densification"],
+    documentPlaceholders: ["Project Brief", "Housing Development Summary", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 49–50",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-022",
+    title: "Waterfalls Prospect Walk-Up Flats Project",
+    slug: "waterfalls-prospect-walk-up-flats-project",
+    sector: "Infrastructure",
+    subsector: "Housing / Urban Regeneration",
+    location: "Waterfalls, Harare",
+    province: "Harare",
+    projectOwner: "Ministry of National Housing and Social Amenities",
+    beneficiaryMinistryPlaceholder: "Infrastructure / Housing portfolio — official beneficiary ministry to be validated",
+    strategicPillars: ["Infrastructure, Housing & Urban Development", "Climate Resilience & Sustainable Development", "Investment Attraction & Private Sector Growth"],
+    sdgs: ["SDG 8: Decent Work and Economic Growth", "SDG 9: Industry, Innovation and Infrastructure", "SDG 11: Sustainable Cities and Communities", "SDG 13: Climate Action"],
+    capitalRequired: "US$63 million",
+    financingType: "Investment structure to be validated; ministry contribution referenced in source deck",
+    projectStatus: "published",
+    readinessLevel: "Housing development project",
+    visibilityLevel: "public",
+    roi: "458%",
+    npv: "US$85.6 million",
+    paybackPeriod: "6 years, 1 month",
+    projectedRevenue: "US$345.6 million",
+    opportunitySummary: "Construction of 100 residential blocks totaling 1,200 units with green technologies in Waterfalls, Harare.",
+    description: "The project is designed for urban regeneration and densification in Waterfalls, incorporating green technologies and climate-change initiatives.",
+    scope: ["Construct 100 residential blocks", "Develop 1,200 residential units", "Integrate green technologies"],
+    impact: ["Housing supply", "Sustainable urban development", "Private-sector housing participation", "Climate-aligned urban regeneration"],
+    documentPlaceholders: ["Project Brief", "Housing Development Summary", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 51–52",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-023",
+    title: "Sunway City Special Economic Zone - High-Tech Park",
+    slug: "sunway-city-sez-high-tech-park",
+    sector: "Infrastructure",
+    subsector: "High-Tech Park / SEZ / Innovation Infrastructure",
+    location: "Harare / Sunway City SEZ",
+    province: "Harare",
+    projectOwner: "Sunway City (Pvt) Ltd",
+    beneficiaryMinistryPlaceholder: "Infrastructure / Housing portfolio — official beneficiary ministry to be validated",
+    secondaryBeneficiaries: ["ICT / Digital Economy portfolio — to be validated", "ZIDA / Investment Promotion Authority — role to be validated"],
+    strategicPillars: ["Digital Economy & ICT Infrastructure", "Industrialization & Value Addition", "Investment Attraction & Private Sector Growth"],
+    sdgs: ["SDG 8: Decent Work and Economic Growth", "SDG 9: Industry, Innovation and Infrastructure", "SDG 11: Sustainable Cities and Communities", "SDG 17: Partnerships for the Goals"],
+    capitalRequired: "US$195 million; seeking US$50 million equity and US$145 million debt",
+    financingType: "PPP; Build-Operate-Transfer (BOT); equity and debt mix",
+    projectStatus: "published",
+    readinessLevel: "Implementation-ready; EIA and feasibility study completed as stated in source deck",
+    visibilityLevel: "public",
+    irr: "21.1%",
+    npv: "US$17.1 million",
+    paybackPeriod: "7.4 years",
+    projectedRevenue: "US$613.7 million over 20 years",
+    opportunitySummary: "High-tech park within 1,220-hectare Sunway City SEZ to attract IT, knowledge industries, SMEs, R&D, and technology corporations.",
+    description: "The High-Tech Park is allocated 87.1 hectares, including 76.4 hectares for the park and 10.7 hectares for a medical centre, with factory stands, shells, office building, utilities, and ICT infrastructure.",
+    scope: ["Develop high-tech park under PPP/BOT", "Allocate 87.1 hectares", "Service factory stands", "Construct factory shells, storage, offices, utilities, and ICT infrastructure"],
+    impact: ["Innovation ecosystem", "SEZ development", "ICT industrial growth", "Research and development capacity"],
+    documentPlaceholders: ["Project Brief", "EIA Summary", "Feasibility Summary", "SEZ Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 53–54",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-024",
+    title: "Kumusha Power Project",
+    slug: "kumusha-power-project",
+    sector: "Renewable Energy",
+    subsector: "Solar Power-as-a-Service / Mini-Grids",
+    location: "Bikita District; national expansion to additional districts",
+    province: "Masvingo / National",
+    district: "Bikita",
+    projectOwner: "GoodBooks Investments Ltd",
+    beneficiaryMinistryPlaceholder: "Energy portfolio — official beneficiary ministry to be validated",
+    secondaryBeneficiaries: ["ICT / Digital Economy portfolio — to be validated", "Diaspora / Partnerships portfolio — to be validated"],
+    strategicPillars: ["Energy Security & Renewable Transition", "Climate Resilience & Sustainable Development", "Diaspora, Trade & Global Partnerships"],
+    sdgs: ["SDG 7: Affordable and Clean Energy", "SDG 8: Decent Work and Economic Growth", "SDG 9: Industry, Innovation and Infrastructure", "SDG 13: Climate Action"],
+    capitalRequired: "US$18 million total; Phase 1 US$6 million, Phase 2 US$12 million",
+    financingType: "Investment structure to be validated",
+    projectStatus: "published",
+    readinessLevel: "Existing pilot SPaaS site; scale-up opportunity",
+    visibilityLevel: "public",
+    roi: "40%",
+    npv: "US$2.3 million",
+    paybackPeriod: "4 years",
+    projectedRevenue: "Projected 10-year revenues: US$22.5 million; projected 10-year profits: US$6.24 million",
+    opportunitySummary: "Solar Power-as-a-Service mini-grid and solar home system scale-up for underserved rural and peri-urban communities.",
+    description: "GoodBooks Investments operates a pilot SPaaS site in Bikita and has distributed over 15,000 solar home systems using a PayGo model, with plans for 10 mini-grid sites and in-country SHS manufacturing.",
+    scope: ["Deploy 10 SPaaS mini-grid sites", "Expand to 50 additional districts targeting 500,000 rural households", "Establish solar assembly plant", "Enhance CRM, billing, call centre, mobile app, carbon-credit certification, and diaspora-focused solar sponsorship"],
+    impact: ["Rural electrification", "Clean energy access", "Diaspora sponsorship potential", "Digital billing infrastructure"],
+    documentPlaceholders: ["Project Brief", "SPaaS Model Summary", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 55–56",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-025",
+    title: "Solgas Energy 10MW Solar Power Plant Expansion Project",
+    slug: "solgas-energy-10mw-solar-power-plant-expansion",
+    sector: "Renewable Energy",
+    subsector: "Solar PV Expansion",
+    location: "Matabeleland South",
+    province: "Matabeleland South",
+    projectOwner: "Solgas Energy Pvt Ltd",
+    beneficiaryMinistryPlaceholder: "Energy portfolio — official beneficiary ministry to be validated",
+    strategicPillars: ["Energy Security & Renewable Transition", "Climate Resilience & Sustainable Development", "Investment Attraction & Private Sector Growth"],
+    sdgs: ["SDG 7: Affordable and Clean Energy", "SDG 8: Decent Work and Economic Growth", "SDG 9: Industry, Innovation and Infrastructure", "SDG 13: Climate Action"],
+    capitalRequired: "US$7.54 million",
+    financingType: "Funding for solar plant expansion; structure to be validated",
+    projectStatus: "published",
+    readinessLevel: "Fully licensed and shovel-ready as stated in source deck",
+    visibilityLevel: "public",
+    roi: "23.57%/yr",
+    npv: "US$3.6 million",
+    paybackPeriod: "5 years",
+    projectedRevenue: "US$40.5 million",
+    opportunitySummary: "Expansion of existing 5MW solar plant by an additional 10MW to reach 15MW.",
+    description: "The initial 5MW plant was commissioned in November 2021 and evacuates power to the national grid under a long-term PPA with ZETDC.",
+    scope: ["Expand 5MW solar plant by 10MW", "Reach total 15MW capacity", "Continue grid evacuation under PPA framework"],
+    impact: ["Renewable energy supply", "Grid reliability", "Private energy investment"],
+    documentPlaceholders: ["Project Brief", "PPA Summary", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 57–58",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-026",
+    title: "Lanforce Biogas Expansion Project",
+    slug: "lanforce-biogas-expansion-project",
+    sector: "Renewable Energy",
+    subsector: "Biogas / Clean Cooking / Rural Energy",
+    location: "Harare; Zimbabwe and regional expansion",
+    province: "Harare / National",
+    projectOwner: "Lanforce Energy / Lanforce Trading Pvt Ltd",
+    beneficiaryMinistryPlaceholder: "Energy portfolio — official beneficiary ministry to be validated",
+    secondaryBeneficiaries: ["Agriculture portfolio — to be validated", "Climate / Environment portfolio — to be validated"],
+    strategicPillars: ["Energy Security & Renewable Transition", "Climate Resilience & Sustainable Development", "Agriculture, Food Security & Agro-Processing"],
+    sdgs: ["SDG 7: Affordable and Clean Energy", "SDG 8: Decent Work and Economic Growth", "SDG 12: Responsible Consumption and Production", "SDG 13: Climate Action"],
+    capitalRequired: "Phase 1 US$1,050,000; Phase 2 US$500,000",
+    financingType: "Grants, debt, or equity as stated in source deck",
+    projectStatus: "published",
+    readinessLevel: "Expansion of existing clean-energy enterprise",
+    visibilityLevel: "public",
+    roi: "30%/yr",
+    npv: "US$6.7 million",
+    paybackPeriod: "4 years",
+    projectedRevenue: "US$30.1 million over 10 years; projected 10-year profit US$12.4 million",
+    opportunitySummary: "Scale distribution of prefabricated portable biodigesters and biogas appliances for farmers and households.",
+    description: "Lanforce holds exclusive distribution rights for Sistema.bio digesters and uses PAYG and credit models to make systems affordable, with regional expansion to Mozambique.",
+    scope: ["Acquire delivery vans", "Construct containerised distribution centres", "Procure biodigester inventory", "Acquire smart biogas meters", "Expand hybrid solar-biogas offerings"],
+    impact: ["Clean cooking", "Rural energy access", "Smallholder farmer productivity", "Regional green-energy expansion"],
+    documentPlaceholders: ["Project Brief", "Clean Energy Business Model", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 59–60",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-027",
+    title: "Solgas Energy 60MW Solar PV Plant with 20MWh Battery Energy Storage System (BESS)",
+    slug: "solgas-energy-60mw-solar-pv-plant-bess",
+    sector: "Renewable Energy",
+    subsector: "Solar PV / Battery Storage / Green Hydrogen / AI Data Centre",
+    location: "Cross Mabale, Hwange, Matabeleland North",
+    province: "Matabeleland North",
+    projectOwner: "Solgas Energy Pvt Ltd",
+    beneficiaryMinistryPlaceholder: "Energy portfolio — official beneficiary ministry to be validated",
+    secondaryBeneficiaries: ["ICT / Digital Economy portfolio — to be validated", "Climate / Environment portfolio — to be validated"],
+    strategicPillars: ["Energy Security & Renewable Transition", "Digital Economy & ICT Infrastructure", "Climate Resilience & Sustainable Development"],
+    sdgs: ["SDG 7: Affordable and Clean Energy", "SDG 9: Industry, Innovation and Infrastructure", "SDG 13: Climate Action", "SDG 17: Partnerships for the Goals"],
+    capitalRequired: "USD 95 million total; Phase 1 USD 50 million, Phase 2 USD 30 million, Phase 3 USD 15 million",
+    financingType: "Phased investment; structure to be validated",
+    projectStatus: "published",
+    readinessLevel: "Greenfield; key regulatory approvals secured as stated in source deck",
+    visibilityLevel: "public",
+    roi: "17.7% annual average",
+    npv: "USD 9.67 million",
+    paybackPeriod: "5 years, 2 months",
+    projectedRevenue: "USD 107 million over 10 years; projected profit USD 27 million over 10 years",
+    opportunitySummary: "Integrated 60MW Solar PV + 20MWh BESS project with green hydrogen and AI-powered data centre components.",
+    description: "The project spans 100 hectares leased from the Government of Zimbabwe and has a generation license and PPA with ZETDC, with planned phases for solar/BESS, hydrogen, and AI data centre services.",
+    scope: ["Phase 1: 60MW Solar PV + 20MWh BESS", "Phase 2: Green hydrogen plant producing 1,000 tons/year", "Phase 3: AI-powered data centre with AIaaS, data hosting, and 5G support"],
+    impact: ["Clean power generation", "Grid resilience", "Green hydrogen", "AI/data infrastructure powered by renewables"],
+    documentPlaceholders: ["Project Brief", "PPA Summary", "Regulatory Approvals Summary", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 65–66",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-028",
+    title: "Eunigaga Chegutu Solar PV Power Plant",
+    slug: "eunigaga-chegutu-solar-pv-power-plant",
+    sector: "Renewable Energy",
+    subsector: "Utility-Scale Solar PV",
+    location: "Groove Farm, Chegutu District, Mashonaland West",
+    province: "Mashonaland West",
+    district: "Chegutu",
+    projectOwner: "Eunigaga Chegutu Solar PV Power Plant / Eunigaga (Private) Limited",
+    beneficiaryMinistryPlaceholder: "Energy portfolio — official beneficiary ministry to be validated",
+    strategicPillars: ["Energy Security & Renewable Transition", "Climate Resilience & Sustainable Development", "Investment Attraction & Private Sector Growth"],
+    sdgs: ["SDG 7: Affordable and Clean Energy", "SDG 8: Decent Work and Economic Growth", "SDG 9: Industry, Innovation and Infrastructure", "SDG 13: Climate Action"],
+    capitalRequired: "USD25.73 million",
+    financingType: "Debt and/or equity; 25% equity and 75% debt structure referenced in source deck",
+    projectStatus: "published",
+    readinessLevel: "Greenfield; land change of use completed and government support letter secured as stated in source deck",
+    visibilityLevel: "public",
+    npv: "US$21 million",
+    paybackPeriod: "4 years",
+    projectedRevenue: "Projected 25-year revenues: US$166.44 million; projected 25-year profits: US$90.50 million",
+    opportunitySummary: "20MW utility-scale solar project in Chegutu seeking financing for preparation and construction.",
+    description: "The project is located at Groove Farm in Chegutu District and is promoted by Eunigaga (Private) Limited.",
+    scope: ["Establish greenfield 20MW utility-scale solar project", "Finance preparatory works and construction", "Use 25% equity / 75% debt structure"],
+    impact: ["Clean energy generation", "Grid supply", "Climate-aligned investment"],
+    documentPlaceholders: ["Project Brief", "Government Support Letter Placeholder", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 67–68",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-029",
+    title: "Hwange 50MW Solar Power Plant Project",
+    slug: "hwange-50mw-solar-power-plant-project",
+    sector: "Renewable Energy",
+    subsector: "Utility-Scale Solar PV",
+    location: "20 km from Hwange town towards Bulawayo",
+    province: "Matabeleland North / Hwange area (source deck lists Mashonaland Central on title slide; requires validation)",
+    projectOwner: "Lafrica Group",
+    beneficiaryMinistryPlaceholder: "Energy portfolio — official beneficiary ministry to be validated",
+    strategicPillars: ["Energy Security & Renewable Transition", "Climate Resilience & Sustainable Development", "Investment Attraction & Private Sector Growth"],
+    sdgs: ["SDG 7: Affordable and Clean Energy", "SDG 8: Decent Work and Economic Growth", "SDG 9: Industry, Innovation and Infrastructure", "SDG 13: Climate Action"],
+    capitalRequired: "US$55 million (Equity) as stated in source deck; project seeking 70% debt and 30% equity structure also stated and requires validation",
+    financingType: "70% debt / 30% equity structure referenced in source deck",
+    projectStatus: "published",
+    readinessLevel: "Phase 1 fully prepared and ready for construction as stated in source deck",
+    visibilityLevel: "public",
+    irr: "16%",
+    npv: "US$3.9 million",
+    paybackPeriod: "6 years, 6 months",
+    projectedRevenue: "Average annual revenues: US$6.9 million; average 20-year revenues shown as US$5138 million in source deck and requires validation",
+    opportunitySummary: "Large-scale solar plant project with Phase 1 50MW and total envisaged capacity of 200MW.",
+    description: "The project sits on 291 hectares and is designed to supply power to the grid through the 88kV Hwange substation with 132kV transmission lines spanning 20 km.",
+    scope: ["Phase 1: 50MW development", "Engineering, procurement, construction, grid interconnection, insurance, contingencies", "Phase 2: 50MW expansion support"],
+    impact: ["Clean power generation", "Grid supply", "Renewable energy infrastructure", "Industrial energy support"],
+    documentPlaceholders: ["Project Brief", "Grid Interconnection Summary", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 69–70",
+    dataVerificationStatus: "pending_review"
+  },
+  {
+    id: "zim-zida-030",
+    title: "Lot 1 of Jafuta Estate in Masuwe Special Economic Zone",
+    slug: "lot-1-jafuta-estate-masuwe-sez",
+    sector: "Tourism and Financial Services",
+    subsector: "Tourism SEZ / Hospitality / Financial Services Hub",
+    location: "Masuwe Special Economic Zone, Victoria Falls, Matabeleland North",
+    province: "Matabeleland North",
+    projectOwner: "Mosi oa Tunya Development Company",
+    beneficiaryMinistryPlaceholder: "Tourism / Financial Services portfolio — official beneficiary ministry to be validated",
+    secondaryBeneficiaries: ["Health portfolio — to be validated", "Infrastructure portfolio — to be validated", "ZIDA / Investment Promotion Authority — role to be validated"],
+    strategicPillars: ["Tourism, Culture & Destination Development", "Investment Attraction & Private Sector Growth", "Infrastructure, Housing & Urban Development"],
+    sdgs: ["SDG 8: Decent Work and Economic Growth", "SDG 9: Industry, Innovation and Infrastructure", "SDG 11: Sustainable Cities and Communities", "SDG 17: Partnerships for the Goals"],
+    capitalRequired: "Multiple estimated project costs listed in source deck: US$81.6m, US$15m, US$79.8m, US$17m, US$10.7m, US$10m, US$7.5m; components require validation",
+    financingType: "SEZ tourism and financial services development; structure to be validated",
+    projectStatus: "published",
+    readinessLevel: "SEZ-declared area; component availability varies as stated in source deck",
+    visibilityLevel: "public",
+    opportunitySummary: "271.5-hectare tourism and financial services hub in Masuwe SEZ near Victoria Falls.",
+    description: "Lot 1 of Jafuta Estate is owned by Mosi oa Tunya Development Company and located in the Masuwe SEZ, declared on 28 September 2018 for a Tourism and Financial Services Hub.",
+    scope: ["Develop core infrastructure: roads, water, sewer, wastewater, power, telecommunications", "Construct two medical centres", "Construct hotels, villas, flats, and holiday homes", "Develop commercial centre, offices, and international financial services centre", "Develop tourism and hospitality school where available", "Develop golf estate", "Multi-purpose international cricket stadium noted as under construction"],
+    impact: ["Tourism destination development", "Hospitality investment", "SEZ infrastructure", "Financial services hub potential", "Job creation"],
+    documentPlaceholders: ["Project Brief", "SEZ Masterplan Summary", "Investor Pack"],
+    sourceReference: "ZIDA 2025 Projects deck, pages 71–72",
+    dataVerificationStatus: "pending_review"
+  }
+];
+```
+
+---
+
+## 5. Projects Listed in the ZIDA Deck but Not Fully Modeled Above
+
+The MVP seed list above includes a broad cross-sector set of 30 projects and covers the core showcase needs. The following additional mining opportunity items appear in the mining opportunities page and can be modeled later as separate mining opportunity records after official validation:
+
+- Engrade Mining (Private) Limited — lithium and manganese claims in Chifombwe and Gato areas of Mutoko district, Mashonaland East.
+- Lamcent Energy (Private) Limited — graphite claims in Buhera District, Manicaland Province.
+- RELM Technologies (Private) Limited — lithium claims in Sandawana area of Mberengwa District, Midlands Province.
+- Lindah Baipai — mining claims in Gutu District, Masvingo Province.
+- Mankotha (Pvt) Ltd — special grants for coal and coal bed methane resources across multiple provinces.
+
+These should be treated as a separate `miningClaimsSeed` or `opportunityListingSeed`, not as full investor-ready project records, unless ZIDA provides full project profiles.
+
+---
+
+## 6. Recommended MVP Display Logic
+
+### Public project card fields
+
+Show publicly:
+
+- Project title
+- Sector
+- Location / province
+- Project owner
+- Capital required, where available
+- Strategic pillar tags
+- SDG tags
+- High-level opportunity summary
+- CTA: `Register to view expanded project details`
+
+### Registered user fields
+
+Show after registration:
+
+- Expanded project description
+- Scope
+- Financial indicators
+- Readiness level
+- Financing type
+- Beneficiary ministry placeholder
+- Document request buttons
+- CTA: `Request investor pack`
+
+### Qualified investor fields
+
+Show after approval:
+
+- Deeper documents if uploaded
+- Project owner contact workflow if authorized
+- Meeting request workflow
+- Internal notes only if role permits
+
+### Admin / super admin fields
+
+Show only to authorized users:
+
+- Verification status
+- Reviewer notes
+- Source reference
+- Created by / reviewed by / approved by / published by
+- Visibility controls
+- Archive/unpublish controls
+
+---
+
+## 7. Cursor Implementation Instruction
+
+Add this seed file to the project folder and instruct Cursor:
+
+```txt
+Use `Zimbabwe_ZIDA_Seed_Projects_v1.0.md` as the source for the initial Zimbabwe MVP seed data. Convert the `zimbabweSeedProjects` array into a typed data file, preferably `lib/data/zimbabwe-projects.ts` or `src/data/zimbabwe-projects.ts`, depending on the project structure.
+
+Do not treat the project data as final official production data. Add visible internal labels in the admin demo indicating: “Seeded from ZIDA 2025 Projects deck — pending official validation.”
+
+The public platform should display these as curated investment opportunity examples for the MVP showcase. Deeper financial and document details should encourage visitor registration or qualified-investor access.
+
+All future project creation must use the standardized project template and review/approval workflow.
+```
