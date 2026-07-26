@@ -15,6 +15,30 @@ validation, with public launch to follow their sign-off. Also folds in new sourc
 
 ## Progress log
 
+- **2026-07-26** — First Hostinger Node.js-app deployment attempt of the real (Neon-backed) app
+  surfaced two issues:
+  1. **Red herring**: Hostinger's build log reported an `ERESOLVE` peer-dependency conflict
+     between `@neondatabase/auth@0.4.2-beta` (optional peer `next@>=16`) and this project's
+     `next@15`, "resolved" by an implicit `--legacy-peer-deps`. This is the same already-documented,
+     intentional non-issue from the 2026-07-21 entry below — the package works fine on Next 15 per
+     Neon's own docs, and upgrading to Next 16 was **not** done (would force a `middleware.ts` →
+     `proxy.ts` rename and a full App Router regression pass, for zero effect on the real bug).
+     Made the behavior deterministic instead: added a root `.npmrc` with `legacy-peer-deps=true`,
+     so every host (Hostinger, Vercel, CI, local) resolves the same way without relying on a flag
+     being passed manually.
+  2. **Actual root cause of "can't log in"**: the Hostinger Node.js app had **zero** production
+     environment variables configured, so `lib/auth/server.ts` / `lib/db/client.ts` were silently
+     falling back to their build-safety placeholder values (see 2026-07-21 entry) and every real
+     sign-in request failed. Neon Auth's trusted-origins list also didn't include
+     `zidaproject.com`. **Fix (Hostinger app → Environment Variables panel)**: set every var listed
+     in [.env.example](.env.example) — `DATABASE_URL`, `DATABASE_URL_UNPOOLED`,
+     `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`,
+     `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `RESEND_API_KEY` — with
+     **`NEXT_PUBLIC_SITE_URL="https://zidaproject.com"`** (production domain, not localhost).
+     Then, in the **Neon Console → Auth → trusted origins**, add `https://zidaproject.com` (and
+     `https://www.zidaproject.com` if that's also served). Confirm the Hostinger app's start
+     command runs `npm run build` then `npm run start` (already the correct scripts in
+     `package.json`) on **Node ≥18.18** (Next 15's minimum).
 - **2026-07-22 (Milestone 2)** — Phase 3 context cutover + route renames landed:
   - **API layer** — Route Handlers for projects, inquiries, engagements, taxonomies, site-settings, and `/api/me` (session + role booleans).
   - **DB mappers/queries** — `lib/db/mappers/*`, `lib/db/queries/projects.ts` + `taxonomies.ts`; projects use DB uuid as `InvestmentProject.id`, slug for URL lookup.
@@ -129,7 +153,7 @@ Concrete IDs/URLs confirmed so far (no secrets recorded here — those live only
   collaboration/staging, and is what Hostinger currently pulls from to serve the live
   `zidaproject.com` (static site, unrelated to this Neon/pilot build, and not touched until the
   board approves the cutover — see Phase 8).
-- **Still outstanding (implementation, not credentials)**: Neon Auth trusted domains (add `localhost:3000` in Console if sign-in fails); R2 storage adapter code; Resend send integration (Phase 5); Vercel project (Phase 8). *Migration + seed + pilot auth accounts: done (Milestone 1).*
+- **Still outstanding (implementation, not credentials)**: Neon Auth trusted domains (add `localhost:3000` for local dev, and `zidaproject.com`/`www.zidaproject.com` for the Hostinger deployment, in Console if sign-in fails); R2 storage adapter code; Resend send integration (Phase 5); Vercel project (Phase 8). *Migration + seed + pilot auth accounts: done (Milestone 1).*
 
 ## Resend DNS runbook — `zidaproject.com` (execute when ready)
 
