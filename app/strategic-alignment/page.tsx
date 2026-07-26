@@ -14,6 +14,7 @@ import { useDemoPersona } from "@/context/demo-persona-context";
 import { cn } from "@/lib/utils";
 import { useSiteStats } from "@/lib/hooks/use-site-stats";
 import { sdgs, getSdgById } from "@/lib/data/taxonomies";
+import { SdgBadge } from "@/components/ui/sdg-badge";
 import {
   getPillarStats,
   getPillarPhase,
@@ -186,16 +187,7 @@ export default function StrategicAlignmentPage() {
                 {pillarSdgIds.map((id) => {
                   const sdg = getSdgById(id);
                   if (!sdg) return null;
-                  return (
-                    <span
-                      key={id}
-                      className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                      style={{ backgroundColor: sdg.colorToken }}
-                      title={sdg.name}
-                    >
-                      {sdg.number}
-                    </span>
-                  );
+                  return <SdgBadge key={id} sdg={sdg} size="sm" />;
                 })}
               </div>
             )}

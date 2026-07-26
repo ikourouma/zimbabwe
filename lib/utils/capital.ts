@@ -5,6 +5,8 @@
  * per-project values. Every item is derived purely from the source text.
  */
 
+import type { CapitalBracket } from "@/lib/types";
+
 export interface CapitalBreakdownItem {
   label: string;
   amount: string;
@@ -221,4 +223,44 @@ export function parseCapitalTotalMillions(raw?: string): number | null {
   const labeled = applyTotalFallback(pending);
   const total = labeled.find((p) => p.label === TOTAL_COST_LABEL);
   return total ? total.valueMillions : labeled[0]?.valueMillions ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Institutional capital brackets (registry quick-chips)
+// ---------------------------------------------------------------------------
+
+/** The four numeric capital brackets used by the registry quick-chips, each with a
+ *  half-open `[min, max)` window in millions of USD (`max: null` = unbounded). The
+ *  fifth chip, `assessment_pending`, is handled separately (see `isAssessmentPending`)
+ *  because it targets opportunities with no parseable capital figure at all. */
+export const CAPITAL_BRACKETS: {
+  key: Exclude<CapitalBracket, "assessment_pending">;
+  label: string;
+  chipLabel: string;
+  min: number;
+  max: number | null;
+}[] = [
+  { key: "micro", label: "Micro (under $2M)", chipLabel: "< $2M", min: 0, max: 2 },
+  { key: "growth", label: "Growth ($2M–$10M)", chipLabel: "$2M–$10M", min: 2, max: 10 },
+  { key: "middle", label: "Middle Market ($10M–$50M)", chipLabel: "$10M–$50M", min: 10, max: 50 },
+  { key: "infrastructure", label: "Infrastructure ($50M+)", chipLabel: "$50M+", min: 50, max: null },
+];
+
+/** A concept-stage opportunity whose capital buildout has no parseable headline figure
+ *  (unparseable or absent `capitalRequired`) — i.e. its valuation is still being structured.
+ *  Drives the "Assessment Pending" registry chip and the Request Valuation Teaser lead magnet. */
+export function isAssessmentPending(capitalRequired?: string): boolean {
+  return parseCapitalTotalMillions(capitalRequired) === null;
+}
+
+/** True when a project's parsed headline capital figure falls inside the given bracket.
+ *  `assessment_pending` matches only projects with no parseable figure; numeric brackets
+ *  require a parseable figure within the bracket's half-open `[min, max)` window. */
+export function matchesCapitalBracket(capitalRequired: string | undefined, bracket: CapitalBracket): boolean {
+  const millions = parseCapitalTotalMillions(capitalRequired);
+  if (bracket === "assessment_pending") return millions === null;
+  if (millions === null) return false;
+  const def = CAPITAL_BRACKETS.find((b) => b.key === bracket);
+  if (!def) return false;
+  return millions >= def.min && (def.max === null || millions < def.max);
 }

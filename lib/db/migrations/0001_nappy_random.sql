@@ -1,0 +1,1 @@
+ALTER TABLE "investor_engagements" ADD COLUMN "user_id" text;

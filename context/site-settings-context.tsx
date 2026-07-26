@@ -2,53 +2,89 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 
-interface SiteSettingsContextValue {
+export type BannerDisplayMode = "stack" | "rotate";
+
+interface SiteSettings {
   costStructureHidden: boolean;
-  setCostStructureHidden: (hidden: boolean) => void;
+  flashBannerEnabled: boolean;
+  flashBannerMessage: string | null;
+  flashBannerCtaLabel: string | null;
+  flashBannerCtaHref: string | null;
+  bannerDisplayMode: BannerDisplayMode;
+}
+
+interface SiteSettingsContextValue extends SiteSettings {
+  isLoading: boolean;
+  setCostStructureHidden: (hidden: boolean) => Promise<void>;
+  updateFlashBanner: (patch: Partial<Omit<SiteSettings, "costStructureHidden">>) => Promise<void>;
+  setBannerDisplayMode: (mode: BannerDisplayMode) => Promise<void>;
 }
 
 const SiteSettingsContext = createContext<SiteSettingsContextValue | null>(null);
 
-const STORAGE_KEY = "zim-site-settings";
-
-interface StoredSettings {
-  costStructureHidden: boolean;
-}
-
-const DEFAULT_SETTINGS: StoredSettings = {
+const DEFAULT_SETTINGS: SiteSettings = {
   costStructureHidden: false,
+  flashBannerEnabled: false,
+  flashBannerMessage: null,
+  flashBannerCtaLabel: null,
+  flashBannerCtaHref: null,
+  bannerDisplayMode: "stack",
 };
 
 export function SiteSettingsProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<StoredSettings>(DEFAULT_SETTINGS);
-  const [hydrated, setHydrated] = useState(false);
+  const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(stored) });
-      } catch {
-        // ignore malformed storage
-      }
-    }
-    setHydrated(true);
+    fetch("/api/site-settings")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) setSettings(data);
+      })
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
   }, []);
 
-  const setCostStructureHidden = useCallback((hidden: boolean) => {
-    setSettings((prev) => {
-      const next = { ...prev, costStructureHidden: hidden };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      return next;
+  const patchSettings = useCallback(async (body: Record<string, unknown>) => {
+    const res = await fetch("/api/site-settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     });
+    if (!res.ok) throw new Error("Failed to update site settings");
+    const data = (await res.json()) as SiteSettings;
+    setSettings(data);
+    return data;
   }, []);
 
-  const value: SiteSettingsContextValue = {
-    costStructureHidden: hydrated ? settings.costStructureHidden : DEFAULT_SETTINGS.costStructureHidden,
-    setCostStructureHidden,
-  };
+  const setCostStructureHidden = useCallback(
+    async (hidden: boolean) => {
+      await patchSettings({ costStructureHidden: hidden });
+    },
+    [patchSettings]
+  );
 
-  return <SiteSettingsContext.Provider value={value}>{children}</SiteSettingsContext.Provider>;
+  const updateFlashBanner = useCallback(
+    async (patch: Partial<Omit<SiteSettings, "costStructureHidden">>) => {
+      await patchSettings(patch);
+    },
+    [patchSettings]
+  );
+
+  const setBannerDisplayMode = useCallback(
+    async (mode: BannerDisplayMode) => {
+      await patchSettings({ bannerDisplayMode: mode });
+    },
+    [patchSettings]
+  );
+
+  return (
+    <SiteSettingsContext.Provider
+      value={{ ...settings, isLoading, setCostStructureHidden, updateFlashBanner, setBannerDisplayMode }}
+    >
+      {children}
+    </SiteSettingsContext.Provider>
+  );
 }
 
 export function useSiteSettings() {

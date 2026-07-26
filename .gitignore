@@ -28,9 +28,19 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files
-.env*.local
+# env files (never commit real credentials — .env.example is the only tracked template)
+.env
+.env.*
+!.env.example
+
+# pilot credentials (never commit)
+docs/PILOT_TEST_ACCOUNTS.md
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local dev server output redirection (npm run dev > dev_*.txt 2>&1)
+dev_out*.txt
+dev_err*.txt
+dev_smoke.txt

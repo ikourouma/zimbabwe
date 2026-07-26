@@ -5,35 +5,15 @@ import { usePathname } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { useTaxonomyStore } from "@/context/taxonomy-store-context";
 import { useProjectStore } from "@/context/project-store-context";
+import { useTranslations } from "@/context/locale-context";
 
-const ROUTE_LABELS: Record<string, string> = {
-  opportunity: "Opportunity",
-  platform: "Platform Concept",
-  "strategic-alignment": "Strategic Pillars",
-  sectors: "Priority Sectors",
-  projects: "Project Registry",
-  "about-afronovation": "Afronovation",
-  "investor-journey": "Investor Journey",
-  zimbabwe: "Zimbabwe",
-  contact: "Contact",
-  legal: "Legal",
-  "admin-demo": "Admin Demo",
-  "super-admin-demo": "Super Admin Demo",
-  "deal-room-demo": "Deal Room (Demo)",
-};
-
-/**
- * Conceptual parent for top-level routes that are surfaced as capability cards on
- * /platform, so their breadcrumb reflects Home -> Platform Concept -> [page] even
- * though the URL itself is flat (not nested under /platform/...).
- */
-const ROUTE_PARENT: Record<string, { label: string; href: string }> = {
-  "investor-journey": { label: "Platform Concept", href: "/platform" },
-  contact: { label: "Platform Concept", href: "/platform" },
-  projects: { label: "Platform Concept", href: "/platform" },
-  "admin-demo": { label: "Platform Concept", href: "/platform" },
-  "super-admin-demo": { label: "Platform Concept", href: "/platform" },
-  "deal-room-demo": { label: "Platform Concept", href: "/platform" },
+const ROUTE_PARENT: Record<string, { labelKey: "platform"; href: string }> = {
+  "investor-journey": { labelKey: "platform", href: "/platform" },
+  contact: { labelKey: "platform", href: "/platform" },
+  projects: { labelKey: "platform", href: "/platform" },
+  "admin": { labelKey: "platform", href: "/platform" },
+  "super-admin": { labelKey: "platform", href: "/platform" },
+  "deal-room": { labelKey: "platform", href: "/platform" },
 };
 
 interface Crumb {
@@ -45,6 +25,9 @@ export function StickyBreadcrumb() {
   const pathname = usePathname();
   const { sectors } = useTaxonomyStore();
   const { projects } = useProjectStore();
+  const t = useTranslations();
+
+  const routeLabels = t.breadcrumb as Record<string, string>;
 
   const segments = pathname.split("/").filter(Boolean);
   if (segments.length === 0) return null;
@@ -54,7 +37,7 @@ export function StickyBreadcrumb() {
 
   const conceptualParent = ROUTE_PARENT[segments[0]];
   if (conceptualParent) {
-    crumbs.push({ label: conceptualParent.label, href: conceptualParent.href });
+    crumbs.push({ label: routeLabels.platform, href: conceptualParent.href });
   }
 
   segments.forEach((segment, index) => {
@@ -62,7 +45,7 @@ export function StickyBreadcrumb() {
     const isLast = index === segments.length - 1;
     const parent = segments[index - 1];
 
-    let label = ROUTE_LABELS[segment];
+    let label = routeLabels[segment];
 
     if (!label && parent === "sectors") {
       label = sectors.find((s) => s.slug === segment)?.name ?? segment;
@@ -90,7 +73,7 @@ export function StickyBreadcrumb() {
           className="transition-colors hover:text-white"
           style={{ color: "var(--color-text-muted)" }}
         >
-          Home
+          {t.breadcrumb.home}
         </Link>
         {crumbs.map((crumb) => (
           <span key={crumb.href || crumb.label} className="flex items-center gap-1.5">

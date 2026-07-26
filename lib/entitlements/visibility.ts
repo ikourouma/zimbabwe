@@ -1,6 +1,7 @@
-import type { DataVerificationStatus, DemoPersona, InvestmentProject, ProjectFilters, VisibilityLevel } from "@/lib/types";
+import type { DataVerificationStatus, DemoPersona, InvestmentProject, ProjectFilters, UpdatedWithin, VisibilityLevel } from "@/lib/types";
+import type { AccountRole } from "@/lib/auth/types";
 import { classifyFinancingType, getFinancingBuckets } from "@/lib/utils/financing-type";
-import { parseCapitalTotalMillions } from "@/lib/utils/capital";
+import { parseCapitalTotalMillions, matchesCapitalBracket } from "@/lib/utils/capital";
 
 export type AccessLevel = "public" | "registered" | "qualified" | "admin";
 
@@ -31,11 +32,52 @@ export function getAccessLevel(persona: DemoPersona): AccessLevel {
   return PERSONA_ACCESS[persona];
 }
 
+/** Maps a real account role (or null for anonymous) to its content access level — the server-side
+ *  counterpart to `getAccessLevel(persona)`, used by the /api/projects GET routes to decide what to
+ *  expose. */
+export function accessLevelForRole(role: AccountRole | null): AccessLevel {
+  if (role === "admin" || role === "super_admin") return "admin";
+  if (role === "qualified" || role === "government") return "qualified";
+  if (role === "registered") return "registered";
+  return "public";
+}
+
+/**
+ * Strips investor-grade confidential fields from a project for callers below the "qualified" tier,
+ * so the public/registered `GET /api/projects` responses never ship data-room-only figures over the
+ * wire (previously they were returned unauthenticated). Qualified investors, government, admins, and
+ * super admins receive the full record unchanged, so every authenticated dashboard keeps working.
+ *
+ * NOTE: `capitalRequired` (headline cost structure) is deliberately preserved for all tiers — it is
+ * a public discovery signal shown on registry cards and drives the public capital-bracket filter;
+ * its sitewide exposure is governed separately by the `costStructureHidden` kill switch. The masked
+ * set here is the return-metric/data-room content that is qualified-only by policy.
+ */
+export function sanitizeProjectForAccess(project: InvestmentProject, accessLevel: AccessLevel): InvestmentProject {
+  if (LEVEL_RANK[accessLevel] >= LEVEL_RANK.qualified) return project;
+  return {
+    ...project,
+    irr: undefined,
+    npv: undefined,
+    roi: undefined,
+    paybackPeriod: undefined,
+    projectedRevenue: undefined,
+    documents: [],
+  };
+}
+
 export function canAccessContent(
   persona: DemoPersona,
   requiredLevel: AccessLevel
 ): boolean {
   return LEVEL_RANK[getAccessLevel(persona)] >= LEVEL_RANK[requiredLevel];
+}
+
+/** Server-side (real-role) counterpart to `canAccessContent` — used to gate real document
+ *  downloads (e.g. GET /api/projects/[id]/documents/[docId]/download) by a `VisibilityLevel`
+ *  column value rather than a persona. */
+export function canAccessVisibilityLevel(accessLevel: AccessLevel, requiredLevel: VisibilityLevel): boolean {
+  return LEVEL_RANK[accessLevel] >= LEVEL_RANK[VISIBILITY_RANK[requiredLevel]];
 }
 
 export function canViewProject(
@@ -110,11 +152,11 @@ export function filterProjects(
   if (filters.sectorId) {
     result = result.filter((p) => p.sectorId === filters.sectorId);
   }
-  if (filters.pillarId) {
-    result = result.filter((p) => p.strategicPillarIds.includes(filters.pillarId!));
+  if (filters.pillarId?.length) {
+    result = result.filter((p) => filters.pillarId!.some((id) => p.strategicPillarIds.includes(id)));
   }
-  if (filters.sdgId) {
-    result = result.filter((p) => p.sdgIds.includes(filters.sdgId!));
+  if (filters.sdgId?.length) {
+    result = result.filter((p) => filters.sdgId!.some((id) => p.sdgIds.includes(id)));
   }
   if (filters.ministryId) {
     result = result.filter(
@@ -126,8 +168,8 @@ export function filterProjects(
   if (filters.province) {
     result = result.filter((p) => p.province?.toLowerCase().includes(filters.province!.toLowerCase()));
   }
-  if (filters.financingType) {
-    result = result.filter((p) => classifyFinancingType(p.financingType) === filters.financingType);
+  if (filters.financingType?.length) {
+    result = result.filter((p) => filters.financingType!.includes(classifyFinancingType(p.financingType)));
   }
   if (filters.readiness) {
     result = result.filter((p) =>
@@ -144,14 +186,49 @@ export function filterProjects(
         : !p.pipelineType || p.pipelineType === "zida_catalogue"
     );
   }
+  if (filters.capitalBracket) {
+    result = result.filter((p) => matchesCapitalBracket(p.capitalRequired, filters.capitalBracket!));
+  }
   if (filters.minCapitalMillions) {
     result = result.filter((p) => {
       const capital = parseCapitalTotalMillions(p.capitalRequired);
       return capital !== null && capital >= filters.minCapitalMillions!;
     });
   }
+  if (filters.maxCapitalMillions) {
+    result = result.filter((p) => {
+      const capital = parseCapitalTotalMillions(p.capitalRequired);
+      return capital !== null && capital <= filters.maxCapitalMillions!;
+    });
+  }
+  if (filters.updatedWithin) {
+    const cutoff = getUpdatedWithinCutoff(filters.updatedWithin);
+    result = result.filter((p) => {
+      const updated = Date.parse(p.updatedAt);
+      return !Number.isNaN(updated) && updated >= cutoff;
+    });
+  }
+  if (filters.recentDataRoom) {
+    const cutoff = getUpdatedWithinCutoff("30d");
+    result = result.filter((p) => {
+      if (!p.documents || p.documents.length === 0) return false;
+      const updated = Date.parse(p.updatedAt);
+      return !Number.isNaN(updated) && updated >= cutoff;
+    });
+  }
 
   return result;
+}
+
+/** Resolves an `updatedWithin` preset to an epoch-ms cutoff. `7d`/`30d` are rolling windows;
+ *  `quarter` is the start of the current calendar quarter (computed dynamically, not hardcoded). */
+function getUpdatedWithinCutoff(within: UpdatedWithin, now: Date = new Date()): number {
+  if (within === "quarter") {
+    const quarterStartMonth = Math.floor(now.getMonth() / 3) * 3;
+    return new Date(now.getFullYear(), quarterStartMonth, 1).getTime();
+  }
+  const days = within === "7d" ? 7 : 30;
+  return now.getTime() - days * 24 * 60 * 60 * 1000;
 }
 
 export function getUniqueProvinces(projects: InvestmentProject[]): string[] {

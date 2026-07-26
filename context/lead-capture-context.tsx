@@ -5,49 +5,59 @@ import type { LeadInquiry } from "@/lib/types";
 
 interface LeadCaptureContextValue {
   inquiries: LeadInquiry[];
-  addInquiry: (inquiry: Omit<LeadInquiry, "id" | "createdAt">) => void;
-  updateInquiryStatus: (id: string, status: LeadInquiry["status"]) => void;
+  isLoading: boolean;
+  addInquiry: (inquiry: Omit<LeadInquiry, "id" | "createdAt">) => Promise<void>;
+  updateInquiryStatus: (id: string, status: LeadInquiry["status"]) => Promise<void>;
+  refresh: () => Promise<void>;
 }
 
 const LeadCaptureContext = createContext<LeadCaptureContextValue | null>(null);
 
-const STORAGE_KEY = "zim-lead-inquiries";
-
 export function LeadCaptureProvider({ children }: { children: React.ReactNode }) {
   const [inquiries, setInquiries] = useState<LeadInquiry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+  const refresh = useCallback(async () => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setInquiries(JSON.parse(stored));
+      const res = await fetch("/api/inquiries");
+      if (res.ok) setInquiries(await res.json());
     } catch {
-      /* ignore */
+      /* non-admin visitors get empty list */
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
-  const addInquiry = useCallback((inquiry: Omit<LeadInquiry, "id" | "createdAt">) => {
-    const newInquiry: LeadInquiry = {
-      ...inquiry,
-      id: `lead-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-    };
-    setInquiries((prev) => {
-      const next = [newInquiry, ...prev];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      return next;
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const addInquiry = useCallback(async (inquiry: Omit<LeadInquiry, "id" | "createdAt">) => {
+    const res = await fetch("/api/inquiries", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...inquiry, status: inquiry.status ?? "pending" }),
     });
+    if (!res.ok) throw new Error("Failed to submit inquiry");
+    const created = (await res.json()) as LeadInquiry;
+    setInquiries((prev) => [created, ...prev]);
   }, []);
 
-  const updateInquiryStatus = useCallback((id: string, status: LeadInquiry["status"]) => {
-    setInquiries((prev) => {
-      const next = prev.map((inq) => (inq.id === id ? { ...inq, status } : inq));
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      return next;
+  const updateInquiryStatus = useCallback(async (id: string, status: LeadInquiry["status"]) => {
+    const res = await fetch(`/api/inquiries/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
     });
+    if (!res.ok) throw new Error("Failed to update inquiry");
+    const updated = (await res.json()) as LeadInquiry;
+    setInquiries((prev) => prev.map((inq) => (inq.id === id ? updated : inq)));
   }, []);
 
   return (
-    <LeadCaptureContext.Provider value={{ inquiries, addInquiry, updateInquiryStatus }}>
+    <LeadCaptureContext.Provider
+      value={{ inquiries, isLoading, addInquiry, updateInquiryStatus, refresh }}
+    >
       {children}
     </LeadCaptureContext.Provider>
   );

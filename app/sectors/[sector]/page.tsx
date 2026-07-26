@@ -13,6 +13,7 @@ import { ProjectCard } from "@/components/projects/project-card";
 import { EstInvestmentRange } from "@/components/projects/est-investment-range";
 import { WorkspaceAccessCta } from "@/components/deal-room/workspace-access-cta";
 import { Badge } from "@/components/ui/badge";
+import { SdgBadge } from "@/components/ui/sdg-badge";
 import { SITE_URL } from "@/lib/config/site";
 import { cn } from "@/lib/utils";
 
@@ -74,7 +75,7 @@ export default function SectorDetailPage({
         <p className="text-zim-muted mt-2 max-w-2xl">{sector.description}</p>
       </div>
 
-      <div className={cn("grid gap-4 mb-8", isQualified ? "sm:grid-cols-4" : "sm:grid-cols-3")}>
+      <div className={cn("grid gap-4 mb-8", isQualified ? "md:grid-cols-4" : "md:grid-cols-3")}>
         <div className="rounded border p-4 border-zim-border">
           <p className="text-xs text-zim-muted uppercase tracking-widest mb-1">Published</p>
           <p className="text-2xl font-mono">{sectorStats.published}</p>
@@ -113,17 +114,7 @@ export default function SectorDetailPage({
           {sdgs.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs text-zim-muted mr-1">SDGs:</span>
-              {sdgs.map((s) => s && (
-                <Link
-                  key={s.id}
-                  href={`/projects?sdgId=${s.id}`}
-                  className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                  style={{ backgroundColor: s.colorToken }}
-                  title={s.name}
-                >
-                  {s.number}
-                </Link>
-              ))}
+              {sdgs.map((s) => s && <SdgBadge key={s.id} sdg={s} size="sm" href={`/projects?sdgId=${s.id}`} />)}
             </div>
           )}
           {ministries.length > 0 && (

@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Check } from "lucide-react";
-import { useDemoPersona } from "@/context/demo-persona-context";
+import {
+  executiveFieldClassName,
+  executiveFieldStyle,
+  executiveLabelClassName,
+} from "@/components/auth/executive-field-styles";
 import { useLeadCapture } from "@/context/lead-capture-context";
 import { sectors } from "@/lib/data/taxonomies";
-
-const FILLED_BG = "#FFD300";
-const EMPTY_BG = "rgba(255,255,255,0.03)";
-const BORDER = "1px solid rgba(255,255,255,0.1)";
+import { isFreeMailDomain } from "@/lib/utils/email-domain";
 
 const investorTypes = [
   "Individual Investor",
@@ -20,16 +21,7 @@ const investorTypes = [
   "Government / Institutional",
 ];
 
-function fieldStyle(hasValue: boolean) {
-  return {
-    backgroundColor: hasValue ? FILLED_BG : EMPTY_BG,
-    color: hasValue ? "#000" : "var(--color-text-primary)",
-    border: BORDER,
-  };
-}
-
 export default function RegisterPage() {
-  const { setPersona } = useDemoPersona();
   const { addInquiry } = useLeadCapture();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -66,14 +58,18 @@ export default function RegisterPage() {
     setIsSubmitting(true);
 
     const sector = sectors.find((s) => s.id === form.sectorId);
-    addInquiry({
-      type: "registration",
-      name: `${form.firstName} ${form.lastName}`,
-      email: form.email,
-      organization: form.organization,
-      message: `Investor type: ${form.investorType}. Sector interest: ${sector?.name ?? form.sectorId}. ${form.mandateAlignment}`,
-    });
-    setPersona("registered");
+    try {
+      await addInquiry({
+        type: "registration",
+        name: `${form.firstName} ${form.lastName}`,
+        email: form.email,
+        organization: form.organization,
+        message: `Investor type: ${form.investorType}. Sector interest: ${sector?.name ?? form.sectorId}. ${form.mandateAlignment}`,
+      });
+    } catch {
+      setIsSubmitting(false);
+      return;
+    }
 
     await new Promise((r) => setTimeout(r, 600));
     setIsSubmitting(false);
@@ -93,30 +89,29 @@ export default function RegisterPage() {
           className="text-3xl font-bold mb-4 text-center"
           style={{ color: "var(--color-text-primary)", letterSpacing: "-0.02em" }}
         >
-          Registration Complete
+          Application Received
         </h2>
         <p
           className="text-sm leading-relaxed mb-6 text-center max-w-md mx-auto"
           style={{ color: "var(--color-text-secondary)" }}
         >
-          Thank you for registering on the Zimbabwe Digital Investment Platform. Your demo investor
-          profile is now active with registered-tier access.
+          Thank you for applying to the Zimbabwe Digital Investment Platform. Your investor application
+          has been securely recorded and is pending credential review.
         </p>
         <p
           className="text-sm leading-relaxed mb-10 text-center max-w-md mx-auto"
           style={{ color: "var(--color-text-secondary)" }}
         >
-          Your profile is now on file for qualified-investor credential review. Capital estimates and
-          financial indicators (IRR, NPV, ROI) unlock once our team verifies your investor status. In a
-          production deployment, your inquiry would be routed to the Afronovation executive team for
-          credential approval.
+          Once your qualification is confirmed, you will receive sign-in credentials to unlock
+          registered-tier registry access. Capital estimates and financial indicators (IRR, NPV, ROI)
+          unlock at the qualified-investor tier after review.
         </p>
         <div className="flex flex-col gap-3 w-full">
           <Link href="/projects" className="btn-sovereign w-full justify-center text-center">
-            Browse Project Registry →
+            Browse Public Registry →
           </Link>
-          <Link href="/" className="btn-sovereign-ghost w-full justify-center text-center">
-            Return to Public Platform
+          <Link href="/auth/sign-in" className="btn-sovereign-ghost w-full justify-center text-center">
+            Already have credentials? Sign in
           </Link>
         </div>
 
@@ -137,14 +132,14 @@ export default function RegisterPage() {
           className="text-3xl font-bold mb-2"
           style={{ color: "var(--color-text-primary)", letterSpacing: "-0.02em" }}
         >
-          Register for Access
+          Apply for Access
         </h1>
         <p
           className="text-sm leading-relaxed"
           style={{ color: "var(--color-text-secondary)", maxWidth: "500px" }}
         >
-          Join the ZIDA investment intelligence network to unlock expanded project details and capital
-          estimates across Zimbabwe&apos;s governed catalogue.
+          Submit your investor application for governed access to the ZIDA catalogue. Applications are
+          reviewed before credentials are issued — this is not a self-service login.
         </p>
       </div>
 
@@ -152,7 +147,7 @@ export default function RegisterPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label
-              className="block text-[10px] font-mono tracking-widest uppercase mb-1"
+              className={executiveLabelClassName}
               style={{ color: "var(--color-text-muted)" }}
             >
               First Name
@@ -163,13 +158,13 @@ export default function RegisterPage() {
               value={form.firstName}
               onChange={handleChange}
               required
-              className="w-full px-3 py-2.5 rounded text-sm transition-colors outline-none focus:bg-[#FFD300] focus:text-black"
-              style={fieldStyle(!!form.firstName)}
+              className={`${executiveFieldClassName} focus:bg-[#FFD300] focus:text-black`}
+              style={executiveFieldStyle(!!form.firstName)}
             />
           </div>
           <div>
             <label
-              className="block text-[10px] font-mono tracking-widest uppercase mb-1"
+              className={executiveLabelClassName}
               style={{ color: "var(--color-text-muted)" }}
             >
               Last Name
@@ -181,7 +176,7 @@ export default function RegisterPage() {
               onChange={handleChange}
               required
               className="w-full px-3 py-2.5 rounded text-sm transition-colors outline-none focus:bg-[#FFD300] focus:text-black"
-              style={fieldStyle(!!form.lastName)}
+              style={executiveFieldStyle(!!form.lastName)}
             />
           </div>
         </div>
@@ -189,7 +184,7 @@ export default function RegisterPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label
-              className="block text-[10px] font-mono tracking-widest uppercase mb-1"
+              className={executiveLabelClassName}
               style={{ color: "var(--color-text-muted)" }}
             >
               Organization
@@ -202,12 +197,12 @@ export default function RegisterPage() {
               required
               placeholder="Fund / Corporate Entity"
               className="w-full px-3 py-2.5 rounded text-sm transition-colors outline-none focus:bg-[#FFD300] focus:text-black placeholder-gray-600"
-              style={fieldStyle(!!form.organization)}
+              style={executiveFieldStyle(!!form.organization)}
             />
           </div>
           <div>
             <label
-              className="block text-[10px] font-mono tracking-widest uppercase mb-1"
+              className={executiveLabelClassName}
               style={{ color: "var(--color-text-muted)" }}
             >
               Investor Profile
@@ -219,7 +214,7 @@ export default function RegisterPage() {
               required
               className="w-full px-3 py-2.5 rounded text-sm transition-colors outline-none focus:bg-[#FFD300] focus:text-black appearance-none"
               style={{
-                ...fieldStyle(!!form.investorType),
+                ...executiveFieldStyle(!!form.investorType),
                 color: form.investorType ? "#000" : "var(--color-text-muted)",
                 backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='${form.investorType ? "%23000" : "%236b7280"}' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E")`,
                 backgroundRepeat: "no-repeat",
@@ -242,7 +237,7 @@ export default function RegisterPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label
-              className="block text-[10px] font-mono tracking-widest uppercase mb-1"
+              className={executiveLabelClassName}
               style={{ color: "var(--color-text-muted)" }}
             >
               Email
@@ -255,12 +250,17 @@ export default function RegisterPage() {
               required
               placeholder="name@org.com"
               className="w-full px-3 py-2.5 rounded text-sm transition-colors outline-none focus:bg-[#FFD300] focus:text-black placeholder-gray-600"
-              style={fieldStyle(!!form.email)}
+              style={executiveFieldStyle(!!form.email)}
             />
+            {isFreeMailDomain(form.email) && (
+              <p className="mt-1.5 text-xs" style={{ color: "var(--color-text-muted)" }}>
+                For faster institutional accreditation, we recommend applying with your official corporate email address.
+              </p>
+            )}
           </div>
           <div>
             <label
-              className="block text-[10px] font-mono tracking-widest uppercase mb-1"
+              className={executiveLabelClassName}
               style={{ color: "var(--color-text-muted)" }}
             >
               Primary Sector Interest
@@ -272,7 +272,7 @@ export default function RegisterPage() {
               required
               className="w-full px-3 py-2.5 rounded text-sm transition-colors outline-none focus:bg-[#FFD300] focus:text-black appearance-none"
               style={{
-                ...fieldStyle(!!form.sectorId),
+                ...executiveFieldStyle(!!form.sectorId),
                 color: form.sectorId ? "#000" : "var(--color-text-muted)",
                 backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='${form.sectorId ? "%23000" : "%236b7280"}' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E")`,
                 backgroundRepeat: "no-repeat",
@@ -307,7 +307,7 @@ export default function RegisterPage() {
             rows={3}
             placeholder="Describe your investment thesis, ticket size, or engagement interest"
             className="w-full px-3 py-2.5 rounded text-sm transition-colors outline-none focus:bg-[#FFD300] focus:text-black placeholder-gray-600 resize-none"
-            style={fieldStyle(!!form.mandateAlignment)}
+            style={executiveFieldStyle(!!form.mandateAlignment)}
           />
         </div>
 
@@ -321,14 +321,20 @@ export default function RegisterPage() {
             boxShadow: "0 4px 14px 0 rgba(0, 100, 0, 0.35)",
           }}
         >
-          {isSubmitting ? "PROCESSING..." : "REGISTER & UNLOCK ACCESS"}
+          {isSubmitting ? "SUBMITTING APPLICATION…" : "SUBMIT APPLICATION"}
           {!isSubmitting && <span>→</span>}
         </button>
       </form>
 
       <div className="mt-8 pt-4 border-t text-center" style={{ borderColor: "var(--color-sovereign-border)" }}>
         <p className="text-[10px] font-mono tracking-widest uppercase" style={{ color: "var(--color-text-muted)" }}>
-          Demo registration · No password · Local session storage
+          Governed application · Stored securely · Credentials issued after review
+        </p>
+        <p className="text-sm mt-4" style={{ color: "var(--color-text-muted)" }}>
+          Already have credentials?{" "}
+          <Link href="/auth/sign-in" className="underline" style={{ color: "var(--color-gold)" }}>
+            Sign in
+          </Link>
         </p>
       </div>
     </div>

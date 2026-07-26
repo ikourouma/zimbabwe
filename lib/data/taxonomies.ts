@@ -148,6 +148,9 @@ export const sdgs: SDG[] = [
   { id: "sdg-11", number: 11, name: "Sustainable Cities and Communities", colorToken: "#FD9D24", description: "SDG 11: Sustainable Cities and Communities" },
   { id: "sdg-12", number: 12, name: "Responsible Consumption and Production", colorToken: "#BF8B2E", description: "SDG 12: Responsible Consumption and Production" },
   { id: "sdg-13", number: 13, name: "Climate Action", colorToken: "#3F7E44", description: "SDG 13: Climate Action" },
+  { id: "sdg-14", number: 14, name: "Life Below Water", colorToken: "#0A97D9", description: "SDG 14: Life Below Water" },
+  { id: "sdg-15", number: 15, name: "Life on Land", colorToken: "#56C02B", description: "SDG 15: Life on Land" },
+  { id: "sdg-16", number: 16, name: "Peace, Justice and Strong Institutions", colorToken: "#00689D", description: "SDG 16: Peace, Justice and Strong Institutions" },
   { id: "sdg-17", number: 17, name: "Partnerships for the Goals", colorToken: "#19486A", description: "SDG 17: Partnerships for the Goals" },
 ];
 
@@ -207,6 +210,10 @@ export const contactReasons: ContactReason[] = [
   { id: "cr-08", label: "Media / Press", routingCategory: "media", status: "active" },
   { id: "cr-09", label: "General Question", routingCategory: "general", status: "active" },
   { id: "cr-10", label: "Other", routingCategory: "other", status: "active" },
+  // Routes straight to the Super Admin Inquiries inbox (app/super-admin/inquiries) rather than the
+  // shared ZIDA admin queue — for board-level, platform-governance, or executive-escalation
+  // matters that specifically need the platform owner (Afronovation), not ZIDA staff.
+  { id: "cr-11", label: "Platform / Executive Escalation", routingCategory: "executive", status: "active" },
 ];
 
 export const userRoles: UserRole[] = [

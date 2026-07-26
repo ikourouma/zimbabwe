@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MessageCircle } from "lucide-react";
 import type { InvestmentProject, ProjectStatus } from "@/lib/types";
 import type { WorkflowRole } from "@/lib/governance/project-workflow";
 import { canTransition, STATUS_LABELS } from "@/lib/governance/project-workflow";
@@ -24,9 +25,14 @@ interface DealRoomKanbanProps {
   /** null means read-only (no drag) — e.g. a qualified investor viewing the board. */
   role: WorkflowRole | null;
   onStatusChange: (projectId: string, status: ProjectStatus) => void;
+  /** Opens the shared project detail drawer (components/dashboard/project-detail-drawer.tsx). */
+  onCardClick?: (project: InvestmentProject) => void;
+  /** Communication Hub entry point — opens the drawer straight to its Messages tab (see the
+   *  Deal Room Engagement and MOU Upgrade plan's "ask ZIDA a question" entry points). */
+  onMessageClick?: (project: InvestmentProject) => void;
 }
 
-export function DealRoomKanban({ projects, role, onStatusChange }: DealRoomKanbanProps) {
+export function DealRoomKanban({ projects, role, onStatusChange, onCardClick, onMessageClick }: DealRoomKanbanProps) {
   const { ministries } = useTaxonomyStore();
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<ProjectStatus | null>(null);
@@ -54,17 +60,24 @@ export function DealRoomKanban({ projects, role, onStatusChange }: DealRoomKanba
 
   return (
     <div>
-      <div className="overflow-x-auto pb-2">
-        <div className="flex gap-4 min-w-[960px]">
+      {/* Fluid 6-up grid at lg+ so every stage is visible without scrolling (see the Phase 6
+       *  "columns cut off" fix) — falls back to a horizontally-scrollable fixed-width row below
+       *  that breakpoint, where 6 comfortably-readable columns can't fit regardless of layout. */}
+      <div className="overflow-x-auto pb-2 lg:overflow-visible">
+        <div className="grid grid-cols-6 gap-3 min-w-[900px] lg:min-w-0">
           {BOARD_COLUMNS.map((column) => {
             const columnProjects = projects.filter((p) => p.projectStatus === column);
             return (
               <div
                 key={column}
                 className={cn(
-                  "flex-1 min-w-[220px] rounded-lg border bg-zim-off-white/40 p-3 transition-colors",
-                  dragOverColumn === column && canDrag && "ring-2 ring-zim-gold"
+                  "min-w-[140px] lg:min-w-0 rounded-lg p-3 transition-colors",
+                  dragOverColumn === column && canDrag && "ring-2 ring-[var(--color-gold)]"
                 )}
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.03)",
+                  border: "1px solid var(--color-sovereign-border)",
+                }}
                 onDragOver={(e) => {
                   if (!canDrag) return;
                   e.preventDefault();
@@ -76,11 +89,17 @@ export function DealRoomKanban({ projects, role, onStatusChange }: DealRoomKanba
                   handleDrop(column);
                 }}
               >
-                <div className="mb-3 flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zim-muted">
+                <div className="mb-3 flex items-center justify-between gap-1">
+                  <p
+                    className="text-xs font-semibold uppercase tracking-wide truncate"
+                    style={{ color: "var(--color-text-muted)" }}
+                    title={STATUS_LABELS[column]}
+                  >
                     {STATUS_LABELS[column]}
                   </p>
-                  <span className="text-xs text-zim-muted">{columnProjects.length}</span>
+                  <span className="text-xs shrink-0" style={{ color: "var(--color-text-muted)" }}>
+                    {columnProjects.length}
+                  </span>
                 </div>
                 <div className="space-y-2 min-h-[80px]">
                   {columnProjects.map((project) => (
@@ -89,13 +108,15 @@ export function DealRoomKanban({ projects, role, onStatusChange }: DealRoomKanba
                       draggable={canDrag}
                       onDragStart={() => setDraggedId(project.id)}
                       onDragEnd={() => setDraggedId(null)}
+                      onClick={() => onCardClick?.(project)}
                       className={cn(
-                        "rounded-md border bg-white p-3 shadow-sm text-sm",
-                        canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-default"
+                        "dashboard-panel rounded-md p-3 text-sm",
+                        canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-default",
+                        onCardClick && "hover:ring-2 hover:ring-[var(--color-gold)]/60 transition-shadow"
                       )}
                     >
-                      <p className="font-medium leading-snug">{project.title}</p>
-                      <p className="mt-1 text-xs text-zim-muted">
+                      <p className="font-medium leading-snug text-white line-clamp-2">{project.title}</p>
+                      <p className="mt-1 text-xs truncate" style={{ color: "var(--color-text-muted)" }}>
                         {(() => {
                           const ministry = getMinistryById(project.primaryBeneficiaryMinistryId);
                           if (!ministry) return "Unassigned";
@@ -105,13 +126,26 @@ export function DealRoomKanban({ projects, role, onStatusChange }: DealRoomKanba
                         })()}
                         {project.capitalRequired ? ` · ${project.capitalRequired}` : ""}
                       </p>
-                      <div className="mt-2">
+                      <div className="mt-2 flex items-center justify-between gap-2">
                         <StatusBadge status={project.projectStatus} />
+                        {onMessageClick && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onMessageClick(project);
+                            }}
+                            title="Ask ZIDA a question"
+                            className="rounded-full p-1 hover:bg-white/10 transition-colors shrink-0"
+                          >
+                            <MessageCircle className="h-3.5 w-3.5" style={{ color: "var(--color-text-muted)" }} />
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
                   {columnProjects.length === 0 && (
-                    <p className="text-xs text-zim-muted/70 italic">No projects</p>
+                    <p className="text-xs italic" style={{ color: "var(--color-text-muted)" }}>No projects</p>
                   )}
                 </div>
               </div>
@@ -120,9 +154,8 @@ export function DealRoomKanban({ projects, role, onStatusChange }: DealRoomKanba
         </div>
       </div>
       {!canDrag && (
-        <p className="mt-3 text-xs text-zim-muted">
-          Qualified investors have read-only visibility into deal status. Switch to a Government or
-          Admin demo persona in the header to move cards between stages.
+        <p className="mt-3 text-xs" style={{ color: "var(--color-text-muted)" }}>
+          Qualified investors have read-only visibility into deal status.
         </p>
       )}
     </div>

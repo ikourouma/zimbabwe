@@ -3,20 +3,21 @@
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { FadeUp, StaggerContainer, StaggerItem } from "@/components/ui/cinematic-reveal";
-import { accessTiers } from "@/content/zimbabwe-site";
+import { useTranslations } from "@/context/locale-context";
 
 export function InvestorAccessTiers() {
+  const t = useTranslations();
+  const accessTiers = t.accessTiers;
   return (
     <section className="py-24" style={{ backgroundColor: "#050805" }}>
       <div className="page-container">
         <FadeUp className="mb-16 max-w-2xl">
-          <p className="section-overline mb-4">Investor Access Tiers</p>
+          <p className="section-overline mb-4">{t.home.accessTiers.overline}</p>
           <h2 className="text-3xl font-light text-white" style={{ letterSpacing: "var(--type-heading-tracking)" }}>
-            Governed access, calibrated to your role
+            {t.home.accessTiers.title}
           </h2>
           <p className="mt-3 text-base" style={{ color: "var(--color-text-secondary)" }}>
-            Every project follows a draft → review → publish workflow, with entitlements that expand as investors
-            register and qualify.
+            {t.home.accessTiers.subtitle}
           </p>
         </FadeUp>
 
@@ -26,8 +27,8 @@ export function InvestorAccessTiers() {
               <div
                 className="h-full p-8 rounded-xl border flex flex-col"
                 style={{
-                  backgroundColor: tier.featured ? "rgba(255, 211, 0, 0.05)" : "rgba(255,255,255,0.02)",
-                  borderColor: tier.featured ? "var(--color-gold)" : "var(--color-sovereign-border)",
+                  backgroundColor: "featured" in tier && tier.featured ? "rgba(255, 211, 0, 0.05)" : "rgba(255,255,255,0.02)",
+                  borderColor: "featured" in tier && tier.featured ? "var(--color-gold)" : "var(--color-sovereign-border)",
                 }}
               >
                 <p className="section-overline mb-3">{tier.label}</p>
@@ -44,7 +45,11 @@ export function InvestorAccessTiers() {
                 </ul>
                 <Link
                   href={tier.cta.href}
-                  className={tier.featured ? "btn-sovereign justify-center" : "btn-sovereign-ghost justify-center"}
+                  className={
+                    "featured" in tier && tier.featured
+                      ? "btn-sovereign justify-center whitespace-nowrap"
+                      : "btn-sovereign-ghost justify-center whitespace-nowrap"
+                  }
                 >
                   {tier.cta.label}
                 </Link>

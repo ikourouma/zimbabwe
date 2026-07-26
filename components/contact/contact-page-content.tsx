@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Clock, ShieldCheck, Route, ArrowRight } from "lucide-react";
 import { useLeadCapture } from "@/context/lead-capture-context";
-import { contactReasons } from "@/lib/data/taxonomies";
+import { useTaxonomyStore } from "@/context/taxonomy-store-context";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,6 +37,12 @@ const trustPoints = [
 
 export function ContactPageContent() {
   const { addInquiry } = useLeadCapture();
+  // Live, super-admin-editable list (Site Settings → Taxonomies → Contact Reasons) rather than the
+  // static seed array, so a newly added reason (e.g. a routing category) shows up immediately
+  // without a redeploy. Archived reasons are excluded — they still exist for historical inquiries
+  // but shouldn't be pickable on new submissions.
+  const { contactReasons } = useTaxonomyStore();
+  const activeContactReasons = contactReasons.filter((cr) => cr.status === "active");
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -137,7 +143,7 @@ export function ContactPageContent() {
                     <SelectValue placeholder="Select a reason" />
                   </SelectTrigger>
                   <SelectContent>
-                    {contactReasons.map((cr) => (
+                    {activeContactReasons.map((cr) => (
                       <SelectItem key={cr.id} value={cr.id}>{cr.label}</SelectItem>
                     ))}
                   </SelectContent>

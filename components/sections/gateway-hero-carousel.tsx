@@ -4,17 +4,36 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { gatewaySlides } from "@/content/zimbabwe-site";
+import { useLocale } from "@/context/locale-context";
 import { useSiteStats } from "@/lib/hooks/use-site-stats";
+import type { HomeHeroContent, HomeHeroSlide } from "@/lib/types";
 
 export function GatewayHeroCarousel() {
+  const { locale, messages: t } = useLocale();
+  // Phase 1 marketing CMS override (Super Admin → Settings → Page Content) — English only for
+  // now; other locales keep showing their translated defaults until this is extended.
+  const [override, setOverride] = useState<HomeHeroSlide[] | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/content-blocks/home-hero")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { body?: HomeHeroContent } | null) => {
+        const slides = data?.body?.slides;
+        if (!cancelled && slides && slides.length > 0) setOverride(slides);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const gatewaySlides = override && locale === "en" ? override : t.gatewaySlides;
   const [activeSlide, setActiveSlide] = useState(0);
   const slideCount = gatewaySlides.length;
   const siteStats = useSiteStats();
   const countryStats = [
-    { value: String(siteStats.totalProjects), label: "Catalogue Projects" },
-    { value: String(siteStats.sectorCount), label: "Economic Sectors" },
-    { value: String(siteStats.publishedProjects), label: "Published" },
+    { value: String(siteStats.totalProjects), label: t.home.heroCountryStats[0].label },
+    { value: String(siteStats.sectorCount), label: t.home.heroCountryStats[1].label },
+    { value: String(siteStats.publishedProjects), label: t.home.heroCountryStats[2].label },
   ];
 
   useEffect(() => {
@@ -27,7 +46,7 @@ export function GatewayHeroCarousel() {
   const slide = gatewaySlides[activeSlide];
 
   return (
-    <section className="relative min-h-[90vh] flex flex-col items-center justify-start overflow-hidden mesh-gradient-hero">
+    <section className="relative min-h-[auto] sm:min-h-[90vh] flex flex-col items-center justify-start overflow-hidden mesh-gradient-hero">
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
         <div
           className="absolute inset-0"
@@ -43,7 +62,7 @@ export function GatewayHeroCarousel() {
       </div>
 
       <div className="relative z-10 page-container w-full pt-16 sm:pt-20 md:pt-24 lg:pt-28">
-        <div className="min-h-[600px] flex items-start justify-center relative">
+        <div className="min-h-0 sm:min-h-[600px] flex items-start justify-center relative">
           <AnimatePresence mode="wait">
             <motion.div
               key={slide.id}
@@ -62,12 +81,20 @@ export function GatewayHeroCarousel() {
                   className="mb-8 inline-flex items-center justify-center p-3 rounded-2xl"
                   style={{ backgroundColor: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}
                 >
-                  <Image src="/brand/zimbabwe-map-icon.png" alt="Zimbabwe" width={64} height={64} className="object-contain" />
+                  <Image
+                    src="/brand/zimbabwe-map-icon.png"
+                    alt="Zimbabwe"
+                    width={64}
+                    height={64}
+                    className="object-contain"
+                    priority
+                    sizes="64px"
+                  />
                 </div>
               )}
 
               <div className={slide.id === "country" ? "flex-1" : "w-full"}>
-                <h2 className="section-overline mb-4 tracking-[0.2em]" style={{ color: "var(--color-gold)" }}>
+                <h2 className="section-overline hero-overline mb-4 tracking-[0.2em] text-balance" style={{ color: "var(--color-gold)" }}>
                   {slide.overline}
                 </h2>
                 <h1
@@ -93,7 +120,7 @@ export function GatewayHeroCarousel() {
                 </p>
 
                 {slide.id === "country" && (
-                  <div className="grid grid-cols-3 gap-6 mb-10 border-y border-white/5 py-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10 border-y border-white/5 py-8">
                     {countryStats.map((stat) => (
                       <div key={stat.label}>
                         <p className="text-3xl font-light font-mono text-white mb-2">{stat.value}</p>
@@ -118,7 +145,14 @@ export function GatewayHeroCarousel() {
               {slide.id === "country" && (
                 <div className="flex-1 hidden lg:flex justify-center">
                   <div className="relative w-full max-w-md aspect-square rounded-2xl overflow-hidden border border-white/5 p-8 flex flex-col justify-center items-center text-center">
-                    <Image src="/brand/zimbabwe-map-icon.png" alt="Zimbabwe map" width={96} height={96} className="object-contain mb-6 opacity-90" />
+                    <Image
+                      src="/brand/zimbabwe-map-icon.png"
+                      alt="Zimbabwe map"
+                      width={96}
+                      height={96}
+                      className="object-contain mb-6 opacity-90"
+                      sizes="96px"
+                    />
                     <h4 className="text-xl font-bold text-white mb-2">ZIDA 2025 Catalogue</h4>
                     <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
                       {countryStats[0].value} projects across {countryStats[1].value} sectors — pending official validation.

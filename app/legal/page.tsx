@@ -5,7 +5,7 @@ import { platformName } from "@/content/zimbabwe-site";
 import { SITE_URL } from "@/lib/config/site";
 
 export const metadata: Metadata = {
-  title: "Governance & Legal | Afronovation",
+  title: "Governance & Legal",
   description: "Legal policies, Terms of Service, and Privacy frameworks governing the Zimbabwe Digital Investment Platform.",
 };
 

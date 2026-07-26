@@ -5,7 +5,7 @@ import { SITE_URL } from "@/lib/config/site";
 const PAGE_URL = `${SITE_URL}/platform`;
 
 export const metadata: Metadata = {
-  title: "Platform Concept | Zimbabwe Investment Platform",
+  title: "Platform Concept",
   description:
     "How the Zimbabwe Investment Platform works: a governed project registry, review-to-publish workflow, persona-based entitlements, and admin-managed taxonomies.",
   alternates: { canonical: PAGE_URL },

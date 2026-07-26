@@ -18,6 +18,7 @@ import {
   Handshake,
   Gauge,
   Lock,
+  Eye,
 } from "lucide-react";
 import { useProjectStore } from "@/context/project-store-context";
 import { useDemoPersona } from "@/context/demo-persona-context";
@@ -30,7 +31,8 @@ import {
   getSdgById,
   getMinistryById,
 } from "@/lib/data/taxonomies";
-import { canViewProject, DATA_VERIFICATION_LABELS } from "@/lib/entitlements/visibility";
+import { canViewProject, accessLevelForRole, canAccessVisibilityLevel } from "@/lib/entitlements/visibility";
+import { useAuth } from "@/context/auth-context";
 import { classifyFinancingType } from "@/lib/utils/financing-type";
 import { parseCapitalTotalMillions, parseCapitalBreakdown, formatMillions } from "@/lib/utils/capital";
 import { getRelevantGlossaryTerms } from "@/lib/data/glossary";
@@ -39,9 +41,14 @@ import { ExecutiveCard } from "@/components/system/executive-card";
 import { RegistrationPrompt } from "@/components/shared/registration-prompt";
 import { StatusBadge } from "@/components/projects/status-badge";
 import { ProjectCard } from "@/components/projects/project-card";
+import { SdgBadge } from "@/components/ui/sdg-badge";
 import { WorkspaceAccessCta } from "@/components/deal-room/workspace-access-cta";
+import { ProjectEngageCta } from "@/components/deal-room/project-engage-cta";
+import { DealRoomAccessButton } from "@/components/deal-room/deal-room-access-button";
+import { HomeCtaSection } from "@/components/sections/home-cta-section";
 import { Badge } from "@/components/ui/badge";
 import { SITE_URL } from "@/lib/config/site";
+import { useLocale, useTranslations } from "@/context/locale-context";
 
 export default function ProjectDetailPage({
   params,
@@ -49,8 +56,22 @@ export default function ProjectDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = use(params);
+  const { locale } = useLocale();
+  const t = useTranslations();
+  const pd = t.projectDetail;
   const { projects, getProjectBySlug } = useProjectStore();
   const { persona, isRegistered, isQualified, isAdmin } = useDemoPersona();
+  // Real auth (not the demo toggle) for Deal Room entitlement — approved investors skip the
+  // document-request funnel and go straight into the Deal Room.
+  const {
+    isQualified: isQualifiedReal,
+    isAdmin: isAdminReal,
+    isSuperAdmin: isSuperAdminReal,
+    role: realRole,
+    ndaAcceptedAt,
+  } = useAuth();
+  const hasDealRoomAccess = isQualifiedReal || isAdminReal || isSuperAdminReal;
+  const realAccessLevel = accessLevelForRole(realRole);
   const { costStructureHidden } = useSiteSettings();
 
   const project = getProjectBySlug(slug);
@@ -58,11 +79,11 @@ export default function ProjectDetailPage({
 
   if (!canViewProject(persona, project) && !isAdmin) {
     return (
-      <DeepDiveShell backHref="/projects" backLabel="Back to registry">
+      <DeepDiveShell backHref="/projects" backLabel={pd.backToRegistry}>
         <div className="max-w-lg mx-auto text-center py-16">
-          <h1 className="text-2xl font-light text-white mb-3">Project not available</h1>
+          <h1 className="text-2xl font-light text-white mb-3">{pd.notAvailable.title}</h1>
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-            This project is not currently published or you do not have access.
+            {pd.notAvailable.description}
           </p>
         </div>
       </DeepDiveShell>
@@ -88,8 +109,9 @@ export default function ProjectDetailPage({
 
   const glossaryTerms = getRelevantGlossaryTerms(project);
 
-  const timelineLabel = project.publishedAt ? "Published" : "Last updated";
-  const timelineDate = formatMonthYear(project.publishedAt ?? project.updatedAt);
+  const timelineLabel = project.publishedAt ? pd.published : pd.lastUpdated;
+  const timelineDate = formatMonthYear(project.publishedAt ?? project.updatedAt, locale);
+  const verificationLabel = pd.dataVerification[project.dataVerificationStatus];
 
   const relatedProjects = projects
     .filter((p) => p.id !== project.id && p.sectorId === project.sectorId && p.projectStatus === "published")
@@ -99,16 +121,16 @@ export default function ProjectDetailPage({
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
-      { "@type": "ListItem", position: 2, name: "Platform Concept", item: `${SITE_URL}/platform` },
-      { "@type": "ListItem", position: 3, name: "Project Registry", item: `${SITE_URL}/projects` },
+      { "@type": "ListItem", position: 1, name: t.breadcrumb.home, item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: t.breadcrumb.platform, item: `${SITE_URL}/platform` },
+      { "@type": "ListItem", position: 3, name: t.breadcrumb.projects, item: `${SITE_URL}/projects` },
       { "@type": "ListItem", position: 4, name: project.title, item: `${SITE_URL}/projects/${project.slug}` },
     ],
   };
 
   return (
     <>
-      <DeepDiveShell backHref="/projects" backLabel="Back to registry" minHeightScreen={false}>
+      <DeepDiveShell backHref="/projects" backLabel={pd.backToRegistry} minHeightScreen={false}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
@@ -120,7 +142,7 @@ export default function ProjectDetailPage({
             <Badge>{getSectorDisplayName(sector)}</Badge>
             {subsector && <span className="status-badge status-badge-info">{subsector.name}</span>}
             {project.pipelineType === "policy_initiative" && (
-              <span className="status-badge status-badge-pending">Illustrative Policy Initiative · TA Required</span>
+              <span className="status-badge status-badge-pending">{pd.policyInitiativeBadge}</span>
             )}
           </div>
           <h1
@@ -141,15 +163,15 @@ export default function ProjectDetailPage({
               <MapPin className="h-3.5 w-3.5" /> {project.location}
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <Building2 className="h-3.5 w-3.5" /> Implementing Entity: {project.projectOwner}
+              <Building2 className="h-3.5 w-3.5" /> {pd.implementingEntity}: {project.projectOwner}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Gauge className="h-3.5 w-3.5" /> {project.projectReadiness}
             </span>
           </div>
           <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-            Project Ref: {project.id.toUpperCase()} · Source: {project.sourceReference ?? "ZIDA 2025 Project Catalogue"} —{" "}
-            {DATA_VERIFICATION_LABELS[project.dataVerificationStatus]}
+            {pd.projectRef}: {project.id.toUpperCase()} · {pd.source}: {project.sourceReference ?? pd.defaultSource} —{" "}
+            {verificationLabel}
             {timelineDate && <> · {timelineLabel} {timelineDate}</>}
           </p>
         </div>
@@ -157,28 +179,28 @@ export default function ProjectDetailPage({
         <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
           <div className="space-y-8 min-w-0">
             {/* Basic Project Data stat strip — always public, always 4 columns */}
-            <div className="grid gap-4 sm:grid-cols-4">
+            <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
               <StatTile
                 icon={Landmark}
-                label="Beneficiary Ministry"
-                value={ministry?.shortName ?? "Not yet assigned"}
+                label={pd.statTiles.beneficiaryMinistry}
+                value={ministry?.shortName ?? pd.statTiles.notYetAssigned}
               />
-              <StatTile icon={CircleDot} label="Status" node={<StatusBadge status={project.projectStatus} />} />
+              <StatTile icon={CircleDot} label={pd.statTiles.status} node={<StatusBadge status={project.projectStatus} />} />
               <StatTile
                 icon={ShieldCheck}
-                label="Data Verification"
+                label={pd.statTiles.dataVerification}
                 node={
                   <span className="status-badge status-badge-info">
-                    {DATA_VERIFICATION_LABELS[project.dataVerificationStatus]}
+                    {verificationLabel}
                   </span>
                 }
               />
-              <StatTile icon={Handshake} label="Financing Instrument" value={financingBucket ?? "Structure TBD"} />
+              <StatTile icon={Handshake} label={pd.statTiles.financingInstrument} value={financingBucket ?? pd.statTiles.structureTbd} />
             </div>
 
             {/* Executive Summary (restyled Development Objective) */}
             <ExecutiveCard>
-              <p className="section-overline mb-3">Development Objective</p>
+              <p className="section-overline mb-3">{pd.developmentObjective}</p>
               <div className="flex gap-3">
                 <Quote
                   className="h-6 w-6 shrink-0 -mt-1"
@@ -197,7 +219,7 @@ export default function ProjectDetailPage({
             {/* Project Description — public; a fuller narrative than the Executive Summary above */}
             {project.description && project.description !== project.opportunitySummary && (
               <ExecutiveCard>
-                <ExecutiveCard.Header overline="Project Design" title="Project Description" />
+                <ExecutiveCard.Header overline={pd.projectDesign} title={pd.projectDescription} />
                 <p className="text-sm leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
                   {project.description}
                 </p>
@@ -206,7 +228,7 @@ export default function ProjectDetailPage({
 
             {/* Project Scope — public */}
             <ExecutiveCard>
-              <ExecutiveCard.Header overline="Project Design" title="Project Scope" />
+              <ExecutiveCard.Header overline={pd.projectDesign} title={pd.projectScope} />
               <ul className="space-y-2">
                 {project.scope.map((item, i) => (
                   <li
@@ -230,7 +252,7 @@ export default function ProjectDetailPage({
                 not figures — this is what keeps the card from looking like an empty lock box. */}
             {!costStructureHidden && totalCostItem && (
               <ExecutiveCard>
-                <ExecutiveCard.Header overline="Financial Performance" title="Project Components" />
+                <ExecutiveCard.Header overline={pd.financialPerformance} title={pd.projectComponents} />
                 <div>
                   {componentCostItems.map((item) => (
                     <div
@@ -252,7 +274,7 @@ export default function ProjectDetailPage({
                     className="flex items-center justify-between pt-3 mt-1 border-t-2"
                     style={{ borderColor: "var(--color-gold)" }}
                   >
-                    <span className="text-sm font-semibold text-white">Total Estimated Project Cost</span>
+                    <span className="text-sm font-semibold text-white">{pd.totalEstimatedProjectCost}</span>
                     <AmountOrLock
                       amount={totalCostItem.amount}
                       locked={!isQualified}
@@ -263,13 +285,13 @@ export default function ProjectDetailPage({
                 </div>
                 {isQualified && project.financingType && (
                   <p className="mt-4 text-xs" style={{ color: "var(--color-text-muted)" }}>
-                    Financing structure: {project.financingType}
+                    {pd.financingStructure}: {project.financingType}
                   </p>
                 )}
                 <p className="mt-2 text-[0.65rem] italic" style={{ color: "var(--color-text-muted)" }}>
-                  Estimated figures — subject to change based on feasibility and resource availability.
+                  {pd.estimatedFiguresDisclaimer}
                 </p>
-                {!isQualified && <UnlockNotice leadText="The full cost breakdown" isRegistered={isRegistered} />}
+                {!isQualified && <UnlockNotice leadText={pd.unlockCostBreakdownLead} isRegistered={isRegistered} pd={pd} />}
               </ExecutiveCard>
             )}
 
@@ -277,27 +299,28 @@ export default function ProjectDetailPage({
                 Gated at "qualified" (admin-approved), not merely "registered": these are the project's
                 own return figures, reserved for vetted investors per DFI/PE data-room convention. */}
             <ExecutiveCard>
-              <ExecutiveCard.Header overline="Financial Performance" title="Financial Performance Data" />
+              <ExecutiveCard.Header overline={pd.financialPerformance} title={pd.financialPerformanceData} />
               <dl className="grid gap-4 sm:grid-cols-2">
-                <FinRow label="IRR" value={project.irr} locked={!isQualified} />
-                <FinRow label="NPV" value={project.npv} locked={!isQualified} />
-                <FinRow label="ROI" value={project.roi} locked={!isQualified} />
-                <FinRow label="Payback Period" value={project.paybackPeriod} locked={!isQualified} />
+                <FinRow label={pd.irr} value={project.irr} locked={!isQualified} notDisclosed={pd.notDisclosed} />
+                <FinRow label={pd.npv} value={project.npv} locked={!isQualified} notDisclosed={pd.notDisclosed} />
+                <FinRow label={pd.roi} value={project.roi} locked={!isQualified} notDisclosed={pd.notDisclosed} />
+                <FinRow label={pd.paybackPeriod} value={project.paybackPeriod} locked={!isQualified} notDisclosed={pd.notDisclosed} />
                 <FinRow
-                  label="Projected Revenue"
+                  label={pd.projectedRevenue}
                   value={project.projectedRevenue}
                   locked={!isQualified}
+                  notDisclosed={pd.notDisclosed}
                   className="sm:col-span-2"
                 />
               </dl>
               {!isQualified && (
-                <UnlockNotice leadText="Full financial performance figures" isRegistered={isRegistered} />
+                <UnlockNotice leadText={pd.unlockFinancialFiguresLead} isRegistered={isRegistered} pd={pd} />
               )}
             </ExecutiveCard>
 
             {/* Expected Development Outcomes — public */}
             <ExecutiveCard>
-              <ExecutiveCard.Header overline="Impact" title="Expected Development Outcomes" />
+              <ExecutiveCard.Header overline={pd.impact} title={pd.expectedOutcomes} />
               <ul className="space-y-2">
                 {project.developmentImpact.map((impact) => (
                   <li
@@ -318,11 +341,11 @@ export default function ProjectDetailPage({
 
             {/* Institutional & Stakeholder Alignment — always public, per the platform's transparency principle */}
             <ExecutiveCard>
-              <ExecutiveCard.Header overline="Institutional Alignment" title="Institutional & Stakeholder Alignment" />
+              <ExecutiveCard.Header overline={pd.institutionalAlignment} title={pd.institutionalStakeholderAlignment} />
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-xs mr-1" style={{ color: "var(--color-text-muted)" }}>
-                    Sector:
+                    {pd.sector}
                   </span>
                   {sector && (
                     <Link
@@ -344,7 +367,7 @@ export default function ProjectDetailPage({
                 {pillars.length > 0 && (
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-xs mr-1" style={{ color: "var(--color-text-muted)" }}>
-                      Strategic pillars:
+                      {pd.strategicPillars}
                     </span>
                     {pillars.map(
                       (p) =>
@@ -359,32 +382,19 @@ export default function ProjectDetailPage({
                 {sdgs.length > 0 && (
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-xs mr-1" style={{ color: "var(--color-text-muted)" }}>
-                      SDGs:
+                      {pd.sdgs}
                     </span>
-                    {sdgs.map(
-                      (s) =>
-                        s && (
-                          <Link
-                            key={s.id}
-                            href={`/projects?sdgId=${s.id}`}
-                            className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                            style={{ backgroundColor: s.colorToken }}
-                            title={s.name}
-                          >
-                            {s.number}
-                          </Link>
-                        )
-                    )}
+                    {sdgs.map((s) => s && <SdgBadge key={s.id} sdg={s} size="sm" href={`/projects?sdgId=${s.id}`} />)}
                   </div>
                 )}
                 {(ministry || secondaryMinistries.length > 0) && (
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-xs mr-1" style={{ color: "var(--color-text-muted)" }}>
-                      {secondaryMinistries.length > 0 ? "Beneficiary ministries:" : "Beneficiary ministry:"}
+                      {secondaryMinistries.length > 0 ? pd.beneficiaryMinistries : pd.beneficiaryMinistry}
                     </span>
                     {ministry && (
                       <Link href={`/projects?ministryId=${ministry.id}`} className="status-badge status-badge-active hover:opacity-80">
-                        {ministry.shortName} <span className="opacity-70">(Primary)</span>
+                        {ministry.shortName} <span className="opacity-70">{pd.primary}</span>
                       </Link>
                     )}
                     {secondaryMinistries.map(
@@ -403,7 +413,7 @@ export default function ProjectDetailPage({
                       className="text-xs uppercase tracking-widest mb-2 flex items-center gap-1.5"
                       style={{ color: "var(--color-text-muted)" }}
                     >
-                      <BookOpen className="h-3.5 w-3.5" /> National Alignment
+                      <BookOpen className="h-3.5 w-3.5" /> {pd.nationalAlignment}
                     </p>
                     <ul className="space-y-1.5">
                       {pillars.map(
@@ -418,60 +428,108 @@ export default function ProjectDetailPage({
                   </div>
                 )}
                 <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-                  Illustrative alignment mapping — pending official ZIDA/ministry validation.
+                  {pd.alignmentDisclaimer}
                 </p>
               </div>
             </ExecutiveCard>
 
             {/* Documents & Data Room — public, informational; per-row badges signal file-level gating once real files exist */}
             <ExecutiveCard>
-              <ExecutiveCard.Header overline="Data Room" title="Documents & Data Room" />
-              {project.documents.length > 0 ? (
+              <ExecutiveCard.Header overline={pd.dataRoom} title={pd.documentsAndDataRoom} />
+              {(project.documentRecords ?? []).length > 0 ? (
                 <div className="space-y-2 mb-5">
-                  {project.documents.map((doc) => (
-                    <div
-                      key={doc}
-                      className="flex items-center gap-2.5 text-sm p-2.5 rounded"
-                      style={{ backgroundColor: "rgba(255,255,255,0.02)" }}
-                    >
-                      <FileText className="h-4 w-4 shrink-0" style={{ color: "var(--color-gold)" }} />
-                      <span className="flex-1" style={{ color: "var(--color-text-secondary)" }}>{doc}</span>
-                      <span
-                        className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded shrink-0"
-                        style={{
-                          backgroundColor: "rgba(255,211,0,0.12)",
-                          color: "var(--color-gold)",
-                          border: "1px solid rgba(255,211,0,0.3)",
-                        }}
+                  {(project.documentRecords ?? []).map((doc) => {
+                    const hasLevelAccess = canAccessVisibilityLevel(realAccessLevel, doc.visibilityLevel);
+                    const needsNda =
+                      doc.visibilityLevel === "qualified_investor" && realRole === "qualified" && !ndaAcceptedAt;
+                    const unlocked = hasLevelAccess && !needsNda;
+                    return (
+                      <div
+                        key={doc.id}
+                        className="flex items-center gap-2.5 text-sm p-2.5 rounded"
+                        style={{ backgroundColor: "rgba(255,255,255,0.02)" }}
                       >
-                        Qualified Access
-                      </span>
-                    </div>
-                  ))}
+                        <FileText className="h-4 w-4 shrink-0" style={{ color: "var(--color-gold)" }} />
+                        <span className="flex-1" style={{ color: "var(--color-text-secondary)" }}>{doc.title}</span>
+                        {unlocked ? (
+                          <span className="flex items-center gap-1.5 shrink-0">
+                            <a
+                              href={`/api/projects/${project.id}/documents/${doc.id}/download?mode=preview`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded hover:underline"
+                              style={{
+                                backgroundColor: "rgba(255,255,255,0.06)",
+                                color: "var(--color-text-secondary)",
+                                border: "1px solid rgba(255,255,255,0.14)",
+                              }}
+                            >
+                              <Eye className="h-3 w-3" /> Preview
+                            </a>
+                            <a
+                              href={`/api/projects/${project.id}/documents/${doc.id}/download`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded hover:underline"
+                              style={{
+                                backgroundColor: "rgba(74,222,128,0.12)",
+                                color: "#4ade80",
+                                border: "1px solid rgba(74,222,128,0.3)",
+                              }}
+                            >
+                              Download
+                            </a>
+                          </span>
+                        ) : (
+                          <span
+                            className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded shrink-0"
+                            style={{
+                              backgroundColor: "rgba(255,211,0,0.12)",
+                              color: "var(--color-gold)",
+                              border: "1px solid rgba(255,211,0,0.3)",
+                            }}
+                          >
+                            {needsNda ? "NDA Required" : pd.qualifiedAccess}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-sm mb-5" style={{ color: "var(--color-text-secondary)" }}>
-                  Data room is being prepared — request early access below.
+                  {pd.dataRoomPreparing}
                 </p>
               )}
               <div className="flex flex-wrap gap-2">
-                <Link
-                  href={`/strategic-partnerships?projectId=${project.id}&ask=document_request`}
-                  className="btn-sovereign-ghost text-xs px-4 py-2"
-                >
-                  Request document access
-                </Link>
+                {hasDealRoomAccess ? (
+                  // Approved investors / staff aren't required to request access — they open the
+                  // documents directly inside the Deal Room.
+                  <Link
+                    href={`/deal-room/pipeline?projectId=${project.id}`}
+                    className="btn-sovereign text-xs px-4 py-2"
+                  >
+                    <FileText className="h-3.5 w-3.5" /> {pd.accessDocuments}
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/strategic-partnerships?projectId=${project.id}&ask=document_request`}
+                    className="btn-sovereign-ghost text-xs px-4 py-2"
+                  >
+                    {pd.requestDocumentAccess}
+                  </Link>
+                )}
                 <Link
                   href={`/strategic-partnerships?projectId=${project.id}&ask=investment_interest`}
                   className="btn-sovereign-ghost text-xs px-4 py-2"
                 >
-                  Submit investment interest
+                  {pd.submitInvestmentInterest}
                 </Link>
                 <Link
                   href={`/strategic-partnerships?projectId=${project.id}&ask=meeting_request`}
                   className="btn-sovereign text-xs px-4 py-2"
                 >
-                  <Calendar className="h-3.5 w-3.5" /> Request meeting
+                  <Calendar className="h-3.5 w-3.5" /> {pd.requestMeeting}
                 </Link>
               </div>
             </ExecutiveCard>
@@ -480,10 +538,10 @@ export default function ProjectDetailPage({
             {relatedProjects.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <p className="section-overline m-0">Related Opportunities</p>
+                  <p className="section-overline m-0">{pd.relatedOpportunities}</p>
                   {sector && (
-                    <Link href={`/sectors/${sector.slug}`} className="text-xs hover:underline" style={{ color: "var(--color-gold)" }}>
-                      More in {getSectorDisplayName(sector)} →
+                    <Link href={`/sectors/${sector.slug}`} className="text-xs hover:underline whitespace-nowrap" style={{ color: "var(--color-gold)" }}>
+                      {pd.moreInSector} {getSectorDisplayName(sector)} →
                     </Link>
                   )}
                 </div>
@@ -500,17 +558,17 @@ export default function ProjectDetailPage({
             {!costStructureHidden && (
               <div className="rounded border p-4" style={{ borderColor: "var(--color-sovereign-border)" }}>
                 <p className="text-xs uppercase tracking-widest mb-1.5" style={{ color: "var(--color-text-muted)" }}>
-                  Total Project Cost
+                  {pd.totalProjectCost}
                 </p>
                 {!capitalRange ? (
                   <p className="text-xs italic" style={{ color: "var(--color-text-muted)" }}>
-                    Cost estimate pending
+                    {pd.costEstimatePending}
                   </p>
                 ) : isQualified ? (
                   <>
                     <p className="text-2xl font-mono text-white">{capitalRange}</p>
                     <p className="text-[10px] mt-2" style={{ color: "var(--color-text-muted)" }}>
-                      Indicative only — pending official ZIDA appraisal.
+                      {pd.indicativeOnly}
                     </p>
                   </>
                 ) : (
@@ -523,13 +581,13 @@ export default function ProjectDetailPage({
                       />
                     </div>
                     <p className="text-[10px] mt-2" style={{ color: "var(--color-text-muted)" }}>
-                      Approved investors only —{" "}
+                      {pd.approvedInvestorsOnly}{" "}
                       <Link
                         href={isRegistered ? "/strategic-partnerships" : "/register"}
                         className="hover:underline"
                         style={{ color: "var(--color-gold)" }}
                       >
-                        {isRegistered ? "Request qualified access" : "Register to get started"}
+                        {isRegistered ? pd.requestQualifiedAccess : pd.registerToGetStarted}
                       </Link>
                     </p>
                   </>
@@ -538,11 +596,11 @@ export default function ProjectDetailPage({
             )}
 
             <ExecutiveCard>
-              <ExecutiveCard.Header overline="Geography" title="Location" />
+              <ExecutiveCard.Header overline={pd.geography} title={pd.location} />
               <dl className="space-y-2 text-sm">
-                {project.province && <LocRow label="Province" value={project.province} />}
-                {project.district && <LocRow label="District" value={project.district} />}
-                <LocRow label="Site" value={project.location} />
+                {project.province && <LocRow label={pd.province} value={project.province} />}
+                {project.district && <LocRow label={pd.district} value={project.district} />}
+                <LocRow label={pd.site} value={project.location} />
               </dl>
             </ExecutiveCard>
 
@@ -553,18 +611,21 @@ export default function ProjectDetailPage({
               <div className="flex items-start gap-3 mb-4">
                 <KeyRound className="h-5 w-5 shrink-0" style={{ color: "var(--color-gold)" }} />
                 <div>
-                  <p className="text-sm font-medium text-white">Full Blueprint Access — Authorized Stakeholders Only</p>
+                  <p className="text-sm font-medium text-white">{pd.blueprintTitle}</p>
                   <p className="text-xs mt-1" style={{ color: "var(--color-text-secondary)" }}>
-                    Detailed financial models, governance workflow, and the project Deal Room are reserved for
-                    registered investors and government stakeholders.
+                    {pd.blueprintDescription}
                   </p>
                 </div>
               </div>
               <WorkspaceAccessCta />
             </div>
 
+            <DealRoomAccessButton projectId={project.id} />
+
+            <ProjectEngageCta project={project} />
+
             <ExecutiveCard>
-              <ExecutiveCard.Header overline="Reference" title="Glossary of Terms" />
+              <ExecutiveCard.Header overline={pd.reference} title={pd.glossaryOfTerms} />
               <dl className="space-y-3">
                 {glossaryTerms.map((g) => (
                   <div key={g.term}>
@@ -582,12 +643,8 @@ export default function ProjectDetailPage({
             {!isQualified && (
               <RegistrationPrompt
                 dark
-                message={
-                  isRegistered
-                    ? "Your registration is on file — full financial figures (IRR, NPV, ROI) and project costs unlock once our team verifies your investor status."
-                    : "Register, then request investor verification to view full financial performance figures (IRR, NPV, ROI) and project costs."
-                }
-                ctaLabel={isRegistered ? "Request qualified access" : "Register to unlock"}
+                message={isRegistered ? pd.registrationOnFile : pd.registerForFigures}
+                ctaLabel={isRegistered ? pd.requestQualifiedAccess : pd.registerToUnlock}
                 ctaHref={isRegistered ? "/strategic-partnerships" : "/register"}
               />
             )}
@@ -595,24 +652,7 @@ export default function ProjectDetailPage({
         </div>
       </DeepDiveShell>
 
-      <section className="py-16" style={{ backgroundColor: "var(--color-zim-green)" }}>
-        <div className="page-container flex flex-col md:flex-row items-center justify-between gap-6 text-white">
-          <div>
-            <h2 className="text-2xl font-light text-white mb-2" style={{ letterSpacing: "var(--type-heading-tracking)" }}>
-              Ready to invest in Zimbabwe?
-            </h2>
-            <p className="text-white/85 text-sm">Register for full project detail — verified investors unlock capital estimates and financial indicators.</p>
-          </div>
-          <div className="flex gap-3">
-            <Link href="/register" className="btn-sovereign bg-[var(--color-gold)] text-black hover:opacity-90">
-              Register
-            </Link>
-            <Link href="/investor-journey" className="btn-sovereign-ghost border-white/30">
-              Investor Journey
-            </Link>
-          </div>
-        </div>
-      </section>
+      <HomeCtaSection />
     </>
   );
 }
@@ -646,11 +686,13 @@ function FinRow({
   label,
   value,
   locked,
+  notDisclosed,
   className,
 }: {
   label: string;
   value?: string;
   locked?: boolean;
+  notDisclosed: string;
   className?: string;
 }) {
   return (
@@ -670,15 +712,18 @@ function FinRow({
           />
         </dd>
       ) : (
-        <dd className="text-sm font-medium text-white">{value || "Not disclosed"}</dd>
+        <dd className="text-sm font-medium text-white">{value || notDisclosed}</dd>
       )}
     </div>
   );
 }
 
-function formatMonthYear(iso?: string): string | null {
+function formatMonthYear(iso: string | undefined, locale: string): string | null {
   if (!iso) return null;
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US", {
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function AmountOrLock({
@@ -713,22 +758,30 @@ function AmountOrLock({
 /** Branched unlock CTA for financial figures: a public visitor is told to register first, while an
  *  already-registered-but-not-yet-approved investor is told their next step is verification, not
  *  another registration form. */
-function UnlockNotice({ leadText, isRegistered }: { leadText: string; isRegistered: boolean }) {
+function UnlockNotice({
+  leadText,
+  isRegistered,
+  pd,
+}: {
+  leadText: string;
+  isRegistered: boolean;
+  pd: ReturnType<typeof useTranslations>["projectDetail"];
+}) {
   if (isRegistered) {
     return (
       <p className="mt-4 text-xs" style={{ color: "var(--color-text-muted)" }}>
-        {leadText} unlock once our team verifies your investor status — your registration is on file.{" "}
+        {leadText} {pd.unlockRegisteredSuffix}{" "}
         <Link href="/strategic-partnerships" className="hover:underline" style={{ color: "var(--color-gold)" }}>
-          Request qualified access
+          {pd.requestQualifiedAccess}
         </Link>
       </p>
     );
   }
   return (
     <p className="mt-4 text-xs" style={{ color: "var(--color-text-muted)" }}>
-      {leadText} visible to approved investors.{" "}
+      {leadText} {pd.unlockPublicSuffix}{" "}
       <Link href="/register" className="hover:underline" style={{ color: "var(--color-gold)" }}>
-        Register, then request investor verification
+        {pd.registerThenVerify}
       </Link>
     </p>
   );

@@ -5,7 +5,7 @@ import { SITE_URL } from "@/lib/config/site";
 const PAGE_URL = `${SITE_URL}/investor-journey`;
 
 export const metadata: Metadata = {
-  title: "Investor Journey | Zimbabwe Investment Platform",
+  title: "Investor Journey",
   description:
     "From browsing the ZIDA project registry to a qualified investment conversation — the governed, four-step pathway and access tiers for institutional investors.",
   alternates: { canonical: PAGE_URL },

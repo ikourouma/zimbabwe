@@ -82,10 +82,70 @@ be scanned, not read cover to cover.
   Canonical site URL lives in [lib/config/site.ts](lib/config/site.ts) (`SITE_URL`, currently a
   placeholder pending a real production domain).
 
+## Production backend (in progress)
+
+- **Drizzle schema + Neon Managed Better Auth scaffolding** — `lib/db/schema/` (20 tables,
+  mirroring `lib/types/index.ts` and `lib/data/taxonomies.ts` field-for-field) and
+  `lib/auth/{server,client,session}.ts` are the first real backend code in the repo, added
+  alongside — not instead of — the existing Context/`localStorage` demo, which is untouched and
+  still what every page runs on today. See [PRODUCTION_MIGRATION_PLAN.md](PRODUCTION_MIGRATION_PLAN.md)
+  for the full phased plan and live status.
+- **Taxonomy tables keep their existing string IDs** (`"sec-health"`, `"pillar-01"`, etc.) as
+  primary keys rather than uuid, specifically so the eventual seed migration from
+  `lib/data/taxonomies.ts`'s arrays is a straight port, not a redesign.
+- **Auth/DB modules must never throw at import time** — `next build` executes every route module
+  (including unused ones) during "Collecting page data," so a missing-env-var check that throws
+  at module scope breaks the build outright, which would break the live Hostinger build (it has
+  none of these vars). Both `lib/auth/server.ts` and `lib/db/client.ts` fall back to an
+  obviously-fake placeholder value at import time instead; real failures surface only when a
+  request actually tries to use them. Apply this same pattern to any future module gated on an
+  env var that isn't guaranteed to be set in every build environment.
+- **Role authorization is layered, not centralized in middleware** — `middleware.ts` only proves
+  "is there a valid session" (Better Auth's session has no custom fields). Which roles may enter
+  a given area is checked separately, server-side, via `lib/auth/session.ts`'s `requireRole()` in
+  each protected Server Component/Route Handler, once it joins the session to the `profiles`
+  table for the real `role` column.
+- **Production tech stack documented** — Neon Postgres, Neon Managed Better Auth, Drizzle ORM,
+  Cloudflare R2, and Resend are listed with descriptions in [README.md](README.md) and
+  [PRODUCTION_MIGRATION_PLAN.md](PRODUCTION_MIGRATION_PLAN.md#production-tech-stack). All service
+  credentials are configured in local `.env.local` only (never in `.env.example` or this repo).
+- **Resend domain DNS pending (deferred to Phase 5 gate)** — `zidaproject.com` is added in Resend
+  but DNS is not yet configured on Hostinger. Mandatory email verification is **deferred** until
+  Phase 5 / board-readiness; pilot auth uses seeded accounts with verification disabled. See
+  [Email verification — deferred decision](PRODUCTION_MIGRATION_PLAN.md#email-verification--deferred-decision-2026-07-22)
+  and the [Resend DNS runbook](PRODUCTION_MIGRATION_PLAN.md#resend-dns-runbook--zidaprojectcom-execute-when-ready).
+  Until verified, pilot email tests use Resend's sandbox/onboarding rules.
+- **Navigation centralized** — shared link arrays in `lib/config/navigation.ts`; Contact is in
+  primary header nav (desktop + mobile), not only the utility bar.
+- **French (FR) i18n** — `LocaleProvider` + `lib/i18n/messages/{en,fr}.ts`; utility-bar language
+  switcher is live (no longer "Coming Soon"). Shell + homepage support FR; remaining pages tracked
+  in [PRODUCTION_MIGRATION_PLAN.md — French i18n](PRODUCTION_MIGRATION_PLAN.md#french-i18n-enfr).
+- **Milestone 2 — Context cutover (2026-07-22)** — All five Context providers backed by Neon API
+  Route Handlers; `AuthProvider`/`useAuth()` replaces persona switcher. Production routes:
+  `/admin`, `/super-admin`, `/deal-room` (middleware-protected). Re-run `npm run db:seed` to load
+  investor engagements after pulling this milestone.
+- **Auth & registration UX (2026-07-22)** — **`/register`** = investor **application** (writes to
+  `strategic_inquiries`; no login). **`/auth/sign-in`** = returning users + pilot testers (Better Auth
+  session). **`/auth/sign-up`** redirects to `/register` (no public self-service account creation).
+  Both `/register` and `/auth/sign-in` share [`ExecutiveAccessShell`](components/layout/executive-access-shell.tsx)
+  (split institutional layout). Header nav uses responsive short labels so **Contact** stays visible
+  at 1280px.
+- **Pilot test accounts** — five role accounts seeded by `npm run db:seed` via
+  [`lib/db/seed/accounts.ts`](lib/db/seed/accounts.ts). Credentials written locally to git-ignored
+  **`docs/PILOT_TEST_ACCOUNTS.md`** (emails: `registered+pilot@`, `qualified+pilot@`,
+  `government+pilot@`, `admin+pilot@`, `superadmin+pilot@zidaproject.com`). Sign in at `/auth/sign-in`.
+  Optional: set `PILOT_ACCOUNT_PASSWORD` in `.env.local` for a fixed password across re-seeds.
+- **Milestone 1 — Neon live + auth (2026-07-22)** — Drizzle migration applied to Neon; `npm run db:seed`
+  loads taxonomies, 32 projects (DB uuid IDs, **`slug` is the stable public key** for Milestone 2 cutover),
+  site_settings, and document placeholders. Auth: `/auth/sign-in`, `/auth/sign-up`, `POST /api/auth/ensure-profile`,
+  header Sign in link. Pilot credentials: git-ignored `docs/PILOT_TEST_ACCOUNTS.md`.
+
 ## Page-by-page log
 
 - **Top nav & footer** — rebuilt to solid dark colors, Stripe-aligned type, pill buttons, mirrored
-  logo lockups, responsive height increase on the nav.
+  logo lockups, responsive height increase on the nav. Nav links centralized in
+  `lib/config/navigation.ts` (2026-07-22). **Contact** is in primary header nav (desktop + mobile),
+  not only the utility bar; utility bar retains FAQs only.
 - **Landing page** (`app/page.tsx`) — hero carousel top-anchored (fixed a large gap that came from
   vertical-centering + duplicate top padding), stat values on the "country" slide now computed live
   via `useSiteStats()` instead of baked in at content-file load time. New sections added:
@@ -174,6 +234,8 @@ be scanned, not read cover to cover.
 
 - Deferred work and the eventual platform-template documentation initiative:
   [BACKLOG.md](BACKLOG.md).
+- Active backend/production build-out (Neon + Drizzle + Better Auth + Cloudflare R2), tracked with a
+  live status checklist: [PRODUCTION_MIGRATION_PLAN.md](PRODUCTION_MIGRATION_PLAN.md).
 - Nothing in this repo yet corresponds to a formal, versioned design-system spec document (compare
   the Lesotho reference platform's `design-system-spec-v2.md`) — that is intentionally deferred until
   the Zimbabwe page-by-page rebuild is further along; see `BACKLOG.md`.

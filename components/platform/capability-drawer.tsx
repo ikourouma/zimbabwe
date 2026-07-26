@@ -16,7 +16,7 @@ import {
   FileCheck,
   ShieldCheck,
 } from "lucide-react";
-import { useDemoPersona } from "@/context/demo-persona-context";
+import { useAuth } from "@/context/auth-context";
 import { useProjectStore } from "@/context/project-store-context";
 import { useSiteStats } from "@/lib/hooks/use-site-stats";
 import { getInReviewCount } from "@/lib/governance/project-workflow";
@@ -72,9 +72,7 @@ function CapabilityDrawerShell({ trigger, overline, title, description, children
   );
 }
 
-/** Shows a real link into the internal console only if the visitor has switched the demo
- *  persona to a role that would actually have access — otherwise a hint pointing at the
- *  persona switcher, so the drawer never routes a public visitor into a staff tool. */
+/** Shows a real link into the internal console only when the signed-in user has access. */
 function PersonaGatedConsoleLink({
   requiredPersona,
   consoleHref,
@@ -84,7 +82,7 @@ function PersonaGatedConsoleLink({
   consoleHref: string;
   consoleLabel: string;
 }) {
-  const { isAdmin, isSuperAdmin } = useDemoPersona();
+  const { isAdmin, isSuperAdmin } = useAuth();
   const unlocked = requiredPersona === "admin" ? isAdmin : isSuperAdmin;
 
   if (unlocked) {
@@ -101,8 +99,10 @@ function PersonaGatedConsoleLink({
 
   return (
     <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-      Switch to the {requiredPersona === "admin" ? "Admin or Super Admin" : "Super Admin"} persona
-      (top right) to preview this console.
+      <Link href="/auth/sign-in" className="underline" style={{ color: "var(--color-gold)" }}>
+        Sign in
+      </Link>{" "}
+      with an {requiredPersona === "admin" ? "admin" : "super admin"} pilot account to open this console.
     </p>
   );
 }
@@ -189,7 +189,7 @@ export function GovernanceWorkflowDrawer({ trigger }: { trigger: ReactNode }) {
       footer={
         <PersonaGatedConsoleLink
           requiredPersona="admin"
-          consoleHref="/admin-demo"
+          consoleHref="/admin"
           consoleLabel="Open Review Console"
         />
       }
@@ -228,8 +228,8 @@ export function AdminTaxonomiesDrawer({ trigger }: { trigger: ReactNode }) {
       footer={
         <PersonaGatedConsoleLink
           requiredPersona="super_admin"
-          consoleHref="/super-admin-demo"
-          consoleLabel="Open Super Admin Console"
+          consoleHref="/super-admin"
+          consoleLabel="Open Platform Admin Console"
         />
       }
     >
@@ -270,12 +270,12 @@ export function DealRoomDrawer({ trigger }: { trigger: ReactNode }) {
       footer={
         <PersonaGatedConsoleLink
           requiredPersona="admin"
-          consoleHref="/deal-room-demo"
+          consoleHref="/deal-room"
           consoleLabel="Open Internal Preview"
         />
       }
     >
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <StatTile value={stats.totalProjects} label="Projects" />
         <StatTile value={stats.publishedProjects} label="Published" />
         <StatTile value={inReview} label="In Review" />

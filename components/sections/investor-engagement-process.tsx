@@ -2,19 +2,21 @@
 
 import Link from "next/link";
 import { FadeUp, StaggerContainer, StaggerItem } from "@/components/ui/cinematic-reveal";
-import { engagementSteps } from "@/content/zimbabwe-site";
+import { useTranslations } from "@/context/locale-context";
 
 export function InvestorEngagementProcess() {
+  const t = useTranslations();
+  const engagementSteps = t.engagementSteps;
   return (
     <section className="py-24" style={{ backgroundColor: "var(--color-sovereign-midnight)" }}>
       <div className="page-container">
         <FadeUp className="mb-16 max-w-2xl">
-          <p className="section-overline mb-4">Engagement Pathway</p>
+          <p className="section-overline mb-4">{t.home.engagement.overline}</p>
           <h2 className="text-3xl font-light text-white" style={{ letterSpacing: "var(--type-heading-tracking)" }}>
-            From discovery to strategic partnership
+            {t.home.engagement.title}
           </h2>
           <p className="mt-3 text-base" style={{ color: "var(--color-text-secondary)" }}>
-            A governed, four-step pathway for institutional investors engaging with Zimbabwe&apos;s ZIDA project pipeline.
+            {t.home.engagement.subtitle}
           </p>
         </FadeUp>
 

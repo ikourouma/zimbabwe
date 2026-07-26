@@ -67,7 +67,7 @@ export default function SectorsPage() {
                     />
                     <ExecutiveCard.Body>
                       <p className="mb-4 line-clamp-2">{sector.description}</p>
-                      <div className="grid grid-cols-2 gap-2 text-xs mb-3" style={{ color: "var(--color-text-muted)" }}>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-3" style={{ color: "var(--color-text-muted)" }}>
                         <span>Subsectors: {sectorStats.subsectorCount}</span>
                         <span>Provinces: {sectorStats.provinceCount}</span>
                       </div>

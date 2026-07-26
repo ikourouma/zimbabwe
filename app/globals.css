@@ -41,7 +41,7 @@
   --color-zim-muted: #6b7280;
   --color-zim-border: #e5e7eb;
   --color-zim-alert: #d50000;
-  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 :root {
@@ -206,7 +206,7 @@
   }
 
   .btn-sovereign {
-    @apply inline-flex items-center gap-2 px-6 py-3 font-semibold text-sm transition-all;
+    @apply inline-flex items-center gap-2 px-6 py-3 font-semibold text-sm whitespace-nowrap transition-all;
     background-color: var(--color-zim-green);
     color: #ffffff;
     border-radius: var(--radius-pill);
@@ -219,7 +219,7 @@
   }
 
   .btn-sovereign-ghost {
-    @apply inline-flex items-center gap-2 px-6 py-3 font-semibold text-sm transition-all;
+    @apply inline-flex items-center gap-2 px-6 py-3 font-semibold text-sm whitespace-nowrap transition-all;
     background-color: transparent;
     color: var(--color-text-primary);
     border: 1px solid var(--color-sovereign-border);
@@ -229,6 +229,17 @@
   .btn-sovereign-ghost:hover {
     border-color: var(--color-zim-accent);
     background-color: rgba(0, 100, 0, 0.15);
+  }
+
+  .site-logo-overline {
+    @apply text-xs font-semibold tracking-widest uppercase leading-none mb-0.5 text-[0.7rem] whitespace-nowrap;
+    color: var(--color-gold);
+    letter-spacing: 0.12em;
+  }
+
+  .site-logo-title {
+    @apply font-semibold text-sm lg:text-base leading-none text-white whitespace-nowrap;
+    letter-spacing: -0.01em;
   }
 
   .nav-item {
@@ -249,7 +260,7 @@
      whitespace-nowrap + shrink-0 guarantee each link stays on one line and never gets
      squeezed or wrapped by flexbox. */
   .nav-link {
-    @apply px-2.5 py-2 rounded-full text-[13px] font-medium whitespace-nowrap shrink-0 transition-colors;
+    @apply px-2 py-1.5 lg:px-2 lg:py-2 xl:px-2.5 rounded-full text-xs lg:text-[12px] xl:text-[13px] font-medium whitespace-nowrap shrink-0 transition-colors;
     color: var(--color-text-secondary);
   }
 
@@ -258,12 +269,26 @@
     background-color: rgba(255, 255, 255, 0.08);
   }
 
+  /* FR homepage: hero overlines run longer — tighten tracking at large breakpoints */
+  html[lang="fr"] .hero-overline {
+    @apply lg:tracking-[0.14em] xl:tracking-[0.12em];
+  }
+
   .footer-link {
     color: var(--color-text-secondary);
     transition: color var(--duration-sovereign) var(--ease-sovereign);
   }
 
   .footer-link:hover {
+    color: var(--color-text-primary);
+  }
+
+  .utility-link {
+    color: var(--color-text-muted);
+    transition: color var(--duration-sovereign) var(--ease-sovereign);
+  }
+
+  .utility-link:hover {
     color: var(--color-text-primary);
   }
 
@@ -288,6 +313,197 @@
     color: var(--color-zim-accent-pale);
     border: 1px solid rgba(0, 100, 0, 0.3);
   }
+
+  .auth-transition-overlay {
+    background: rgba(5, 8, 5, 0.92);
+    backdrop-filter: blur(6px);
+  }
+
+  .auth-transition-orbit {
+    position: relative;
+    width: 120px;
+    height: 120px;
+  }
+
+  .auth-transition-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    border-top-color: var(--color-gold);
+    border-right-color: rgba(255, 211, 0, 0.35);
+    animation: auth-orbit-spin 1.4s linear infinite;
+  }
+
+  .auth-transition-icon-wrap {
+    position: absolute;
+    inset: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .auth-transition-icon {
+    animation: auth-icon-glow 1.6s ease-in-out infinite;
+  }
+
+  @keyframes auth-orbit-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes auth-icon-glow {
+    0%,
+    100% {
+      filter: drop-shadow(0 0 6px rgba(255, 211, 0, 0.35));
+    }
+    50% {
+      filter: drop-shadow(0 0 18px rgba(255, 211, 0, 0.75));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .auth-transition-ring {
+      animation: none;
+      border-color: rgba(255, 211, 0, 0.45);
+    }
+
+    .auth-transition-icon {
+      animation: none;
+      filter: drop-shadow(0 0 10px rgba(255, 211, 0, 0.5));
+    }
+  }
+
+  /* Dashboard shell — Admin / Super Admin / Deal Room. Dark "sovereign executive" console
+     surface, distinct from the public marketing site's light/dark chrome (see
+     components/layout/layout-chrome.tsx and components/dashboard/dashboard-shell.tsx). */
+  .dashboard-shell {
+    background-color: #060d0a;
+    color: var(--color-text-primary);
+  }
+
+  .dashboard-sidebar {
+    background-color: #050b08;
+    border-right: 1px solid var(--color-sovereign-border);
+  }
+
+  .dashboard-sidebar-link {
+    @apply flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors;
+    color: var(--color-text-secondary);
+  }
+
+  .dashboard-sidebar-link:hover {
+    color: var(--color-text-primary);
+    background-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .dashboard-sidebar-link-active {
+    color: var(--color-text-primary);
+    background-color: rgba(0, 100, 0, 0.22);
+    border: 1px solid rgba(0, 100, 0, 0.35);
+  }
+
+  .dashboard-topbar {
+    background-color: rgba(6, 13, 10, 0.92);
+    border-bottom: 1px solid var(--color-sovereign-border);
+    backdrop-filter: blur(8px);
+  }
+
+  .dashboard-panel {
+    background-color: var(--color-sovereign-panel);
+    border: 1px solid var(--color-sovereign-border);
+    border-radius: var(--radius-panel);
+  }
+
+  .dashboard-table {
+    width: 100%;
+    font-size: 0.8125rem;
+  }
+
+  .dashboard-table th {
+    text-align: left;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 0.6875rem;
+    color: var(--color-text-muted);
+    padding: 0.65rem 0.85rem;
+    border-bottom: 1px solid var(--color-sovereign-border);
+    white-space: nowrap;
+  }
+
+  .dashboard-table td {
+    padding: 0.7rem 0.85rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--color-text-secondary);
+    vertical-align: middle;
+  }
+
+  .dashboard-table tbody tr {
+    transition: background-color 150ms ease;
+  }
+
+  .dashboard-table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+  }
+
+  .dashboard-input {
+    @apply flex h-9 w-full rounded-md px-3 py-2 text-sm outline-none transition-colors;
+    background-color: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--color-sovereign-border);
+    color: var(--color-text-primary);
+  }
+
+  .dashboard-input::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  /* Native <select> dropdown popups are rendered by the OS/browser, not by our page CSS — they
+     never inherit a parent's translucent background, so a select styled for our dark theme (e.g.
+     .dashboard-input's near-transparent bg + white text) can open with white text on the
+     browser's default white option-list background. Force every <option>, everywhere, to an
+     explicit opaque dark background + light text so this can never happen again. */
+  select option {
+    background-color: #0d1a0d;
+    color: var(--color-text-primary);
+  }
+
+  select option:disabled {
+    color: var(--color-text-muted);
+  }
+
+  .dashboard-input:focus {
+    border-color: var(--color-zim-accent);
+    background-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .dashboard-skeleton {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.04) 25%,
+      rgba(255, 255, 255, 0.08) 37%,
+      rgba(255, 255, 255, 0.04) 63%
+    );
+    background-size: 400% 100%;
+    animation: dashboard-skeleton-shimmer 1.6s ease-in-out infinite;
+    border-radius: var(--radius-card);
+  }
+
+  @keyframes dashboard-skeleton-shimmer {
+    0% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0 50%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dashboard-skeleton {
+      animation: none;
+    }
+  }
 }
 
 @layer utilities {
@@ -308,6 +524,18 @@
     animation: fadeInUp 0.5s var(--ease-sovereign) forwards;
   }
 
+  /* Touch-optimized horizontal tab scrolling (e.g. the Institutional Compliance Dossier drawer's
+     4-tab TabsList) — hides the scrollbar track while keeping the element natively scrollable by
+     touch/trackpad/wheel, across the three engines that need separate rules. */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   @keyframes fadeInUp {
     from {
       opacity: 0;
@@ -317,5 +545,32 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+}
+
+/* Printable reports (Government Executive Report / personal Activity Report — window.print()-based,
+   no PDF dependency). Hides the dashboard chrome and lets the light-themed .report-print card fill
+   the printed page cleanly, independent of the dark dashboard-shell it's normally viewed inside. */
+@media print {
+  .dashboard-sidebar,
+  .dashboard-topbar {
+    display: none !important;
+  }
+
+  .dashboard-shell {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  .dashboard-shell main {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  .report-print {
+    box-shadow: none !important;
+    padding: 0 !important;
   }
 }

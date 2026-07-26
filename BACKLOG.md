@@ -19,6 +19,42 @@ to do:
 - Revisit once the real production domain replaces the `SITE_URL` placeholder in
   `lib/config/site.ts`.
 
+## Personal Document Vault (aggregated "my records" page)
+
+`components/deal-room/mou-panel.tsx`'s "Download Snapshot" button (added alongside the NDA
+server-side gate and Sector/Ministry MOU template seeding work) is the deliberately-scoped
+interim solution: a finalized/executed MOU's frozen `contentSnapshot` is downloadable as JSON
+directly from the MOU tab, no new route or nav entry required.
+
+The full version — a dedicated Vault page/section aggregating **all** of a user's MOU snapshots
+across every engagement, their downloaded project documents (`document.downloaded` audit events),
+and their NDA acceptance certificate (`profiles.ndaAcceptedAt`/`ndaVersion`/`ndaAcceptedIp`) in one
+browsable destination — is scaffolded conceptually but not built. It would be a pure aggregation
+*view* over existing tables (no new storage, no consolidation of R2 prefixes), so the remaining
+work is UI/nav (where does it live — `/account/vault`? a Deal Room tab?) plus a cross-table query.
+Revisit once enough per-user content has accumulated (more than the 1 MOU + a handful of document
+downloads typical today) to justify a standalone page over the in-context snapshot button.
+
+## Institutional Compliance Dossier — deferred infrastructure
+
+Scoped out of the Sovereign Dossier Drawer Round 2 upgrade (`components/dashboard/user-detail-drawer.tsx`)
+as explicitly deferred rather than built now:
+
+- **Full VDR watermarking.** The drawer's "VDR Previews" KPI and the Preview links added to the two
+  investor-facing document lists (`components/dashboard/project-detail-drawer.tsx`,
+  `app/projects/[slug]/page.tsx`) are a real but lightweight signal — an inline-disposition signed R2
+  URL plus a distinct `document.previewed` audit event (`app/api/projects/[id]/documents/[docId]/download/route.ts`).
+  There is no dynamic per-viewer watermark overlay on the rendered document itself; a leaked preview
+  URL is only as traceable as the audit log entry that generated it.
+- **Admin-visible per-account device/IP session telemetry.** The Security & Governance tab's "Active
+  Device & IP Telemetry" scaffold (`DeferredAction`, same convention as the MFA/password-reset/session
+  scaffolds above it) notes that Neon Auth's admin session API (`listUserSessions`) exists but isn't
+  wired into the drawer yet — staff can't currently see another user's active sessions/IPs from the
+  console.
+- **Accreditation document upload + review queue.** The Compliance & NDA tab's "Commitment Letter" /
+  "Investment Guarantee Letter" rows stay disabled "Coming soon" scaffolds — no upload UI, storage
+  path, or ZIDA review workflow exists yet for investor-submitted accreditation documents.
+
 ## Full province data migration
 
 `lib/data/taxonomies.ts` now has a canonical `provinces: string[]` registry (super-admin managed,
@@ -87,11 +123,14 @@ already shaped to make that transition straightforward (see migration map below)
 
 ### Demo to SaaS migration map
 
-So the eventual backend/auth build-out (starting after the July 10 ambassador demo) isn't
-reverse-engineering the client-side demo, here is the current Context/storage → intended backend
-mapping. Every context below is consumed by components only through its hook (`useProjectStore()`,
-etc.), never via direct storage access, so migrating means reimplementing what's *inside* the
-provider — consuming components should not need to change.
+**This map is now being executed** — see [PRODUCTION_MIGRATION_PLAN.md](PRODUCTION_MIGRATION_PLAN.md)
+for the live, phased build-out (Neon + Drizzle + Better Auth + Cloudflare R2) with a status checklist
+kept up to date as each phase lands. The mapping below is preserved as the original rationale.
+
+So the eventual backend/auth build-out isn't reverse-engineering the client-side demo, here is the
+current Context/storage → intended backend mapping. Every context below is consumed by components
+only through its hook (`useProjectStore()`, etc.), never via direct storage access, so migrating
+means reimplementing what's *inside* the provider — consuming components should not need to change.
 
 - `context/project-store-context.tsx` (`sessionStorage: zim-project-store`) → `projects` table +
   CRUD/status-transition endpoints. `lib/governance/project-workflow.ts`'s `canTransition` /

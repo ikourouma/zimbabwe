@@ -6,28 +6,31 @@ import { ProjectCard } from "@/components/projects/project-card";
 import type { InvestmentProject } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { useTranslations } from "@/context/locale-context";
 
 interface LandingFeaturedOpportunitiesProps {
   projects: InvestmentProject[];
 }
 
 export function LandingFeaturedOpportunities({ projects }: LandingFeaturedOpportunitiesProps) {
+  const t = useTranslations();
+
   return (
     <section className="py-20" style={{ backgroundColor: "var(--color-sovereign-midnight)" }}>
       <div className="page-container">
         <div className="mb-10 flex items-end justify-between gap-4">
           <div>
-            <p className="section-overline mb-2">Featured Opportunities</p>
+            <p className="section-overline mb-2">{t.home.featured.overline}</p>
             <h2 className="text-3xl font-light text-white" style={{ letterSpacing: "var(--type-heading-tracking)" }}>
-              Highlighted ZIDA Projects
+              {t.home.featured.title}
             </h2>
             <p className="mt-2 text-sm" style={{ color: "var(--color-text-secondary)" }}>
-              From the ZIDA 2025 catalogue — pending official validation
+              {t.home.featured.subtitle}
             </p>
           </div>
           <Button asChild variant="outline" className="border-white/20 text-white hover:bg-white/10 hidden sm:inline-flex">
             <Link href="/projects">
-              Full registry <ArrowRight className="h-4 w-4 ml-1" />
+              {t.home.featured.fullRegistry} <ArrowRight className="h-4 w-4 ml-1" />
             </Link>
           </Button>
         </div>

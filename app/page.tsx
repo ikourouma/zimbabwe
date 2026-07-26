@@ -1,4 +1,5 @@
-import Link from "next/link";
+import type { Metadata } from "next";
+import { HomeCtaSection } from "@/components/sections/home-cta-section";
 import { GatewayHeroCarousel } from "@/components/sections/gateway-hero-carousel";
 import { ClassificationStrip } from "@/components/sections/classification-strip";
 import { GatewayStrategicDirectory } from "@/components/sections/gateway-strategic-directory";
@@ -6,6 +7,21 @@ import { LandingFeaturedOpportunities } from "@/components/sections/landing-feat
 import { InvestorEngagementProcess } from "@/components/sections/investor-engagement-process";
 import { InvestorAccessTiers } from "@/components/sections/investor-access-tiers";
 import { featuredProjectSlugs, zimbabweProjects } from "@/lib/data/zimbabwe-projects";
+import { SITE_URL, SITE_NAME } from "@/lib/config/site";
+
+export const metadata: Metadata = {
+  title: { absolute: SITE_NAME },
+  description:
+    "Discover governed, searchable investment opportunities across Zimbabwe. Powered by Afronovation.",
+  alternates: { canonical: SITE_URL },
+  openGraph: {
+    title: SITE_NAME,
+    description:
+      "A sovereign-grade digital investment intelligence platform transforming ZIDA's static 2025 catalogue into a governed, investor-facing registry.",
+    url: SITE_URL,
+    type: "website",
+  },
+};
 
 export default function HomePage() {
   const featured = featuredProjectSlugs
@@ -21,24 +37,7 @@ export default function HomePage() {
       <LandingFeaturedOpportunities projects={featured as NonNullable<(typeof featured)[number]>[]} />
       <InvestorEngagementProcess />
       <InvestorAccessTiers />
-      <section className="py-16" style={{ backgroundColor: "var(--color-zim-green)" }}>
-        <div className="page-container flex flex-col md:flex-row items-center justify-between gap-6 text-white">
-          <div>
-            <h2 className="text-2xl font-light text-white mb-2" style={{ letterSpacing: "var(--type-heading-tracking)" }}>
-              Ready to invest in Zimbabwe?
-            </h2>
-            <p className="text-white/85 text-sm">Register for full project detail — verified investors unlock capital estimates and financial indicators.</p>
-          </div>
-          <div className="flex gap-3">
-            <Link href="/register" className="btn-sovereign bg-[var(--color-gold)] text-black hover:opacity-90">
-              Register
-            </Link>
-            <Link href="/investor-journey" className="btn-sovereign-ghost border-white/30">
-              Investor Journey
-            </Link>
-          </div>
-        </div>
-      </section>
+      <HomeCtaSection />
     </div>
   );
 }

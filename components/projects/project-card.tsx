@@ -1,11 +1,17 @@
+"use client";
+
 import type { InvestmentProject } from "@/lib/types";
 import Link from "next/link";
+import { useState } from "react";
 import { getSectorById, getSectorDisplayName, getSdgById, getPillarById, getMinistryById } from "@/lib/data/taxonomies";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CapitalBreakdown } from "@/components/projects/capital-breakdown";
-import { MapPin, Building2, Landmark } from "lucide-react";
+import { ValuationTeaserModal } from "@/components/projects/valuation-teaser-modal";
+import { SdgBadge } from "@/components/ui/sdg-badge";
+import { isAssessmentPending } from "@/lib/utils/capital";
+import { MapPin, Building2, Landmark, FileSearch } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ProjectCardProps {
@@ -18,6 +24,12 @@ export function ProjectCard({ project, dark = false }: ProjectCardProps) {
   const pillars = project.strategicPillarIds.slice(0, 2).map((id) => getPillarById(id)).filter(Boolean);
   const sdgs = project.sdgIds.slice(0, 3).map((id) => getSdgById(id)).filter(Boolean);
   const ministry = getMinistryById(project.primaryBeneficiaryMinistryId);
+  const [teaserOpen, setTeaserOpen] = useState(false);
+
+  // Concept-stage: a policy initiative (TA required) or an opportunity whose capital buildout has no
+  // parseable headline figure yet. These reveal no financials and instead offer the valuation-teaser
+  // lead magnet, capturing high-intent investors before the deal is fully structured.
+  const conceptStage = project.pipelineType === "policy_initiative" || isAssessmentPending(project.capitalRequired);
 
   return (
     <Card
@@ -43,6 +55,15 @@ export function ProjectCard({ project, dark = false }: ProjectCardProps) {
               <Badge variant="gold" className="w-fit whitespace-nowrap">Illustrative · TA Required</Badge>
             )
           )}
+          {conceptStage && project.pipelineType !== "policy_initiative" && (
+            dark ? (
+              <span className="status-badge status-badge-pending w-fit whitespace-nowrap">
+                Capital Assessment Pending
+              </span>
+            ) : (
+              <Badge variant="gold" className="w-fit whitespace-nowrap">Capital Assessment Pending</Badge>
+            )
+          )}
         </div>
         <CardTitle className={cn("text-lg leading-snug mt-2", dark ? "text-white" : "")}>
           <Link href={`/projects/${project.slug}`} className={dark ? "hover:text-[var(--color-gold)]" : "hover:text-zim-green-700"}>
@@ -65,11 +86,7 @@ export function ProjectCard({ project, dark = false }: ProjectCardProps) {
           ))}
         </div>
         <div className="flex flex-wrap gap-1">
-          {sdgs.map((s) => s && (
-            <span key={s.id} className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium text-white" style={{ backgroundColor: s.colorToken }}>
-              SDG {s.number}
-            </span>
-          ))}
+          {sdgs.map((s) => s && <SdgBadge key={s.id} sdg={s} size="sm" />)}
         </div>
         <div className={cn("space-y-1 text-xs", dark ? "text-[var(--color-text-muted)]" : "text-zim-muted")}>
           <div className="flex items-center gap-1"><MapPin className="h-3 w-3" />{project.location}</div>
@@ -79,11 +96,25 @@ export function ProjectCard({ project, dark = false }: ProjectCardProps) {
           )}
         </div>
       </CardContent>
-      <CardFooter className="pt-0">
+      <CardFooter className="flex flex-col gap-2 pt-0">
+        {conceptStage && (
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => setTeaserOpen(true)}
+            className="w-full gap-1.5"
+          >
+            <FileSearch className="h-3.5 w-3.5" />
+            Request Valuation Teaser
+          </Button>
+        )}
         <Button asChild variant="outline" size="sm" className={cn("w-full", dark && "border-white/20 text-white hover:bg-white/10")}>
           <Link href={`/projects/${project.slug}`}>View opportunity</Link>
         </Button>
       </CardFooter>
+      {conceptStage && (
+        <ValuationTeaserModal project={project} open={teaserOpen} onOpenChange={setTeaserOpen} />
+      )}
     </Card>
   );
 }

@@ -5,7 +5,7 @@ import { SITE_URL } from "@/lib/config/site";
 const PAGE_URL = `${SITE_URL}/contact`;
 
 export const metadata: Metadata = {
-  title: "Contact | Zimbabwe Investment Platform",
+  title: "Contact",
   description:
     "Get in touch with the Zimbabwe Investment Platform team — investment inquiries, partnerships, government and DFI liaison, media, and general questions.",
   alternates: { canonical: PAGE_URL },

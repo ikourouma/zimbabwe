@@ -22,35 +22,41 @@ const SheetOverlay = React.forwardRef<
 ));
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
 
-const SheetContent = React.forwardRef<
-  React.ElementRef<typeof SheetPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <SheetPortal>
-    <SheetOverlay />
-    <SheetPrimitive.Content
-      ref={ref}
-      className={cn(
-        "sheet-content fixed right-0 top-0 z-50 h-full w-full max-w-md overflow-y-auto p-6 shadow-2xl focus:outline-none",
-        className
-      )}
-      style={{
-        backgroundColor: "var(--color-sovereign-panel)",
-        borderLeft: "1px solid var(--color-sovereign-border)",
-      }}
-      {...props}
-    >
-      {children}
-      <SheetClose
-        className="absolute right-4 top-4 rounded-full p-1.5 transition-colors hover:bg-white/10 focus:outline-none"
-        style={{ color: "var(--color-text-muted)" }}
-        aria-label="Close"
+interface SheetContentProps extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content> {
+  side?: "left" | "right";
+}
+
+const SheetContent = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Content>, SheetContentProps>(
+  ({ className, children, side = "right", ...props }, ref) => (
+    <SheetPortal>
+      <SheetOverlay />
+      <SheetPrimitive.Content
+        ref={ref}
+        className={cn(
+          "sheet-content fixed top-0 z-50 h-full w-full max-w-md overflow-y-auto p-6 shadow-2xl focus:outline-none",
+          side === "right" ? "right-0" : "left-0",
+          className
+        )}
+        style={{
+          backgroundColor: "var(--color-sovereign-panel)",
+          ...(side === "right"
+            ? { borderLeft: "1px solid var(--color-sovereign-border)" }
+            : { borderRight: "1px solid var(--color-sovereign-border)" }),
+        }}
+        {...props}
       >
-        <X className="h-4 w-4" />
-      </SheetClose>
-    </SheetPrimitive.Content>
-  </SheetPortal>
-));
+        {children}
+        <SheetClose
+          className="absolute right-4 top-4 rounded-full p-1.5 transition-colors hover:bg-white/10 focus:outline-none"
+          style={{ color: "var(--color-text-muted)" }}
+          aria-label="Close"
+        >
+          <X className="h-4 w-4" />
+        </SheetClose>
+      </SheetPrimitive.Content>
+    </SheetPortal>
+  )
+);
 SheetContent.displayName = SheetPrimitive.Content.displayName;
 
 const SheetHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (

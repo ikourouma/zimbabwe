@@ -4,85 +4,79 @@ import { createContext, useContext, useEffect, useState, useCallback } from "rea
 import type { InvestorEngagement } from "@/lib/types";
 import { seedInvestorEngagements } from "@/lib/data/investor-engagements";
 
-/**
- * Deal Room engagement store — same sessionStorage-backed Context pattern as
- * `project-store-context.tsx`. Kept as its own provider (rather than folded into
- * `lead-capture-context.tsx`) so it maps 1:1 to a future `investor_engagements` /
- * `investor_proposals` table + approve/reject endpoint. See BACKLOG.md "Demo to
- * SaaS Migration Map".
- */
 interface DealRoomStoreContextValue {
   engagements: InvestorEngagement[];
+  isLoading: boolean;
   getEngagementsForProject: (projectId: string) => InvestorEngagement[];
-  updateEngagementStatus: (id: string, status: InvestorEngagement["status"]) => void;
-  addEngagement: (engagement: InvestorEngagement) => void;
+  updateEngagementStatus: (id: string, status: InvestorEngagement["status"]) => Promise<void>;
+  addEngagement: (engagement: InvestorEngagement) => Promise<InvestorEngagement>;
+  refresh: () => Promise<void>;
 }
 
 const DealRoomStoreContext = createContext<DealRoomStoreContextValue | null>(null);
 
-const STORAGE_KEY = "zim-deal-room-engagements";
-
 export function DealRoomStoreProvider({ children }: { children: React.ReactNode }) {
   const [engagements, setEngagements] = useState<InvestorEngagement[]>(seedInvestorEngagements);
-  const [hydrated, setHydrated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    try {
+      const res = await fetch("/api/engagements");
+      if (res.ok) setEngagements(await res.json());
+    } catch {
+      /* unauthenticated visitors keep seed fallback */
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    try {
-      const stored = sessionStorage.getItem(STORAGE_KEY);
-      if (stored) setEngagements(JSON.parse(stored));
-    } catch {
-      /* ignore */
-    }
-    setHydrated(true);
-  }, []);
-
-  const persist = useCallback((next: InvestorEngagement[]) => {
-    setEngagements(next);
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  }, []);
+    void refresh();
+  }, [refresh]);
 
   const getEngagementsForProject = useCallback(
-    (projectId: string) => engagements.filter((e) => e.projectId === projectId),
+    (projectId: string) =>
+      engagements.filter((e) => e.projectId === projectId),
     [engagements]
   );
 
   const updateEngagementStatus = useCallback(
-    (id: string, status: InvestorEngagement["status"]) => {
-      persist(
-        engagements.map((e) =>
-          e.id === id ? { ...e, status, updatedAt: new Date().toISOString() } : e
-        )
-      );
+    async (id: string, status: InvestorEngagement["status"]) => {
+      const res = await fetch(`/api/engagements/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error("Failed to update engagement");
+      const updated = (await res.json()) as InvestorEngagement;
+      setEngagements((prev) => prev.map((e) => (e.id === id ? updated : e)));
     },
-    [engagements, persist]
+    []
   );
 
-  const addEngagement = useCallback(
-    (engagement: InvestorEngagement) => {
-      persist([engagement, ...engagements]);
-    },
-    [engagements, persist]
-  );
-
-  if (!hydrated) {
-    return (
-      <DealRoomStoreContext.Provider
-        value={{
-          engagements: seedInvestorEngagements,
-          getEngagementsForProject: (projectId) =>
-            seedInvestorEngagements.filter((e) => e.projectId === projectId),
-          updateEngagementStatus: () => {},
-          addEngagement: () => {},
-        }}
-      >
-        {children}
-      </DealRoomStoreContext.Provider>
-    );
-  }
+  const addEngagement = useCallback(async (engagement: InvestorEngagement) => {
+    const { id: _id, createdAt: _c, updatedAt: _u, ...payload } = engagement;
+    const res = await fetch("/api/engagements", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error("Failed to add engagement");
+    const created = (await res.json()) as InvestorEngagement;
+    setEngagements((prev) => [created, ...prev]);
+    return created;
+  }, []);
 
   return (
     <DealRoomStoreContext.Provider
-      value={{ engagements, getEngagementsForProject, updateEngagementStatus, addEngagement }}
+      value={{
+        engagements,
+        isLoading,
+        getEngagementsForProject,
+        updateEngagementStatus,
+        addEngagement,
+        refresh,
+      }}
     >
       {children}
     </DealRoomStoreContext.Provider>

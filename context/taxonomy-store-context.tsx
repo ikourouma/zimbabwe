@@ -1,13 +1,14 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
-import type { ContactReason, Ministry, Sector, StrategicPillar } from "@/lib/types";
+import type { ContactReason, Ministry, SDG, Sector, StrategicPillar } from "@/lib/types";
 import {
   contactReasons as seedContactReasons,
   ministries as seedMinistries,
   sectors as seedSectors,
   strategicPillars as seedPillars,
   provinces as seedProvinces,
+  sdgs as seedSdgs,
 } from "@/lib/data/taxonomies";
 
 interface TaxonomyStoreContextValue {
@@ -16,21 +17,31 @@ interface TaxonomyStoreContextValue {
   ministries: Ministry[];
   contactReasons: ContactReason[];
   provinces: string[];
-  updateSector: (id: string, updates: Partial<Sector>) => void;
-  updatePillar: (id: string, updates: Partial<StrategicPillar>) => void;
-  updateMinistry: (id: string, updates: Partial<Ministry>) => void;
-  addMinistry: (ministry: Omit<Ministry, "id">) => void;
-  removeMinistry: (id: string) => void;
-  updateContactReason: (id: string, updates: Partial<ContactReason>) => void;
-  addProvince: (name: string) => void;
-  renameProvince: (index: number, name: string) => void;
-  removeProvince: (index: number) => void;
-  resetTaxonomies: () => void;
+  sdgs: SDG[];
+  isLoading: boolean;
+  updateSector: (id: string, updates: Partial<Sector>) => Promise<void>;
+  addSector: (input: { name: string; shortName?: string; description?: string }) => Promise<void>;
+  archiveSector: (id: string) => Promise<void>;
+  removeSector: (id: string) => Promise<void>;
+  updatePillar: (id: string, updates: Partial<StrategicPillar>) => Promise<void>;
+  addPillar: (input: { name: string; description?: string; strategicMandate?: string; policyAlignmentPrimary?: string }) => Promise<void>;
+  archivePillar: (id: string) => Promise<void>;
+  removePillar: (id: string) => Promise<void>;
+  updateMinistry: (id: string, updates: Partial<Ministry>) => Promise<void>;
+  addMinistry: (ministry: Omit<Ministry, "id">) => Promise<void>;
+  archiveMinistry: (id: string) => Promise<void>;
+  removeMinistry: (id: string) => Promise<void>;
+  updateContactReason: (id: string, updates: Partial<ContactReason>) => Promise<void>;
+  addContactReason: (input: { label: string; routingCategory?: string }) => Promise<void>;
+  archiveContactReason: (id: string) => Promise<void>;
+  removeContactReason: (id: string) => Promise<void>;
+  addProvince: (name: string) => Promise<void>;
+  renameProvince: (index: number, name: string) => Promise<void>;
+  removeProvince: (index: number) => Promise<void>;
+  resetTaxonomies: () => Promise<void>;
 }
 
 const TaxonomyStoreContext = createContext<TaxonomyStoreContextValue | null>(null);
-
-const STORAGE_KEY = "zim-taxonomy-store";
 
 type TaxonomyState = {
   sectors: Sector[];
@@ -38,6 +49,7 @@ type TaxonomyState = {
   ministries: Ministry[];
   contactReasons: ContactReason[];
   provinces: string[];
+  sdgs: SDG[];
 };
 
 const defaultState: TaxonomyState = {
@@ -46,111 +58,144 @@ const defaultState: TaxonomyState = {
   ministries: seedMinistries,
   contactReasons: seedContactReasons,
   provinces: seedProvinces,
+  sdgs: seedSdgs,
 };
+
+async function patchTaxonomies(body: Record<string, unknown>): Promise<TaxonomyState> {
+  const res = await fetch("/api/taxonomies", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    // Surface the server's specific message (e.g. the linked-project delete guard's 409 copy)
+    // instead of a generic failure, so the UI can toast exactly why an action was blocked.
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(data.error ?? "Failed to update taxonomies");
+  }
+  return res.json();
+}
 
 export function TaxonomyStoreProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<TaxonomyState>(defaultState);
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+  const refresh = useCallback(async () => {
     try {
-      const stored = sessionStorage.getItem(STORAGE_KEY);
-      if (stored) setState(JSON.parse(stored));
+      const res = await fetch("/api/taxonomies");
+      if (res.ok) setState(await res.json());
     } catch {
-      /* ignore */
+      /* keep seed fallback */
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
-  const persist = useCallback((next: TaxonomyState) => {
-    setState(next);
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const updateSector = useCallback(async (id: string, updates: Partial<Sector>) => {
+    setState(await patchTaxonomies({ action: "updateSector", id, updates }));
   }, []);
 
-  const updateSector = useCallback(
-    (id: string, updates: Partial<Sector>) => {
-      persist({ ...state, sectors: state.sectors.map((s) => (s.id === id ? { ...s, ...updates } : s)) });
-    },
-    [state, persist]
-  );
-
-  const updatePillar = useCallback(
-    (id: string, updates: Partial<StrategicPillar>) => {
-      persist({ ...state, pillars: state.pillars.map((p) => (p.id === id ? { ...p, ...updates } : p)) });
-    },
-    [state, persist]
-  );
-
-  const updateMinistry = useCallback(
-    (id: string, updates: Partial<Ministry>) => {
-      persist({ ...state, ministries: state.ministries.map((m) => (m.id === id ? { ...m, ...updates } : m)) });
-    },
-    [state, persist]
-  );
-
-  const addMinistry = useCallback(
-    (ministry: Omit<Ministry, "id">) => {
-      const id = `min-${Date.now()}`;
-      persist({ ...state, ministries: [...state.ministries, { ...ministry, id }] });
-    },
-    [state, persist]
-  );
-
-  const removeMinistry = useCallback(
-    (id: string) => {
-      persist({ ...state, ministries: state.ministries.filter((m) => m.id !== id) });
-    },
-    [state, persist]
-  );
-
-  const updateContactReason = useCallback(
-    (id: string, updates: Partial<ContactReason>) => {
-      persist({
-        ...state,
-        contactReasons: state.contactReasons.map((c) => (c.id === id ? { ...c, ...updates } : c)),
-      });
-    },
-    [state, persist]
-  );
-
-  const addProvince = useCallback(
-    (name: string) => {
-      const trimmed = name.trim();
-      if (!trimmed || state.provinces.includes(trimmed)) return;
-      persist({ ...state, provinces: [...state.provinces, trimmed] });
-    },
-    [state, persist]
-  );
-
-  const renameProvince = useCallback(
-    (index: number, name: string) => {
-      const trimmed = name.trim();
-      if (!trimmed) return;
-      persist({ ...state, provinces: state.provinces.map((p, i) => (i === index ? trimmed : p)) });
-    },
-    [state, persist]
-  );
-
-  const removeProvince = useCallback(
-    (index: number) => {
-      persist({ ...state, provinces: state.provinces.filter((_, i) => i !== index) });
-    },
-    [state, persist]
-  );
-
-  const resetTaxonomies = useCallback(() => {
-    sessionStorage.removeItem(STORAGE_KEY);
-    setState(defaultState);
+  const addSector = useCallback(async (input: { name: string; shortName?: string; description?: string }) => {
+    setState(await patchTaxonomies({ action: "addSector", ...input }));
   }, []);
+
+  const archiveSector = useCallback(async (id: string) => {
+    setState(await patchTaxonomies({ action: "archiveSector", id }));
+  }, []);
+
+  const removeSector = useCallback(async (id: string) => {
+    setState(await patchTaxonomies({ action: "removeSector", id }));
+  }, []);
+
+  const updatePillar = useCallback(async (id: string, updates: Partial<StrategicPillar>) => {
+    setState(await patchTaxonomies({ action: "updatePillar", id, updates }));
+  }, []);
+
+  const addPillar = useCallback(async (input: { name: string; description?: string; strategicMandate?: string; policyAlignmentPrimary?: string }) => {
+    setState(await patchTaxonomies({ action: "addPillar", ...input }));
+  }, []);
+
+  const archivePillar = useCallback(async (id: string) => {
+    setState(await patchTaxonomies({ action: "archivePillar", id }));
+  }, []);
+
+  const removePillar = useCallback(async (id: string) => {
+    setState(await patchTaxonomies({ action: "removePillar", id }));
+  }, []);
+
+  const updateMinistry = useCallback(async (id: string, updates: Partial<Ministry>) => {
+    setState(await patchTaxonomies({ action: "updateMinistry", id, updates }));
+  }, []);
+
+  const addMinistry = useCallback(async (ministry: Omit<Ministry, "id">) => {
+    setState(await patchTaxonomies({ action: "addMinistry", ministry }));
+  }, []);
+
+  const archiveMinistry = useCallback(async (id: string) => {
+    setState(await patchTaxonomies({ action: "archiveMinistry", id }));
+  }, []);
+
+  const removeMinistry = useCallback(async (id: string) => {
+    setState(await patchTaxonomies({ action: "removeMinistry", id }));
+  }, []);
+
+  const updateContactReason = useCallback(async (id: string, updates: Partial<ContactReason>) => {
+    setState(await patchTaxonomies({ action: "updateContactReason", id, updates }));
+  }, []);
+
+  const addContactReason = useCallback(async (input: { label: string; routingCategory?: string }) => {
+    setState(await patchTaxonomies({ action: "addContactReason", ...input }));
+  }, []);
+
+  const archiveContactReason = useCallback(async (id: string) => {
+    setState(await patchTaxonomies({ action: "archiveContactReason", id }));
+  }, []);
+
+  const removeContactReason = useCallback(async (id: string) => {
+    setState(await patchTaxonomies({ action: "removeContactReason", id }));
+  }, []);
+
+  const addProvince = useCallback(async (name: string) => {
+    setState(await patchTaxonomies({ action: "addProvince", name }));
+  }, []);
+
+  const renameProvince = useCallback(async (index: number, name: string) => {
+    setState(await patchTaxonomies({ action: "renameProvince", index, name }));
+  }, []);
+
+  const removeProvince = useCallback(async (index: number) => {
+    setState(await patchTaxonomies({ action: "removeProvince", index }));
+  }, []);
+
+  const resetTaxonomies = useCallback(async () => {
+    await refresh();
+  }, [refresh]);
 
   return (
     <TaxonomyStoreContext.Provider
       value={{
         ...state,
+        isLoading,
         updateSector,
+        addSector,
+        archiveSector,
+        removeSector,
         updatePillar,
+        addPillar,
+        archivePillar,
+        removePillar,
         updateMinistry,
         addMinistry,
+        archiveMinistry,
         removeMinistry,
         updateContactReason,
+        addContactReason,
+        archiveContactReason,
+        removeContactReason,
         addProvince,
         renameProvince,
         removeProvince,

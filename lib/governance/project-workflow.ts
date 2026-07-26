@@ -103,3 +103,10 @@ const IN_REVIEW_STATUSES: ProjectStatus[] = ["submitted_for_review", "under_revi
 export function getInReviewCount(projects: InvestmentProject[]): number {
   return projects.filter((p) => IN_REVIEW_STATUSES.includes(p.projectStatus)).length;
 }
+
+/** Shared predicate so the Deal Room Overview "In Review" KPI card and the Pipeline page's
+ *  `?status=in_review` deep link (see StatCard href wiring) agree on exactly the same set of
+ *  statuses. */
+export function isInReviewStatus(status: ProjectStatus): boolean {
+  return IN_REVIEW_STATUSES.includes(status);
+}

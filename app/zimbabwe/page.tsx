@@ -43,6 +43,8 @@ export default function ZimbabwePage() {
             width={120}
             height={120}
             className="object-contain shrink-0"
+            priority
+            sizes="120px"
           />
           <p
             className="text-lg md:text-xl leading-relaxed max-w-3xl"
@@ -57,7 +59,7 @@ export default function ZimbabwePage() {
       </FadeUp>
 
       <FadeIn delay={0.15}>
-        <StaggerContainer className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-16">
+        <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5 mb-16">
           {profileStats.map((stat) => (
             <StaggerItem key={stat.label}>
               <div

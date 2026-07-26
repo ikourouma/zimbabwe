@@ -2,19 +2,21 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { matrixNodes } from "@/content/zimbabwe-site";
+import { useTranslations } from "@/context/locale-context";
 
 export function GatewayStrategicDirectory() {
+  const t = useTranslations();
+  const matrixNodes = t.matrixNodes;
   return (
     <section className="relative py-24 z-20" style={{ backgroundColor: "#050805" }}>
       <div className="page-container">
         <div className="mb-16">
           <div className="flex items-center gap-3 mb-4">
             <div className="h-px w-8" style={{ background: "var(--color-gold)" }} />
-            <p className="section-overline m-0">Strategic Directory</p>
+            <p className="section-overline m-0">{t.home.strategicDirectory.overline}</p>
           </div>
           <h2 className="text-3xl font-light text-white" style={{ letterSpacing: "var(--type-heading-tracking)" }}>
-            Explore the Investment Intelligence Platform
+            {t.home.strategicDirectory.title}
           </h2>
         </div>
 
@@ -31,8 +33,8 @@ export function GatewayStrategicDirectory() {
                 <div
                   className="h-full p-8 rounded-xl border transition-all duration-300 flex flex-col relative overflow-hidden hover:-translate-y-0.5"
                   style={{
-                    backgroundColor: node.isSpecial ? "rgba(255, 211, 0, 0.05)" : "rgba(255,255,255,0.02)",
-                    borderColor: node.isSpecial ? "var(--color-gold)" : "var(--color-sovereign-border)",
+                    backgroundColor: "isSpecial" in node && node.isSpecial ? "rgba(255, 211, 0, 0.05)" : "rgba(255,255,255,0.02)",
+                    borderColor: "isSpecial" in node && node.isSpecial ? "var(--color-gold)" : "var(--color-sovereign-border)",
                   }}
                 >
                   <div className="mb-auto">
@@ -48,17 +50,17 @@ export function GatewayStrategicDirectory() {
                   </div>
                   <div
                     className="mt-8 pt-6 flex items-end gap-3"
-                    style={{ borderTop: `1px solid ${node.isSpecial ? "rgba(255,211,0,0.2)" : "rgba(255,255,255,0.05)"}` }}
+                    style={{ borderTop: `1px solid ${"isSpecial" in node && node.isSpecial ? "rgba(255,211,0,0.2)" : "rgba(255,255,255,0.05)"}` }}
                   >
                     <span
                       className="text-3xl font-light font-mono leading-none"
-                      style={{ color: node.isSpecial ? "var(--color-gold)" : "var(--color-zim-accent-pale)" }}
+                      style={{ color: "isSpecial" in node && node.isSpecial ? "var(--color-gold)" : "var(--color-zim-accent-pale)" }}
                     >
                       {node.metric}
                     </span>
                     <span
                       className="text-xs uppercase tracking-widest font-semibold pb-1"
-                      style={{ color: node.isSpecial ? "rgba(255,211,0,0.8)" : "var(--color-text-muted)" }}
+                      style={{ color: "isSpecial" in node && node.isSpecial ? "rgba(255,211,0,0.8)" : "var(--color-text-muted)" }}
                     >
                       {node.metricLabel}
                     </span>

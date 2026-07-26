@@ -32,4 +32,26 @@ Use the header dropdown to simulate: Public → Registered → Qualified → Adm
 
 ## Stack
 
-Next.js 15 · TypeScript · Tailwind CSS v4 · shadcn-style UI · Client-side demo state (no backend)
+The **live site on Hostinger** (`www.zidaproject.com`) still runs the client-side demo (persona
+switcher + `localStorage`) until Phase 3 cutover. The production backend below is provisioned and
+documented in [PRODUCTION_MIGRATION_PLAN.md](PRODUCTION_MIGRATION_PLAN.md).
+
+### Frontend / app
+
+| Technology | Role |
+| --- | --- |
+| Next.js 15 | App Router, SSR, Route Handlers, middleware |
+| TypeScript | Type-safe application code |
+| Tailwind CSS v4 | Design system and responsive UI |
+| Radix UI / shadcn-style | Accessible UI primitives |
+
+### Production backend (pilot — in progress)
+
+| Service | Role |
+| --- | --- |
+| **Neon Postgres** | Primary database — projects, taxonomies, inquiries, engagements, site settings, audit logs. Serverless Postgres with branching; standard Postgres underneath for portability (`pg_dump` / export). Project: `zimbabwe-investment-platform`. |
+| **Neon Managed Better Auth** | Authentication and sessions — email/password, user accounts in `neon_auth` schema, integrated with the same Neon DB. Beta; replaces demo persona switcher in Phase 3. |
+| **Drizzle ORM** | Type-safe schema, migrations, and queries against Neon (`lib/db/schema/`, `lib/db/migrations/`). |
+| **Cloudflare R2** | Private document storage (investor packs, feasibility studies) via S3-compatible API. Bucket: `zimbabwe-investment-platform`. Zero egress fees; portable to other S3-compatible hosts or self-hosted MinIO if government requests rehosting. |
+| **Resend** | Transactional email — registration confirmations, inquiry alerts, qualified-investor approvals, Better Auth verification/reset. API key scoped to `zimbabwe-investment-platform`; domain `zidaproject.com` added (DNS pending — see plan runbook). |
+| **Vercel** (planned Phase 8) | Pilot/staging host for SSR + middleware + API routes (Hostinger static export cannot run the Neon-backed app). |

@@ -1,0 +1,1331 @@
+To elevate this **Super Admin Platform Analytics** dashboard to a **Fortune 100-grade enterprise standard**, the metric cards must evolve from static summary statistics into **interactive strategic control switches** that dynamically drive administrative focus.
+
+Here is an architectural evaluation and high-impact design strategy for transforming these cards into seamless navigation and filtering flows.
+
+---
+
+## 1. High-Impact Routing & Filtering Matrix
+
+When a Super Admin clicks a metric card, the application should route them to the relevant view (**Project Registry** vs. **Pipeline/Inquiries**) with the appropriate pre-filtered scope applied in the URL parameters.
+
+| Metric Card | Target Destination | Filter Applied on Load | Justification & High-Impact Flow |
+| --- | --- | --- | --- |
+| **Total Projects (32)** | **Project Registry** | `?status=all` | Opens the comprehensive project repository view with default sorting by *Last Updated*. |
+| **Published (26)** | **Project Registry** | `?status=published` | Directs to live, active public/investor-facing deals for quick audits or metadata management. |
+| **In Review (2)** | **Project Registry** | `?status=in_review` | **Highest Impact Flow:** Instantly isolates projects requiring administrative governance, compliance approval, or QA sign-off. |
+| **Lead Inquiries (0)** | **Pipeline / Inquiries** | `?view=all_inquiries` | Switches context from *Projects* to *Deal Flow/Investor Leads*, allowing admins to track investor engagements and deal room entry requests. |
+
+---
+
+## 2. Dynamic UI/UX Enhancements for Fortune 100 Grade
+
+To match enterprise-grade UX standards (e.g., Salesforce, Palantir Foundry, AWS Management Console), consider adding the following visual and interactive refinements:
+
+### A. Clear Interactive Signifiers & States
+
+* **Hover & Visual Affordance:** Add subtle elevation/shadow transitions on card hover, accompanied by a subtle "Click to filter" tooltip or an arrow indicator ($\rightarrow$) that appears on hover.
+* **Active Filter State Indicator:** If the admin clicks a card and returns to the dashboard (or if the analytics bar is sticky above the registry table), highlight the selected card with an active border accent (e.g., green ring) to show which scope is driving the current view.
+
+### B. Enterprise Visual Hierarchy & Micro-Data
+
+* **Trend Indicators (Delta Metrics):** Fortune 100 dashboards rarely display standalone numbers. Add time-based comparison trends below the primary value:
+* *Example:* `32` $\rightarrow$ `+3 this month`
+* *Example:* `2 In Review` $\rightarrow$ `⚡ Needs Action` (Color-coded amber/red)
+
+
+* **Secondary Action Triggers:** Include a small hover action button inside the card for power users (e.g., a direct `+ New Project` shortcut on the *Total Projects* card or an `Export CSV` icon).
+
+### C. Contextual Dynamic Deep-Linking (Deep Filtering)
+
+When deep-linking from cards to the **Project Registry**, pass full state via clean query parameters:
+
+```text
+/admin/projects?status=in_review&sort=updated_desc
+/admin/inquiries?status=unassigned
+
+```
+
+This allows admins to bookmark specific operational queues or share filtered workflows directly via link with team members.
+
+---
+
+## 3. Recommended Implementation Architecture
+
+If you are using Next.js / React with standard state or router navigation, structure the card click handler as follows:
+
+```typescript
+// Pattern for high-impact metric card routing
+const handleCardClick = (targetView: string, filterStatus?: string) => {
+  const query = filterStatus ? `?status=${filterStatus}` : '';
+  router.push(`/super-admin/${targetView}${query}`);
+};
+
+```
+
+---
+
+### Suggested 
+
+## 1. Production-Ready React / Tailwind Component Blueprint
+
+Here is a copy-pasteable, Fortune 100-grade **React + Tailwind CSS** component implementation. It includes subtle hover elevation, active indicator rings, delta trend tags, and keyboard accessibility.
+
+```tsx
+import React from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { 
+  FolderIcon, 
+  CheckCircleIcon, 
+  ExclamationTriangleIcon, 
+  InboxIcon, 
+  ArrowUpRightIcon 
+} from '@heroicons/react/24/outline';
+
+interface MetricCardProps {
+  id: string;
+  title: string;
+  count: number;
+  trendText?: string;
+  trendType?: 'positive' | 'warning' | 'neutral';
+  targetPath: string;
+  filterStatus?: string;
+  icon: React.ElementType;
+  accentColor: 'blue' | 'emerald' | 'amber' | 'indigo';
+}
+
+export const MetricFilterCard: React.FC<MetricCardProps> = ({
+  id,
+  title,
+  count,
+  trendText,
+  trendType = 'neutral',
+  targetPath,
+  filterStatus,
+  icon: Icon,
+  accentColor,
+}) => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Check if this card represents the active URL filter
+  const currentStatus = searchParams.get('status') || 'all';
+  const isActive = filterStatus ? currentStatus === filterStatus : currentStatus === 'all';
+
+  const handleClick = () => {
+    const query = filterStatus ? `?status=${filterStatus}` : '';
+    router.push(`${targetPath}${query}`);
+  };
+
+  // Color mappings for enterprise dark mode styling
+  const colorStyles = {
+    blue: 'hover:border-blue-500/50 focus:ring-blue-500/40 text-blue-400 bg-blue-500/10',
+    emerald: 'hover:border-emerald-500/50 focus:ring-emerald-500/40 text-emerald-400 bg-emerald-500/10',
+    amber: 'hover:border-amber-500/50 focus:ring-amber-500/40 text-amber-400 bg-amber-500/10',
+    indigo: 'hover:border-indigo-500/50 focus:ring-indigo-500/40 text-indigo-400 bg-indigo-500/10',
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      type="button"
+      className={`group relative flex flex-col justify-between p-5 rounded-xl border transition-all duration-200 text-left w-full cursor-pointer
+        bg-zinc-900/80 backdrop-blur-md shadow-sm hover:shadow-lg hover:-translate-y-0.5 focus:outline-none focus:ring-2
+        ${isActive ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-zinc-800'}
+        ${colorStyles[accentColor]}`}
+      aria-label={`Filter by ${title}, total ${count}`}
+    >
+      {/* Top Header Row */}
+      <div className="flex items-center justify-between w-full">
+        <span className="text-xs font-semibold tracking-wider text-zinc-400 uppercase">
+          {title}
+        </span>
+        <div className="flex items-center space-x-2">
+          <div className="p-2 rounded-lg bg-zinc-800/80 text-zinc-300 group-hover:text-white transition-colors">
+            <Icon className="w-5 h-5" />
+          </div>
+          <ArrowUpRightIcon className="w-4 h-4 text-zinc-600 opacity-0 group-hover:opacity-100 group-hover:text-zinc-300 transition-all duration-150 transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+        </div>
+      </div>
+
+      {/* Main Metric Value */}
+      <div className="mt-4 flex items-baseline justify-between">
+        <span className="text-3xl font-bold tracking-tight text-white font-mono">
+          {count}
+        </span>
+        
+        {trendText && (
+          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+            trendType === 'warning' 
+              ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' 
+              : trendType === 'positive'
+              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+              : 'bg-zinc-800 text-zinc-400'
+          }`}>
+            {trendText}
+          </span>
+        )}
+      </div>
+
+      {/* Bottom Affordance Indicator */}
+      <div className="mt-3 text-[11px] text-zinc-500 group-hover:text-zinc-300 transition-colors flex items-center">
+        <span>Click to filter registry</span>
+        <span className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+      </div>
+    </button>
+  );
+};
+
+// --- Container Implementation Example ---
+export const PlatformAnalyticsCards: React.FC = () => {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+      <MetricFilterCard
+        id="total-projects"
+        title="Total Projects"
+        count={32}
+        trendText="+3 this mo"
+        trendType="positive"
+        targetPath="/super-admin/projects"
+        filterStatus="all"
+        icon={FolderIcon}
+        accentColor="blue"
+      />
+      <MetricFilterCard
+        id="published"
+        title="Published"
+        count={26}
+        trendText="Live Deals"
+        trendType="positive"
+        targetPath="/super-admin/projects"
+        filterStatus="published"
+        icon={CheckCircleIcon}
+        accentColor="emerald"
+      />
+      <MetricFilterCard
+        id="in-review"
+        title="In Review"
+        count={2}
+        trendText="Action Required"
+        trendType="warning"
+        targetPath="/super-admin/projects"
+        filterStatus="in_review"
+        icon={ExclamationTriangleIcon}
+        accentColor="amber"
+      />
+      <MetricFilterCard
+        id="lead-inquiries"
+        title="Lead Inquiries"
+        count={0}
+        trendText="0 New Leads"
+        trendType="neutral"
+        targetPath="/super-admin/pipeline"
+        filterStatus="unassigned"
+        icon={InboxIcon}
+        accentColor="indigo"
+      />
+    </div>
+  );
+};
+
+```
+
+---
+
+## 2. In Review Item Governance Flow & Drawer Architecture
+
+When an administrator clicks an item under the **In Review** filter state (e.g., in the Project Registry table), avoid a full-page context switch. Instead, trigger a high-efficiency **Slide-over Governance Drawer** so they can review, approve, request revisions, or publish without losing their place in the queue.
+
+### Slide-Over Drawer Interaction Architecture
+
+```
++-----------------------------------------------------------------------------------+
+|  PROJECT REGISTRY [ Filter: In Review (2) ]                                       |
+|  +-------------------------------------------------------------+------------------+
+|  | Project Name       | Sector       | Submitted By  | Action  | REVIEW DRAWER    |
+|  +-------------------------------------------------------------+                  |
+|  | [!] Mwenezi Solar  | Energy       | Dev Team A    | Review >| [ Project Meta ] |
+|  | [!] Chirundu Hub   | Logistics    | Dev Team B    | Review >| Compliance Check |
+|  |                                                             | ESG Docs (PDF)   |
+|  |                                                             | Tax Clearance    |
+|  |                                                             |                  |
+|  |                                                             | ---------------- |
+|  |                                                             | [Request Edit]   |
+|  |                                                             | [Approve & Live] |
+|  +-------------------------------------------------------------+------------------+
+
+```
+
+### Key Drawer Components & Workflow Steps
+
+1. **Governance Summary Header:**
+* Displays project title, sector tag, submission timestamp, and current submission version (e.g., `v1.2`).
+
+
+2. **Interactive Compliance Checklist:**
+* Automated verification badges:
+* **ZIDA / Regulatory Approval** (Passed / Pending)
+* **Deal Room NDA Draft** (Attached)
+* **Financial Model & Teaser Documentation** (Verified)
+
+
+
+
+3. **Audit & Decision Action Bar (Sticky Footer):**
+* **`Approve & Publish` (Primary CTA - Emerald):** Changes status to `Published`, triggers an automated email notification to the project owner, and immediately updates the public deal room.
+* **`Request Revisions` (Secondary CTA - Amber):** Opens a rich-text inline field to specify missing criteria or required updates before pushing back to the owner.
+* **`Reject` (Danger - Red/Ghost):** Archives the record with mandatory administrative notes.
+
+
+
+----
+
+### Interactive Wireframe & Component Flow Guide
+
+This wireframe demonstrates how the metric cards from the Super Admin dashboard act as smart filters, automatically deep-linking and configuring the target views (Project Registry or Pipeline) for immediate administrative action.
+
+---
+
+#### Diagram 1: Dashboard Overlays & Component Flow
+
+This diagram illustrates the visual affordance required for the analytic cards, highlighting their clickable states and the resulting page transition and deep filtering.
+
+```mermaid
+graph TD
+    %% Define Styles
+    classDef clickable fill:#f9f,stroke:#333,stroke-width:2px,rx:8,ry:8;
+    classDef route fill:#bbf,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5,rx:8,ry:8;
+    classDef contextSwitch fill:#dfd,stroke:#333,stroke-width:2px,rx:8,ry:8;
+
+    %% Source: Dashboard Cards
+    subgraph Dashboard_Cards [DASHBOARD: ANALYTICS BAR]
+        direction LR
+        
+        %% Component Wireframe Overlays
+        T_CARD[<b>Total Projects</b><br/>(32) <br/><br/><i>⚡ Click to View All</i>]:::clickable
+        P_CARD[<b>Published</b><br/>(26) <br/><br/><i>👁️ View Live Deals</i>]:::clickable
+        R_CARD[<b>In Review</b><br/>(2) <br/><br/><i>⚠️ REVIEW QUEUE</i>]:::clickable
+        I_CARD[<b>Lead Inquiries</b><br/>(0) <br/><br/><i>📩 Go to Pipeline</i>]:::clickable
+    end
+
+    %% Routing Logic Layer
+    subgraph Routing [DYNAMIC ROUTING & DEEP-LINKING]
+        direction TB
+        
+        %% Internal Page Routes
+        REGISTRY_ROUTE(<b>Navigate to:</b><br/>/super-admin/projects):::route
+        PIPELINE_ROUTE(<b>Navigate to:</b><br/>/super-admin/pipeline):::route
+
+        %% Pre-applied URL Filters
+        ALL_FILTER[Filter: ?status=all]:::route
+        PUB_FILTER[Filter: ?status=published]:::route
+        REV_FILTER[Filter: ?status=in_review]:::route
+        INQ_FILTER[Filter: ?status=unassigned]:::route
+    end
+
+    %% Target Destinations
+    subgraph Registry_View [DESTINATION: PROJECT REGISTRY]
+        direction TB
+        PROJECT_TABLE[<b>Project Table</b><br/>(Paginated List)<br/><br/>Showing: [All | Published | In Review]]
+    end
+
+    subgraph Pipeline_View [DESTINATION: PIPELINE & INQUIRIES]
+        direction TB
+        INQUIRY_LIST[<b>Inquiry List</b><br/>(Cards / Table)]
+    end
+
+    %% --- Interaction Mapping ---
+
+    %% 1. Total Projects Flow
+    T_CARD -.-> REGISTRY_ROUTE
+    REGISTRY_ROUTE --> ALL_FILTER
+    ALL_FILTER --> PROJECT_TABLE
+    ALL_FILTER -.-|"Deep Link & Filter 'status=all'"|PROJECT_TABLE
+
+    %% 2. Published Projects Flow
+    P_CARD -.-> REGISTRY_ROUTE
+    REGISTRY_ROUTE --> PUB_FILTER
+    PUB_FILTER --> PROJECT_TABLE
+    PUB_FILTER -.-|"Deep Link & Filter 'status=published'"|PROJECT_TABLE
+
+    %% 3. In Review Projects Flow (HIGH IMPACT)
+    R_CARD -.-> REGISTRY_ROUTE
+    REGISTRY_ROUTE --> REV_FILTER
+    REV_FILTER --> PROJECT_TABLE
+    REV_FILTER -.-|"Deep Link & Filter 'status=in_review'"|PROJECT_TABLE
+
+    %% 4. Lead Inquiries Flow (CONTEXT SWITCH)
+    I_CARD -.-> PIPELINE_ROUTE:::contextSwitch
+    PIPELINE_ROUTE --> INQ_FILTER
+    INQ_FILTER --> INQUIRY_LIST
+    INQ_FILTER -.-|"Deep Link & Filter 'status=unassigned'"|INQUIRY_LIST
+
+
+```
+
+#### Key Implementation Notes for Dev Team
+
+1. **Component Encapsulation:** Treat each analytic card as a standalone React component (e.g., `MetricFilterCard`). It should accept `label`, `value`, `icon`, `targetUrl`, `filterQuery`, and optional `trend` props.
+2. **Card States:** Use distinct Tailwind classes or CSS pseudo-classes for `hover`, `focus`, and an `active` state (e.g., if the user returns to the dashboard after applying a filter). Add a subtle elevation transition.
+3. **Routing Method:** When clicked, use your router's programmatic navigation (e.g., `router.push('/target/url?query=value')`) rather than just an `<a>` tag for seamless state management.
+4. **Deep Link Handling:** The target pages (Registry/Pipeline) must consume these URL query parameters on load to automatically apply the corresponding filters to the table or list view.
+
+
+#### elevate the **Users & Roles** section of the Super Admin dashboard
+
+To elevate the **Users & Roles** section of the Super Admin dashboard to a Fortune 100 enterprise level (e.g., Okta, Microsoft Entra ID, AWS IAM, Palantir), the interface needs to shift from a simple role editor to a **Zero-Trust Governance & Security Control Center**.
+
+In high-stakes investment and sovereign digital platforms (like ZIDA), user management must prioritize auditability, access control safety, rapid batch management, and enterprise onboarding workflows.
+
+---
+
+## 1. Core Architectural & Functional Enhancements
+
+### A. Role & Lifecycle Management Safety (Zero-Trust Controls)
+
+* **Role Change Confirmation Modal:** Changing a user's role (especially elevating to *Super Admin* or *ZIDA Admin*) should **never** take effect instantly via a naked dropdown click without confirmation. Trigger a modal requiring:
+* Justification note for the audit log.
+* Re-authentication / 2FA check for *Super Admin* privilege escalation.
+
+
+* **MFA / Authentication Status Tracking:** Add a explicit authentication health indicator for each account (e.g., `MFA Enforced` vs. `Password Only` vs. `SSO/SAML`).
+* **Session Management & Remote Wipe:** Add a quick action on each row: **"Revoke Active Sessions"** (forces immediate logout) and **"Send Password Reset"**.
+
+### B. Enterprise Visual Hierarchy & Micro-Data
+
+* **KPI Header Summary Bar:** Add high-level operational metrics above the table to give immediate visibility:
+* **Total Accounts** (`5`) | **Active Sessions** (`3`) | **MFA Compliance** (`80%`) | **Pending Invites** (`1`)
+
+
+* **Interactive Filtering Tabs:** Above the search bar, add quick filter pills:
+* `All (5)` | `Admins (2)` | `Government (1)` | `Investors (2)` | `Inactive / Suspended (0)`
+
+
+* **Last Active Timestamp:** Replace or complement the static "Joined" date with a dynamic **"Last Active"** column (e.g., `Active 12m ago` or `2 days ago`).
+
+### C. Scalability & Bulk Governance Tools
+
+* **Bulk Action Toolbar:** Include multi-select checkboxes on table rows. Selecting multiple users reveals a top floating batch bar:
+* `Batch Change Role` | `Deactivate Selected` | `Resend Onboarding Invites` | `Export Audit Log (CSV)`
+
+
+* **"Invite New User" Primary CTA:** Add a prominent **`+ Invite User`** modal flow supporting custom expiration times for invite links, automated welcome emails, and pre-assigned role permissions.
+
+---
+
+## 2. High-Impact Visual Wireframe
+
+This layout illustrates the updated Users & Roles dashboard structure, complete with KPI metrics, status badges, and governance action menus.
+
+```
++-------------------------------------------------------------------------------------------------------+
+|  USERS & ROLES MANAGEMENT                                            [ Export Audit Log ] [+ Invite User] |
+|  Manage accounts, security posture, and zero-trust permission tiers.                                 |
++-------------------------------------------------------------------------------------------------------+
+|  [ TOTAL ACCOUNTS ]       [ ACTIVE SESSIONS ]       [ MFA COMPLIANCE ]       [ PENDING INVITES ]       |
+|  5 Active                 3 Connected               80% Enforced             1 Invited                 |
++-------------------------------------------------------------------------------------------------------+
+|                                                                                                       |
+|  [ All (5) ]  [ Admins (2) ]  [ Government (1) ]  [ Investors (2) ]  [ Suspended (0) ]                   |
+|                                                                                                       |
+|  [🔍 Search by name, email, or org...               ]  [ Filter by Role ▾ ] [ Filter by Status ▾ ]    |
++-------------------------------------------------------------------------------------------------------+
+| [☐] NAME & EMAIL              | ORGANIZATION      | ROLE tier       | AUTH / MFA | STATUS   | ACTIONS  |
++-------------------------------------------------------------------------------------------------------+
+| [☐] Pilot Super Admin         | Afronovation, Inc.| [ Super Admin ▾]| 🔒 SAML/MFA| [Active ▾]| [···]    |
+|     superadmin+pilot@zid...   |                   |                 |            |          |          |
+|                               |                   |                 |            |          |          |
+| [☐] Pilot ZIDA Admin          | ZIDA Pilot        | [ ZIDA Admin ▾] | 🟢 2FA OK  | [Active ▾]| [···]    |
+|     admin+pilot@zidaproject...|                   |                 |            |          |          |
+|                               |                   |                 |            |          |          |
+| [☐] Pilot Government User     | ZIDA Pilot        | [ Government ▾] | ⚠️ No MFA  | [Active ▾]| [···]    |
+|     government+pilot@zidap... |                   |                 |            |          |          |
+|                               |                   |                 |            |          |          |
+| [☐] Pilot Qualified Investor  | ZIDA Pilot        | [ Qualified ▾ ] | 🟢 2FA OK  | [Active ▾]| [···]    |
+|     qualified+pilot@zidapr... |                   |                 |            |          |          |
++-------------------------------------------------------------------------------------------------------+
+| Showing 1–5 of 5 accounts                                                       [‹ Previous] [Next ›] |
++-------------------------------------------------------------------------------------------------------+
+
+```
+
+---
+
+## 3. Production-Ready React / Tailwind Component Blueprint
+
+Here is a enterprise component layout for the updated User Management table with MFA status badges, safety modals, and batch selection support.
+
+```tsx
+import React, { useState } from 'react';
+import { 
+  MagnifyingGlassIcon, 
+  UserPlusIcon, 
+  ShieldCheckIcon, 
+  EllipsisVerticalIcon,
+  ExclamationTriangleIcon,
+  KeyIcon,
+  ArrowPathIcon
+} from '@heroicons/react/24/outline';
+
+interface UserAccount {
+  id: string;
+  name: string;
+  email: string;
+  organization: string;
+  role: 'Super Admin' | 'ZIDA Admin' | 'Government' | 'Qualified Investor' | 'Registered';
+  mfaStatus: 'Enforced' | 'Enabled' | 'Disabled';
+  status: 'Active' | 'Suspended' | 'Pending';
+  lastActive: string;
+}
+
+const mockUsers: UserAccount[] = [
+  { id: '1', name: 'Pilot Super Admin', email: 'superadmin+pilot@zidaproject.com', organization: 'Afronovation, Inc.', role: 'Super Admin', mfaStatus: 'Enforced', status: 'Active', lastActive: 'Now' },
+  { id: '2', name: 'Pilot ZIDA Admin', email: 'admin+pilot@zidaproject.com', organization: 'ZIDA Pilot', role: 'ZIDA Admin', mfaStatus: 'Enabled', status: 'Active', lastActive: '12m ago' },
+  { id: '3', name: 'Pilot Government User', email: 'government+pilot@zidaproject.com', organization: 'ZIDA Pilot', role: 'Government', mfaStatus: 'Disabled', status: 'Active', lastActive: '2h ago' },
+  { id: '4', name: 'Pilot Qualified Investor', email: 'qualified+pilot@zidaproject.com', organization: 'ZIDA Pilot', role: 'Qualified Investor', mfaStatus: 'Enabled', status: 'Active', lastActive: '1d ago' },
+  { id: '5', name: 'Pilot Registered Investor', email: 'registered+pilot@zidaproject.com', organization: 'ZIDA Pilot', role: 'Registered', mfaStatus: 'Disabled', status: 'Active', lastActive: '3d ago' },
+];
+
+export const EnterpriseUserManagement: React.FC = () => {
+  const [users, setUsers] = useState<UserAccount[]>(mockUsers);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [pendingRoleChange, setPendingRoleChange] = useState<{ userId: string; newRole: UserAccount['role'] } | null>(null);
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === users.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(users.map(u => u.id));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]);
+  };
+
+  return (
+    <div className="w-full space-y-6 bg-zinc-950 p-6 text-zinc-100 rounded-xl border border-zinc-800">
+      
+      {/* Top Header & Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-800">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-white">Users & Role Governance</h1>
+          <p className="text-sm text-zinc-400 mt-1">Manage accounts, enterprise permissions, and security posture across tiers.</p>
+        </div>
+        <div className="flex items-center space-x-3">
+          <button className="px-3.5 py-2 text-xs font-semibold rounded-lg border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 transition text-zinc-300">
+            Export Audit Logs
+          </button>
+          <button className="flex items-center space-x-2 px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 transition text-white shadow-md">
+            <UserPlusIcon className="w-4 h-4" />
+            <span>Invite User</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Enterprise KPI Bar */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800/80">
+          <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Total Accounts</span>
+          <div className="text-2xl font-bold font-mono text-white mt-1">5</div>
+        </div>
+        <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800/80">
+          <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Active Sessions</span>
+          <div className="text-2xl font-bold font-mono text-emerald-400 mt-1">3 Connected</div>
+        </div>
+        <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800/80">
+          <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">MFA Enforced</span>
+          <div className="text-2xl font-bold font-mono text-amber-400 mt-1">60%</div>
+        </div>
+        <div className="p-4 rounded-lg bg-zinc-900/60 border border-zinc-800/80">
+          <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Role Tiers</span>
+          <div className="text-2xl font-bold font-mono text-indigo-400 mt-1">5 Configured</div>
+        </div>
+      </div>
+
+      {/* Filter Toolbar */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-2">
+        <div className="relative w-full md:w-96">
+          <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-500" />
+          <input 
+            type="text" 
+            placeholder="Search by name, email, or org..." 
+            className="w-full pl-9 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
+          />
+        </div>
+
+        {selectedIds.length > 0 && (
+          <div className="flex items-center space-x-2 bg-emerald-950/40 border border-emerald-800/50 px-3 py-1.5 rounded-lg text-xs text-emerald-300">
+            <span>{selectedIds.length} selected</span>
+            <span className="text-zinc-600">|</span>
+            <button className="hover:underline font-semibold">Revoke Sessions</button>
+            <span className="text-zinc-600">|</span>
+            <button className="hover:underline font-semibold">Deactivate</button>
+          </div>
+        )}
+      </div>
+
+      {/* Data Table */}
+      <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-900/40">
+        <table className="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-zinc-800 bg-zinc-900/80 text-xs font-semibold uppercase text-zinc-400 tracking-wider">
+              <th className="py-3.5 px-4 w-10">
+                <input 
+                  type="checkbox" 
+                  checked={selectedIds.length === users.length} 
+                  onChange={toggleSelectAll} 
+                  className="rounded border-zinc-700 bg-zinc-800 text-emerald-500 focus:ring-0"
+                />
+              </th>
+              <th className="py-3.5 px-4">User Details</th>
+              <th className="py-3.5 px-4">Organization</th>
+              <th className="py-3.5 px-4">Role Tier</th>
+              <th className="py-3.5 px-4">MFA Posture</th>
+              <th className="py-3.5 px-4">Status</th>
+              <th className="py-3.5 px-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-800/60 text-zinc-300">
+            {users.map((u) => (
+              <tr key={u.id} className="hover:bg-zinc-800/30 transition-colors group">
+                <td className="py-4 px-4">
+                  <input 
+                    type="checkbox" 
+                    checked={selectedIds.includes(u.id)} 
+                    onChange={() => toggleSelect(u.id)} 
+                    className="rounded border-zinc-700 bg-zinc-800 text-emerald-500 focus:ring-0"
+                  />
+                </td>
+                <td className="py-4 px-4">
+                  <div className="font-semibold text-white">{u.name}</div>
+                  <div className="text-xs text-zinc-500 font-mono">{u.email}</div>
+                </td>
+                <td className="py-4 px-4 text-zinc-400">{u.organization}</td>
+                <td className="py-4 px-4">
+                  <select
+                    value={u.role}
+                    onChange={(e) => setPendingRoleChange({ userId: u.id, newRole: e.target.value as UserAccount['role'] })}
+                    className="bg-zinc-800/80 border border-zinc-700 text-xs text-zinc-200 rounded-md px-2.5 py-1.5 focus:border-emerald-500 focus:outline-none cursor-pointer"
+                  >
+                    <option value="Super Admin">Super Admin</option>
+                    <option value="ZIDA Admin">ZIDA Admin</option>
+                    <option value="Government">Government</option>
+                    <option value="Qualified Investor">Qualified Investor</option>
+                    <option value="Registered">Registered</option>
+                  </select>
+                </td>
+                <td className="py-4 px-4">
+                  {u.mfaStatus === 'Enforced' && (
+                    <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <ShieldCheckIcon className="w-3.5 h-3.5" />
+                      <span>SAML/SSO</span>
+                    </span>
+                  )}
+                  {u.mfaStatus === 'Enabled' && (
+                    <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <ShieldCheckIcon className="w-3.5 h-3.5" />
+                      <span>2FA Active</span>
+                    </span>
+                  )}
+                  {u.mfaStatus === 'Disabled' && (
+                    <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                      <ExclamationTriangleIcon className="w-3.5 h-3.5" />
+                      <span>No MFA</span>
+                    </span>
+                  )}
+                </td>
+                <td className="py-4 px-4">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-800 text-emerald-400 border border-emerald-500/30">
+                    {u.status}
+                  </span>
+                </td>
+                <td className="py-4 px-4 text-right">
+                  <div className="flex items-center justify-end space-x-2">
+                    <button title="Revoke Session" className="p-1.5 text-zinc-400 hover:text-amber-400 hover:bg-zinc-800 rounded transition">
+                      <KeyIcon className="w-4 h-4" />
+                    </button>
+                    <button title="More Actions" className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition">
+                      <EllipsisVerticalIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Role Change Safety Confirmation Modal */}
+      {pendingRoleChange && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <div className="flex items-center space-x-3 text-amber-400">
+              <ExclamationTriangleIcon className="w-6 h-6" />
+              <h3 className="text-lg font-bold text-white">Confirm Privileged Role Change</h3>
+            </div>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              You are modifying account permissions to <strong className="text-white">{pendingRoleChange.newRole}</strong>. This change updates security boundaries across project records and governance workflows immediately.
+            </p>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-zinc-400">Reason / Audit Justification</label>
+              <input 
+                type="text" 
+                placeholder="e.g. Approved under Jira Ticket #SEC-204" 
+                className="w-full p-2 bg-zinc-950 border border-zinc-800 rounded text-xs text-zinc-200 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+            <div className="flex justify-end space-x-3 pt-2">
+              <button 
+                onClick={() => setPendingRoleChange(null)}
+                className="px-3.5 py-2 text-xs font-medium text-zinc-400 hover:text-white transition"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => setPendingRoleChange(null)}
+                className="px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition"
+              >
+                Confirm & Log Change
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+};
+
+```
+
+### Recommended Drawer Structure & Blueprint
+
+**Yes, absolutely.** Opening a full right slide-over drawer when a user row is clicked is the gold standard UX pattern for enterprise-grade administrative and governance platforms (such as Okta, Stripe Dashboard, AWS IAM, and Salesforce).
+
+Here is why this pattern works so well for your platform and how to structure it to maximize efficiency and security.
+
+---
+
+## Why a Slide-Over Drawer is the Right Pattern
+
+1. **Context Retention:** Super admins can inspect comprehensive user details, audit trails, and security settings without losing their position, search queries, or active table filters.
+2. **Zero-Trust Depth:** A standard table row can only fit basic fields like Name, Role, and Status. The drawer provides the space needed for enterprise-level controls like:
+* **Authentication Posture:** Active sessions, 2FA/MFA methods, last login IP, and device logs.
+* **Granular Permissions:** Specific scope overrides beyond high-level roles.
+* **Activity & Audit Trail:** Recent actions performed by or on that user.
+* **Quick Administrative Actions:** Password resets, forcing session termination, or account deactivation.
+
+
+
+---
+
+## Recommended Drawer Structure & Blueprint
+
+When a super admin clicks anywhere on a row (except directly on quick-action dropdowns), slide open a **500px–600px right drawer** with the following layout:
+
+```
++-------------------------------------------------------------------+
+| [X] User Details & Governance                                      |
++-------------------------------------------------------------------+
+|  [ User Avatar ]  Pilot Super Admin                      [Active] |
+|                   superadmin+pilot@zidaproject.com                |
+|                   Afronovation, Inc.                              |
++-------------------------------------------------------------------+
+|  [ Account ]   [ Security & MFA ]   [ Access Scopes ]   [ Activity Log ]
++-------------------------------------------------------------------+
+|                                                                   |
+|  ROLE & PERMISSIONS                                               |
+|  Role Tier: [ Super Admin  ▼ ]                                    |
+|  * Changes to Super Admin require administrative confirmation.      |
+|                                                                   |
+|  AUTHENTICATION POSTURE                                           |
+|  • MFA Method: Hardware Security Key / TOTP (Enforced)            |
+|  • Last Login: July 22, 2026 at 14:32 UTC (Harare, ZW)            |
+|  • Active Sessions: 2 Connected Devices                           |
+|                                                                   |
+|  QUICK GOVERNANCE ACTIONS                                         |
+|  [ 🔑 Revoke All Active Sessions ]                                |
+|  [ ✉️ Send Password Reset Link  ]                                |
+|  [ 🚫 Suspend Account           ]                                |
+|                                                                   |
++-------------------------------------------------------------------+
+|  [ Cancel ]                                   [ Save Changes ]    |
++-------------------------------------------------------------------+
+
+```
+
+---
+
+## UX Best Practices to Keep in Mind
+
+* **Prevent Accidental Triggers:** Clicking a row opens the drawer, but clicking on interactive inline elements inside the table row (such as the *Role* or *Status* dropdowns) should perform their inline action without opening the drawer.
+* **URL Deep-Linking:** Pass the selected user ID into the URL query parameters (e.g., `/super-admin/users?userId=1`). This allows admins to bookmark or share a link directly to a specific user's drawer.
+* **Keyboard Navigation:** Support `ESC` to close the drawer and standard arrow keys/tabbing for accessibility.
+
+#### Taxonomies and Dynamic Role-Based Governance Matrix
+
+Here is the expanded, Fortune 100-grade architectural strategy incorporating **SDG Management** and **Dynamic Multi-Role Taxonomy Governance**.
+
+---
+
+## 1. Dynamic Role-Based Governance Matrix
+
+To ensure data integrity across sovereign entities (such as ZIDA, line ministries, and super admin consultants), taxonomies shouldn't be edited freely without proper permission scoping.
+
+| Taxonomy Domain | Super Admin Rights | Standard Admin / ZIDA Rights | Governance Rule & Safety Workflow |
+| --- | --- | --- | --- |
+| **Sectors & Strategic Pillars** | Full (Create, Edit, Delete, Merge) | Read-Only | Core platform ontologies affect national reporting and investment matching algorithms; require Super Admin privileges. |
+| **Ministries & Provinces** | Full Control | Request / Submit for Validation | Admins can propose new department codes or sub-agencies, which enter a `Pending Validation` queue before going live. |
+| **SDG Alignment (UN SDGs 1–17)** | Full Control & Canonical Mapping | Tag Projects & Map Target Indicators | Admins tag deal rooms to specific UN SDGs ($1\text{--}17$) and targets, but Super Admins manage the canonical mapping definitions. |
+| **Contact & Inquiry Reasons** | Full Control | Edit / Reorder | Flexible operational routing controlled across management tiers. |
+
+---
+
+## 2. Integrated SDG Management Engine
+
+The UN Sustainable Development Goals (SDGs) are critical for attracting ESG capital, DFI investments, and sovereign wealth funds. Integrating an **SDG Management Suite** directly into the taxonomy engine allows administrators to monitor ESG impact scores across the deal flow.
+
+### Key SDG Features to Implement:
+
+* **Canonical SDG Registry ($1\text{--}17$):** Visual icons and color-coded badges matching official UN SDG branding (e.g., Goal 7: Affordable & Clean Energy, Goal 9: Industry, Innovation, & Infrastructure).
+* **Target & Indicator Mapping:** Ability to map specific sub-targets (e.g., Target 7.2 for Renewable Energy Share) directly to sectors and projects.
+* **Impact Metrics Counter:** Displays live deal room counts linked to each SDG ($1\text{--}17$).
+* **ESG Scorecard Generator:** Auto-aggregates project pipeline data into downloadable DFI/ESG compliance reports.
+
+---
+
+## 3. Consolidated UI Wireframe: Master Taxonomy & SDG Suite
+
+This tabbed interface consolidates all platform taxonomies into a single control panel with built-in SDG management.
+
+```
++---------------------------------------------------------------------------------------------------------+
+|  MASTER TAXONOMIES & SDG GOVERNANCE                                              [ 🔄 Sync DB ] [ + Add Entry ]|
+|  Manage platform-wide canonical metadata, sovereign sector tags, and UN SDG mappings.                   |
++---------------------------------------------------------------------------------------------------------+
+|  [ CANONICAL SECTORS ]    [ ACTIVE MINISTRIES ]    [ PROVINCES MAPPED ]     [ UN SDGs TRACKED ]           |
+|  8 Sectors                12 Ministries            10 Mapped                17 Active Goals               |
++---------------------------------------------------------------------------------------------------------+
+|                                                                                                         |
+|  ( Sectors [8] )  [ Ministries [12] ]  [ Provinces [10] ]  [ UN SDGs [17] ]  [ Pillars ]  [ Contact Reasons ] |
++---------------------------------------------------------------------------------------------------------+
+|                                                                                                         |
+|  [🔍 Search taxonomies or SDG targets...        ]  Filter: [ All Statuses ▾ ]   [ Sort: Most Linked ▾ ]   |
++---------------------------------------------------------------------------------------------------------+
+| CANONICAL NAME / SDG            | UN GOAL CODE | LINKED DEALS | PERMISSION REQ. | GOVERNANCE STATUS | ACTIONS |
++---------------------------------------------------------------------------------------------------------+
+| [🎨 Goal 7: Clean Energy      ] | SDG-07       | 22 Projects  | Super Admin     | 🟢 Canonical      | [ Edit ]|
+| [🎨 Goal 9: Innovation & Infra ] | SDG-09       | 18 Projects  | Super Admin     | 🟢 Canonical      | [ Edit ]|
+| [🎨 Goal 1: No Poverty        ] | SDG-01       | 14 Projects  | Super Admin     | 🟢 Canonical      | [ Edit ]|
+| [🎨 Goal 13: Climate Action   ] | SDG-13       | 11 Projects  | Super Admin     | 🟢 Canonical      | [ Edit ]|
++---------------------------------------------------------------------------------------------------------+
+
+```
+
+---
+
+## 4. Production-Ready React Component (Includes SDG Tab & Modals)
+
+Below is the production component code incorporating tabbed switching, SDG mapping, and role-restricted editing controls.
+
+```tsx
+import React, { useState } from 'react';
+import { 
+  FolderIcon, 
+  BuildingLibraryIcon, 
+  MapPinIcon, 
+  SparklesIcon, 
+  GlobeAmericasIcon,
+  PlusIcon,
+  CheckCircleIcon,
+  PencilSquareIcon,
+  LockClosedIcon,
+  ArrowPathIcon
+} from '@heroicons/react/24/outline';
+
+interface SDGItem {
+  id: string;
+  number: number;
+  title: string;
+  code: string;
+  color: string;
+  linkedProjects: number;
+  status: 'Canonical' | 'Custom Target';
+  requiredRole: 'Super Admin' | 'Admin';
+}
+
+const mockSDGs: SDGItem[] = [
+  { id: '1', number: 1, title: 'No Poverty', code: 'SDG-01', color: 'bg-red-600', linkedProjects: 14, status: 'Canonical', requiredRole: 'Super Admin' },
+  { id: '2', number: 2, title: 'Zero Hunger', code: 'SDG-02', color: 'bg-amber-500', linkedProjects: 9, status: 'Canonical', requiredRole: 'Super Admin' },
+  { id: '7', number: 7, title: 'Affordable & Clean Energy', code: 'SDG-07', color: 'bg-yellow-500', linkedProjects: 22, status: 'Canonical', requiredRole: 'Super Admin' },
+  { id: '8', number: 8, title: 'Decent Work & Economic Growth', code: 'SDG-08', color: 'bg-red-800', linkedProjects: 19, status: 'Canonical', requiredRole: 'Super Admin' },
+  { id: '9', number: 9, title: 'Industry, Innovation & Infrastructure', code: 'SDG-09', color: 'bg-orange-500', linkedProjects: 18, status: 'Canonical', requiredRole: 'Super Admin' },
+  { id: '13', number: 13, title: 'Climate Action', code: 'SDG-13', color: 'bg-emerald-700', linkedProjects: 11, status: 'Canonical', requiredRole: 'Super Admin' },
+];
+
+export const MasterTaxonomyAndSDGSuite: React.FC<{ currentUserRole?: 'Super Admin' | 'Admin' }> = ({ 
+  currentUserRole = 'Super Admin' 
+}) => {
+  const [activeTab, setActiveTab] = useState<'sectors' | 'ministries' | 'sdgs' | 'provinces'>('sdgs');
+  const [sdgs, setSdgs] = useState<SDGItem[]>(mockSDGs);
+  const [editingItem, setEditingItem] = useState<SDGItem | null>(null);
+
+  const canEdit = (requiredRole: string) => {
+    if (currentUserRole === 'Super Admin') return true;
+    return requiredRole === 'Admin';
+  };
+
+  return (
+    <div className="w-full space-y-6 bg-zinc-950 p-6 text-zinc-100 rounded-xl border border-zinc-800 font-sans">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-800">
+        <div>
+          <div className="flex items-center space-x-2">
+            <span className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded">
+              Enterprise Data Engine
+            </span>
+            <span className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-widest text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded">
+              Role: {currentUserRole}
+            </span>
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-white mt-1">Platform Taxonomies & UN SDG Governance</h1>
+          <p className="text-sm text-zinc-400 mt-1">Manage global sectors, line ministries, regional bounds, and ESG / SDG targets.</p>
+        </div>
+
+        <div className="flex items-center space-x-3">
+          <button className="flex items-center space-x-2 px-3.5 py-2 text-xs font-semibold rounded-lg border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 transition text-zinc-300">
+            <ArrowPathIcon className="w-4 h-4" />
+            <span>Sync Engine</span>
+          </button>
+          {currentUserRole === 'Super Admin' && (
+            <button className="flex items-center space-x-2 px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 transition text-white shadow-md">
+              <PlusIcon className="w-4 h-4" />
+              <span>Add Taxonomy / SDG</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="flex border-b border-zinc-800 space-x-6 text-xs font-semibold overflow-x-auto">
+        <button 
+          onClick={() => setActiveTab('sdgs')}
+          className={`pb-3 flex items-center space-x-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'sdgs' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-zinc-400 hover:text-zinc-200'}`}
+        >
+          <GlobeAmericasIcon className="w-4 h-4 text-emerald-400" />
+          <span>UN SDGs & ESG Targets (17)</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab('sectors')}
+          className={`pb-3 flex items-center space-x-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'sectors' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-zinc-400 hover:text-zinc-200'}`}
+        >
+          <FolderIcon className="w-4 h-4" />
+          <span>Sectors (8)</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab('ministries')}
+          className={`pb-3 flex items-center space-x-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'ministries' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-zinc-400 hover:text-zinc-200'}`}
+        >
+          <BuildingLibraryIcon className="w-4 h-4" />
+          <span>Ministries (12)</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab('provinces')}
+          className={`pb-3 flex items-center space-x-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'provinces' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-zinc-400 hover:text-zinc-200'}`}
+        >
+          <MapPinIcon className="w-4 h-4" />
+          <span>Provinces (10)</span>
+        </button>
+      </div>
+
+      {/* Main Table View */}
+      {activeTab === 'sdgs' && (
+        <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-900/40">
+          <table className="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-zinc-800 bg-zinc-900/80 text-xs font-semibold uppercase text-zinc-400 tracking-wider">
+                <th className="py-3.5 px-4">SDG Goal & Title</th>
+                <th className="py-3.5 px-4">Code</th>
+                <th className="py-3.5 px-4">Linked Projects</th>
+                <th className="py-3.5 px-4">Permission Boundary</th>
+                <th className="py-3.5 px-4 text-right">Governance Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-800/60 text-zinc-300">
+              {sdgs.map((sdg) => {
+                const hasPermission = canEdit(sdg.requiredRole);
+                return (
+                  <tr key={sdg.id} className="hover:bg-zinc-800/30 transition-colors group">
+                    <td className="py-3.5 px-4 flex items-center space-x-3">
+                      <span className={`w-7 h-7 rounded-md ${sdg.color} text-white font-bold text-xs flex items-center justify-center shrink-0`}>
+                        {sdg.number}
+                      </span>
+                      <span className="font-semibold text-white">{sdg.title}</span>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span className="font-mono text-xs text-zinc-400 bg-zinc-800/80 px-2 py-1 rounded">
+                        {sdg.code}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        {sdg.linkedProjects} Active Projects
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span className="inline-flex items-center space-x-1 text-xs text-zinc-400">
+                        {sdg.requiredRole === 'Super Admin' ? (
+                          <LockClosedIcon className="w-3.5 h-3.5 text-amber-400" />
+                        ) : (
+                          <CheckCircleIcon className="w-3.5 h-3.5 text-emerald-400" />
+                        )}
+                        <span>{sdg.requiredRole} Only</span>
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-right">
+                      {hasPermission ? (
+                        <button 
+                          onClick={() => setEditingItem(sdg)}
+                          className="px-3 py-1.5 text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg transition border border-zinc-700 inline-flex items-center space-x-1"
+                        >
+                          <PencilSquareIcon className="w-3.5 h-3.5" />
+                          <span>Edit Scope</span>
+                        </button>
+                      ) : (
+                        <span className="text-xs text-zinc-600 italic">Read Only</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+    </div>
+  );
+};
+
+```
+
+---
+
+## Summary Checklist for Dev Team Feedback
+
+1. **Tabbed Consolidation:** Move away from a single vertical page to a clean tabbed view (`Sectors`, `Ministries`, `Provinces`, `Pillars`, `UN SDGs`, `Inquiry Reasons`).
+2. **SDG Engine:** Add the UN SDG $1\text{--}17$ canonical dataset, enabling ESG deal room tagging and national impact reporting.
+3. **Role Scoping:** Enforce permission checks: Super Admins manage canonical structure/SDGs; Standard Admins submit modifications or tag projects.
+4. **Safety & Impact Counters:** Display active project counts per taxonomy item to prevent accidental breaking changes to live deal rooms.
+
+### Multi-Banner Timed Announcement System and Granular Field-Level Visibility & Governance Controls
+
+Here is the consolidated, enterprise-grade feature specification for the development team covering **Timed Banners**, **Granular Field Visibility Controls**, and an **Elevated Audit Log Engine**.
+
+---
+
+## 1. Multi-Banner Timed Announcement System (`Site Settings`)
+
+To support targeted investor communications, platform alerts, and emergency maintenance notices, Super Admins need to create, schedule, and prioritize multiple dynamic banner cards.
+
+### Dev Requirements & Specification
+
+```
++---------------------------------------------------------------------------------------------------------+
+|  ANNOUNCEMENT BANNER MANAGEMENT                                                    [ + Create Banner ]  |
++---------------------------------------------------------------------------------------------------------+
+| TITLE / CONTENT           | AUDIENCE SCOPE       | SCHEDULED WINDOW         | STATUS    | PRIORITY | ACTIONS|
++---------------------------------------------------------------------------------------------------------+
+| [ Q3 Investor Summit    ] | All Investors        | 2026-08-01 ➔ 2026-08-15 | 🟢 Active | High [1] | [···]  |
+| [ System Maintenance    ] | Sovereign / Govt     | 2026-07-28 (02:00 UTC)  | 🕒 Queued | Emergency| [···]  |
+| [ Tax Incentive Update  ] | Unregistered Public  | Perpetual / No Expiry   | ⏸️ Paused | Low  [3] | [···]  |
++---------------------------------------------------------------------------------------------------------+
+
+```
+
+* **Dynamic Carousel & Stacking Logic:** If multiple banners are active simultaneously, the platform displays them as a collapsible banner bar or timed auto-rotating alert ticker.
+* **Target Audience Scoping:** Ability to target specific roles (e.g., `All Visitors`, `Qualified Investors Only`, `Government Users`, `Super Admins`).
+* **Time & Scheduling Trigger:**
+* `Start Date & Time (UTC)` and `Expiration Date & Time (UTC)`.
+* Status auto-transitions: `Draft` $\rightarrow$ `Scheduled` $\rightarrow$ `Active` $\rightarrow$ `Expired`.
+
+
+* **Action & Interactivity:**
+* Customizable CTA Button (e.g., `"Register Now"`, `"Read Policy"`).
+* Dismissability toggle (e.g., *Allow user to hide for 24h* vs. *Mandatory persistent notice*).
+* Style presets: `Info (Blue)`, `Success (Green)`, `Warning (Amber)`, `Critical (Red)`.
+
+
+
+---
+
+## 2. Granular Field-Level Visibility & Governance Controls
+
+*To be added to the Product Backlog for implementation across Project Registry and Deal Room forms.*
+
+Super Admins and ZIDA Admins require precise control over which specific data fields (financial models, cost structures, government concessions, NDA requirements) are visible to different user roles at various deal lifecycle stages.
+
+### Backlog Item: Role & Stage-Based Field Visibility Matrix
+
+```
++---------------------------------------------------------------------------------------------------------+
+| FEATURE BACKLOG ITEM: FIELD VISIBILITY & OBFUSCATION MATRIX                                              |
+| Priority: High | Component: Project Form Engine & API Middleware                                         |
++---------------------------------------------------------------------------------------------------------+
+| FIELD NAME            | PUBLIC / UNVERIFIED | REGISTERED INVESTOR | QUALIFIED INVESTOR | GOVT / SUPER ADMIN|
++---------------------------------------------------------------------------------------------------------+
+| Total Project Cost    | 👁️ Visible          | 👁️ Visible          | 👁️ Visible         | 👁️ Full Access   |
+| Detailed CapEx Split  | 🔒 Hidden           | 🔒 Hidden           | 👁️ Visible (NDA)   | 👁️ Full Access   |
+| IRR & Payback Period  | 🔒 Hidden           | 👁️ Visible          | 👁️ Visible         | 👁️ Full Access   |
+| Sovereign Guarantees  | 🔒 Hidden           | 🔒 Hidden           | 🔒 Hidden (Vetted) | 👁️ Full Access   |
+| Promoter Contacts     | 🔒 Hidden           | 🔒 Hidden           | 👁️ Visible         | 👁️ Full Access   |
++---------------------------------------------------------------------------------------------------------+
+
+```
+
+### Core Architecture Notes for Devs:
+
+1. **API-Level Obfuscation (Zero-Trust):** Hidden fields must be stripped out at the **backend/API level** based on user JWT roles, rather than merely hiding DOM elements via CSS/frontend logic.
+2. **Global & Per-Project Overrides:**
+* **Global Rule:** Default rules set in `/super-admin/settings` (e.g., `costStructureHidden: true/false`).
+* **Project Override:** Ability for Super Admin to unmask or restrict specific fields on a single project instance during deal negotiation.
+
+
+
+---
+
+## 3. Fortune 100 Audit Log Governance Drawer
+
+Currently, the Audit Log displays mutation records in a standard table. To elevate this to a Fortune 100 enterprise compliance suite (equivalent to AWS CloudTrail, Palantir Foundry, or Splunk Enterprise), clicking any audit row should open a **Deep Forensic Audit Drawer**.
+
+### Slide-Over Audit Drawer Architecture
+
+```
++-----------------------------------------------------------------------------------+
+| [X] FORENSIC AUDIT RECORD #AUD-2026-0723-0903                                     |
++-----------------------------------------------------------------------------------+
+|  MUTATION ACTION                                                                  |
+|  site_settings → updated                                                          |
+|  Timestamp: 7/23/2026, 11:09:03 AM EDT                                            |
++-----------------------------------------------------------------------------------+
+|  ACTOR IDENTIFICATION                                                             |
+|  User: Pilot Super Admin (superadmin+pilot@zidaproject.com)                      |
+|  Role: Super Admin | IP Address: 197.221.32.14 | Session ID: #sess_8f912a         |
++-----------------------------------------------------------------------------------+
+|  DIFF INSPECTOR (STATE CHANGES)                                                   |
+|  Entity: site_settings (ID: global_settings)                                      |
+|                                                                                   |
+|  - costStructureHidden: true   (Previous State)                                   |
+|  + costStructureHidden: false  (New State)                                        |
+|                                                                                   |
++-----------------------------------------------------------------------------------+
+|  GOVERNANCE & INCIDENT ACTIONS                                                    |
+|  [ 🔄 Rollback Mutation ]    [ 🔒 Suspend Actor Session ]   [ 📥 Export JSON ]    |
++-----------------------------------------------------------------------------------+
+
+```
+
+### Production React Component for Audit Drawer
+
+Below is the code for integrating the drawer directly into your existing `/super-admin/audit` view.
+
+```tsx
+import React, { useState } from 'react';
+import { 
+  XMarkIcon, 
+  ArrowPathIcon, 
+  ShieldExclamationIcon, 
+  ArrowDownTrayIcon,
+  DocumentDuplicateIcon,
+  CheckCircleIcon
+} from '@heroicons/react/24/outline';
+
+export interface AuditRecord {
+  id: string;
+  when: string;
+  actor: string;
+  actorEmail?: string;
+  ipAddress?: string;
+  action: string;
+  entity: string;
+  details: string;
+  previousState?: Record<string, any>;
+  newState?: Record<string, any>;
+}
+
+export const AuditDetailsDrawer: React.FC<{
+  record: AuditRecord | null;
+  onClose: () => void;
+  onRollback?: (recordId: string) => void;
+}> = ({ record, onClose, onRollback }) => {
+  const [copied, setCopied] = useState(false);
+
+  if (!record) return null;
+
+  const handleCopyJson = () => {
+    navigator.clipboard.writeText(JSON.stringify(record, null, 2));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-sm flex justify-end">
+      <div className="w-full max-w-2xl bg-zinc-950 border-l border-zinc-800 text-zinc-100 h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-200">
+        
+        {/* Drawer Header */}
+        <div className="p-6 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/60">
+          <div>
+            <span className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded">
+              Immutable Audit Trace
+            </span>
+            <h2 className="text-xl font-bold text-white mt-1.5">{record.action}</h2>
+            <p className="text-xs font-mono text-zinc-400 mt-0.5">ID: {record.id}</p>
+          </div>
+          <button 
+            onClick={onClose}
+            className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
+          >
+            <XMarkIcon className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Drawer Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          
+          {/* Metadata Grid */}
+          <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-zinc-900/40 border border-zinc-800 text-xs">
+            <div>
+              <span className="text-zinc-500 uppercase tracking-wider font-semibold text-[10px]">Timestamp</span>
+              <div className="font-mono text-zinc-200 mt-1">{record.when}</div>
+            </div>
+            <div>
+              <span className="text-zinc-500 uppercase tracking-wider font-semibold text-[10px]">Actor / User</span>
+              <div className="font-semibold text-white mt-1">{record.actor}</div>
+              <div className="font-mono text-zinc-400 text-[11px]">{record.actorEmail || 'pilot.admin@zidaproject.com'}</div>
+            </div>
+            <div>
+              <span className="text-zinc-500 uppercase tracking-wider font-semibold text-[10px]">Target Entity</span>
+              <div className="font-mono text-emerald-400 mt-1">{record.entity}</div>
+            </div>
+            <div>
+              <span className="text-zinc-500 uppercase tracking-wider font-semibold text-[10px]">IP & Origin</span>
+              <div className="font-mono text-zinc-300 mt-1">{record.ipAddress || '197.221.32.14 (Harare, ZW)'}</div>
+            </div>
+          </div>
+
+          {/* Diff / Mutation Inspector */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">Payload State Diff</h3>
+              <button 
+                onClick={handleCopyJson}
+                className="text-[11px] text-zinc-400 hover:text-white flex items-center space-x-1"
+              >
+                {copied ? <CheckCircleIcon className="w-3.5 h-3.5 text-emerald-400" /> : <DocumentDuplicateIcon className="w-3.5 h-3.5" />}
+                <span>{copied ? 'Copied' : 'Copy Payload'}</span>
+              </button>
+            </div>
+            <div className="p-4 rounded-xl bg-black border border-zinc-800 font-mono text-xs overflow-x-auto space-y-2">
+              <div className="text-zinc-500">// Mutation Details</div>
+              <div className="text-emerald-400">+ {record.details}</div>
+              {record.previousState && (
+                <div className="text-red-400/80">- {JSON.stringify(record.previousState)}</div>
+              )}
+            </div>
+          </div>
+
+          {/* Security Context */}
+          <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 space-y-2">
+            <div className="flex items-center space-x-2 text-amber-400 text-xs font-bold">
+              <ShieldExclamationIcon className="w-4 h-4" />
+              <span>Compliance & Non-Repudiation</span>
+            </div>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              This action was recorded in the platform's write-only audit pipeline. Modifying or deleting this log entry is restricted by sovereign data governance policies.
+            </p>
+          </div>
+
+        </div>
+
+        {/* Drawer Footer Actions */}
+        <div className="p-4 border-t border-zinc-800 bg-zinc-900/80 flex items-center justify-between">
+          <button 
+            onClick={() => onRollback && onRollback(record.id)}
+            className="px-4 py-2 text-xs font-semibold rounded-lg bg-amber-600/20 text-amber-300 hover:bg-amber-600/30 border border-amber-500/30 transition flex items-center space-x-2"
+          >
+            <ArrowPathIcon className="w-3.5 h-3.5" />
+            <span>Rollback Mutation</span>
+          </button>
+
+          <div className="flex items-center space-x-3">
+            <button 
+              onClick={onClose}
+              className="px-4 py-2 text-xs font-medium text-zinc-400 hover:text-white transition"
+            >
+              Close
+            </button>
+            <button className="px-4 py-2 text-xs font-semibold rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white transition flex items-center space-x-1.5">
+              <ArrowDownTrayIcon className="w-3.5 h-3.5" />
+              <span>Export Audit Evidence</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+```
+
+**Yes, absolutely—build it now.**
+
+Since the underlying page layouts, data models, and form structures are already built, implementing the **Role & Stage-Based Field Visibility Matrix** now will take minimal effort while delivering immediate security and architectural value.
+
+Here is why completing it now is the smartest path forward:
+
+---
+
+### Why Build It Now?
+
+1. **Low Lift, High Security ROI:**
+Because your UI forms and state management are already structured, this is primarily a **middleware / API filtering task**. Adding a utility function or API wrapper to strip/mask JSON keys based on user JWT roles takes very little time.
+2. **Prevents Data Leak Refactoring:**
+If developers continue building new deal room views or export features without field-level masking in place, they will have to retroactively go back and wrap every new field in conditional logic later.
+3. **Zero-Trust Compliance Standard:**
+For an investment platform handling sensitive financial models, CapEx splits, and promoter data, securing fields at the backend layer guarantees sovereign data safety from day one.
+
+---
+
+### Quick Implementation Blueprint for the Dev Team
+
+To keep execution fast and error-free, ask the team to follow this standard pattern:
+
+#### A. Backend/API Middleware (The Fast & Secure Way)
+
+Create a lightweight response transformer utility (e.g., `sanitizeProjectData`):
+
+```typescript
+// Fast API-level field masking based on user role
+export function sanitizeProjectData(project: any, userRole: string) {
+  const isSuperOrGov = ['Super Admin', 'ZIDA Admin', 'Government'].includes(userRole);
+  const isQualified = userRole === 'Qualified Investor';
+
+  return {
+    ...project,
+    // Sensitive fields masked unless authorized
+    detailedCapexSplit: isSuperOrGov || isQualified ? project.detailedCapexSplit : null,
+    promoterContact: isSuperOrGov || isQualified ? project.promoterContact : null,
+    sovereignGuarantees: isSuperOrGov ? project.sovereignGuarantees : null, // Super Admin/Gov only
+  };
+}
+
+```
+
+#### B. Direct Feedback Instruction to Share with Developers
+
+> **Developer Task Instruction:**
+> *"Since our project registry and form structures are already built, let's implement the **Role & Stage-Based Field Visibility Matrix** immediately.*
+> *1. Add a central field-masking helper in the API layer that strips/nullifies sensitive keys (`detailedCapexSplit`, `promoterContact`, `sovereignGuarantees`) before returning the JSON payload to the client based on `userRole`.*
+> *2. On the frontend, update form inputs to conditionally render a locked badge (e.g., `🔒 Qualified Investors Only`) whenever a masked field returns `null` or is restricted by current stage."*

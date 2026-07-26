@@ -5,7 +5,7 @@ import { SITE_URL } from "@/lib/config/site";
 const PAGE_URL = `${SITE_URL}/opportunity`;
 
 export const metadata: Metadata = {
-  title: "The National Opportunity | Zimbabwe Investment Platform",
+  title: "The National Opportunity",
   description:
     "Zimbabwe's ZIDA 2025 investment catalogue, digitised into a governed, searchable registry — the strategic case for institutional investors, DFIs, and diaspora capital.",
   alternates: { canonical: PAGE_URL },
