@@ -12,6 +12,21 @@ const password = process.env.PILOT_ACCOUNT_PASSWORD;
 /** Rendered by components/dashboard/console-redirect.tsx when a console layout denies access. */
 const BOUNCE_MARKER = "do not have access to this console";
 
+// components/dashboard/dashboard-shell.tsx wraps /deal-room and /ministry (and only those) in
+// <NdaGate>, which renders a skeleton while useAuth() is loading — always true during SSR. Their
+// server HTML therefore contains neither the page nor the access-denied bounce, whichever the
+// layout chose; both only appear after hydration. What is still provable over HTTP is the part
+// that matters: no console content is served to a role that should not see it. The redirect
+// itself is client-side on these two routes and is covered by the browser walkthrough.
+const NDA_GATED_CONSOLES = new Set(["/deal-room", "/ministry"]);
+const SKELETON_MARKER = "dashboard-skeleton";
+
+/** Console label shown in the shell topbar, present even while NdaGate holds back the content. */
+const CONSOLE_CHROME_MARKERS: Record<string, string> = {
+  "/ministry": "Ministry Desk",
+  "/deal-room": "Investor Dashboard",
+};
+
 // Body copy unique to each console's overview page. Headings are not usable here: "Ministry Desk"
 // and "Analytics" are also console/nav labels in components/dashboard/dashboard-nav-config.ts, so
 // they appear in shared dashboard chrome and made a correctly-denied page look like a leak.
@@ -165,10 +180,12 @@ async function checkForbiddenPath(email: string, cookies: string, path: string) 
   // into an RSC-stream redirect on a 200. What must hold is that no console markup is served.
   if (status === 200) {
     const body = await res.text();
+    dump(`denied-${email}-${path}`, body);
     if (marker && body.includes(marker)) {
       report(false, `${email} denied ${path}`, `200 and body contains ${marker}`);
+    } else if (NDA_GATED_CONSOLES.has(path)) {
+      report(body.includes(SKELETON_MARKER), `${email} denied ${path}`, `200, no console content, body=${fingerprint(body)}`);
     } else {
-      dump(`denied-${email}-${path}`, body);
       report(body.includes(BOUNCE_MARKER), `${email} denied ${path}`, `200, body=${fingerprint(body)}`);
     }
     return;
@@ -202,6 +219,16 @@ async function checkHomePath(email: string, cookies: string, home: string, homeM
     report(false, `${email} home ${home}`, "own console served the access-denied bounce");
     return;
   }
+
+  // NdaGate holds this console's content back until hydration, so assert the shell rendered for
+  // the right console rather than page copy that SSR never emits.
+  if (NDA_GATED_CONSOLES.has(home)) {
+    const chrome = CONSOLE_CHROME_MARKERS[home];
+    const ok = body.includes(chrome) && body.includes(SKELETON_MARKER);
+    report(ok, `${email} home ${home} (client-gated shell)`, ok ? undefined : `200, body=${fingerprint(body)}`);
+    return;
+  }
+
   report(body.includes(homeMarker), `${email} home ${home}`, body.includes(homeMarker) ? undefined : `200, body=${fingerprint(body)}`);
 }
 
