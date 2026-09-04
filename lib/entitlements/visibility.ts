@@ -2,6 +2,7 @@ import type { DataVerificationStatus, DemoPersona, InvestmentProject, ProjectFil
 import type { AccountRole } from "@/lib/auth/types";
 import { classifyFinancingType, getFinancingBuckets } from "@/lib/utils/financing-type";
 import { parseCapitalTotalMillions, matchesCapitalBracket } from "@/lib/utils/capital";
+import { DEFAULT_FIELD_VISIBILITY, ENTITLEMENT_GROUPS, groupForField, type EntitlementGroupId, type FieldVisibilityMatrix } from "@/lib/entitlements/matrix";
 
 export type AccessLevel = "public" | "registered" | "qualified" | "admin";
 
@@ -37,7 +38,10 @@ export function getAccessLevel(persona: DemoPersona): AccessLevel {
  *  expose. */
 export function accessLevelForRole(role: AccountRole | null): AccessLevel {
   if (role === "admin" || role === "super_admin") return "admin";
-  if (role === "qualified" || role === "government") return "qualified";
+  // ministry_admin gets full investor-grade financial visibility (same tier as government) on
+  // whatever projects it can see — the *which projects* narrowing to their own ministry happens
+  // separately in lib/entitlements/ministry-scope.ts, not here.
+  if (role === "qualified" || role === "government" || role === "ministry_admin") return "qualified";
   if (role === "registered") return "registered";
   return "public";
 }
@@ -53,17 +57,31 @@ export function accessLevelForRole(role: AccountRole | null): AccessLevel {
  * its sitewide exposure is governed separately by the `costStructureHidden` kill switch. The masked
  * set here is the return-metric/data-room content that is qualified-only by policy.
  */
-export function sanitizeProjectForAccess(project: InvestmentProject, accessLevel: AccessLevel): InvestmentProject {
-  if (LEVEL_RANK[accessLevel] >= LEVEL_RANK.qualified) return project;
-  return {
-    ...project,
-    irr: undefined,
-    npv: undefined,
-    roi: undefined,
-    paybackPeriod: undefined,
-    projectedRevenue: undefined,
-    documents: [],
+export function sanitizeProjectForAccess(
+  project: InvestmentProject,
+  accessLevel: AccessLevel,
+  matrix: FieldVisibilityMatrix = DEFAULT_FIELD_VISIBILITY,
+  costStructureHidden = false
+): InvestmentProject {
+  const next: InvestmentProject = { ...project };
+  const hide = (field: keyof InvestmentProject) => {
+    (next as unknown as Record<string, unknown>)[field] = Array.isArray(next[field]) ? [] : undefined;
   };
+  for (const group of Object.values(ENTITLEMENT_GROUPS)) {
+    const required = matrix[groupForField(group.fields[0]) ?? "basics"];
+    if (LEVEL_RANK[accessLevel] >= LEVEL_RANK[required]) continue;
+    for (const field of group.fields) {
+      if (field in next) hide(field as keyof InvestmentProject);
+    }
+  }
+  if (costStructureHidden && LEVEL_RANK[accessLevel] < LEVEL_RANK.admin) {
+    next.capitalRequired = undefined;
+  }
+  if (LEVEL_RANK[accessLevel] < LEVEL_RANK[matrix.documents]) {
+    next.documents = [];
+    next.documentRecords = [];
+  }
+  return next;
 }
 
 export function canAccessContent(
@@ -80,6 +98,30 @@ export function canAccessVisibilityLevel(accessLevel: AccessLevel, requiredLevel
   return LEVEL_RANK[accessLevel] >= LEVEL_RANK[VISIBILITY_RANK[requiredLevel]];
 }
 
+/** Client/server shared gate for a stored entitlement group. `costStructureHidden` additionally
+ *  hides E1 capital from everyone below admin, matching `sanitizeProjectForAccess`. */
+export function canAccessEntitlementGroup(
+  accessLevel: AccessLevel,
+  group: EntitlementGroupId,
+  matrix: FieldVisibilityMatrix = DEFAULT_FIELD_VISIBILITY,
+  costStructureHidden = false
+): boolean {
+  if (group === "financialsE1" && costStructureHidden && LEVEL_RANK[accessLevel] < LEVEL_RANK.admin) {
+    return false;
+  }
+  return LEVEL_RANK[accessLevel] >= LEVEL_RANK[matrix[group]];
+}
+
+/** True for `qualified`, `government`/`ministry_admin` (both mapped to "qualified" by
+ *  `accessLevelForRole`), `admin`, and `super_admin` — i.e. everyone at or above the investor-
+ *  verification tier. Use this (not the configurable `financialsE1` matrix row) for UI that
+ *  renders parsed/itemized capital figures — e.g. `CapitalBreakdown`'s per-component dollar
+ *  amounts and `EstInvestmentRange`'s aggregate range — which are qualified-only by fixed product
+ *  policy, unlike the single public `capitalRequired` headline string that `financialsE1` governs. */
+export function isQualifiedTier(accessLevel: AccessLevel): boolean {
+  return LEVEL_RANK[accessLevel] >= LEVEL_RANK.qualified;
+}
+
 export function canViewProject(
   persona: DemoPersona,
   project: InvestmentProject
@@ -90,32 +132,9 @@ export function canViewProject(
   return canAccessContent(persona, required);
 }
 
-export function getRequiredLevelForField(field: string): AccessLevel {
-  const publicFields = [
-    "title",
-    "sector",
-    "location",
-    "opportunitySummary",
-    "description",
-    "ministries",
-    "projectOwner",
-    "province",
-    "district",
-    "dataVerificationStatus",
-    "scope",
-    "developmentImpact",
-    "projectReadiness",
-    "financingType",
-  ];
-  const registeredFields: string[] = [];
-  // Financial figures require admin-approved "qualified" investor status, not just registration —
-  // a project's own dollar amounts (cost breakdown, returns) stay reserved for vetted investors,
-  // matching real DFI/PE data-room practice, while everything else above is public-disclosure-safe.
-  const qualifiedFields = ["documents", "meeting", "investorPack", "irr", "npv", "roi", "paybackPeriod", "projectedRevenue", "capitalRequired"];
-
-  if (publicFields.includes(field)) return "public";
-  if (registeredFields.includes(field)) return "registered";
-  if (qualifiedFields.includes(field)) return "qualified";
+export function getRequiredLevelForField(field: string, matrix: FieldVisibilityMatrix = DEFAULT_FIELD_VISIBILITY): AccessLevel {
+  const group = groupForField(field);
+  if (group) return matrix[group];
   return "admin";
 }
 

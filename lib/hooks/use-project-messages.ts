@@ -12,6 +12,7 @@ export interface PendingAttachment {
 }
 
 interface PostMessageOptions {
+  subject?: string;
   visibility?: MessageVisibility;
   parentMessageId?: string;
   recipientUserId?: string;
@@ -94,6 +95,7 @@ export function useThreadMessages(channel: ThreadChannel) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           body,
+          subject: options?.subject,
           ...(isConcierge ? { ownerUserId: ownerForPost } : { engagementId: engagementIdForPost }),
           visibility: options?.visibility,
           parentMessageId: options?.parentMessageId,

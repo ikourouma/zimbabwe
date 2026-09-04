@@ -53,3 +53,14 @@ export const ENGAGEMENT_STATUS_LABELS: Record<InvestorEngagementStatus, string> 
   approved: "Approved",
   rejected: "Rejected",
 };
+
+/** Canonical display order for every engagement-status pill/select across the platform (the
+ *  Engagements registry's pills, its filters bar's status <Select>) — single source of truth so
+ *  no caller keeps its own drifting copy. */
+export const ENGAGEMENT_STATUS_ORDER: InvestorEngagementStatus[] = [
+  "draft",
+  "submitted",
+  "under_review",
+  "approved",
+  "rejected",
+];

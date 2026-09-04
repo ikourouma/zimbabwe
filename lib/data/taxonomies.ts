@@ -10,15 +10,134 @@ import type {
 } from "@/lib/types";
 import { slugify } from "@/lib/utils";
 
+// Phase 7 — MOU clause library. Each sector's `defaultMouTerms` pre-fills a brand-new MOU's term
+// bullets/special conditions the moment an engagement tied to a project in that sector is first
+// approved (see buildSeedContent() in lib/db/queries/mous.ts) — ZIDA staff still review and edit
+// every field before Submit for Review; nothing here is ever auto-finalized. Super Admins can
+// further edit these per-sector (and per-ministry) defaults live from /super-admin/taxonomies.
 export const sectors: Sector[] = [
-  { id: "sec-health", name: "Health", slug: "health", description: "Healthcare infrastructure and medical services investment opportunities.", status: "active" },
-  { id: "sec-agriculture", name: "Agriculture", slug: "agriculture", description: "Agriculture, agro-processing, and food security projects.", status: "active" },
-  { id: "sec-ict", name: "ICT", slug: "ict", description: "Digital economy, broadband, and ICT infrastructure projects.", status: "active" },
-  { id: "sec-manufacturing", name: "Manufacturing", slug: "manufacturing", description: "Industrialization and value-addition manufacturing projects.", status: "active" },
-  { id: "sec-mining", name: "Mining", slug: "mining", description: "Mining, exploration, and resource development opportunities.", status: "active" },
-  { id: "sec-infrastructure", name: "Infrastructure", slug: "infrastructure", description: "Housing, urban development, and SEZ infrastructure projects.", status: "active" },
-  { id: "sec-renewable-energy", name: "Renewable Energy", shortName: "Energy", slug: "renewable-energy", description: "Solar, biogas, and clean energy transition projects.", status: "active" },
-  { id: "sec-tourism-financial", name: "Tourism and Financial Services", shortName: "Tourism & Finance", slug: "tourism-and-financial-services", description: "Tourism SEZ, hospitality, and financial services hub projects.", status: "active" },
+  {
+    id: "sec-health",
+    name: "Health",
+    slug: "health",
+    description: "Healthcare infrastructure and medical services investment opportunities.",
+    status: "active",
+    defaultMouTerms: {
+      termBullets: [
+        "Investor commits to meeting Ministry of Health and Child Care (MoHCC) facility licensing and clinical-quality standards prior to commissioning.",
+        "ZIDA facilitates duty/tax rebate applications for imported medical equipment within 60 days of a complete application.",
+        "Investor provides an indicative staffing and local-training plan for clinical and technical personnel.",
+      ],
+      specialConditions: "Any patient data collected must be handled in accordance with Zimbabwe's data protection framework and MoHCC clinical governance guidelines.",
+    },
+  },
+  {
+    id: "sec-agriculture",
+    name: "Agriculture",
+    slug: "agriculture",
+    description: "Agriculture, agro-processing, and food security projects.",
+    status: "active",
+    defaultMouTerms: {
+      termBullets: [
+        "ZIDA facilitates land allocation/lease and irrigation water-rights processing within 90 days of a complete application.",
+        "Investor commits to an indicative smallholder/out-grower linkage plan supporting local farming communities.",
+        "Parties agree on an indicative planting-to-first-harvest timeline to guide the due-diligence schedule.",
+      ],
+      specialConditions: "Any land under customary or communal tenure requires prior community consultation per the applicable Ministry of Lands guidelines.",
+    },
+  },
+  {
+    id: "sec-ict",
+    name: "ICT",
+    slug: "ict",
+    description: "Digital economy, broadband, and ICT infrastructure projects.",
+    status: "active",
+    defaultMouTerms: {
+      termBullets: [
+        "ZIDA facilitates POTRAZ licensing/spectrum or infrastructure-sharing applications within 60 days of a complete submission.",
+        "Investor commits to an indicative local-content and skills-transfer plan for network/software engineering roles.",
+        "Parties agree on data-residency expectations for any infrastructure hosting Zimbabwean user data.",
+      ],
+      specialConditions: "Cybersecurity and data-protection commitments must align with the Cyber and Data Protection Act and any successor legislation.",
+    },
+  },
+  {
+    id: "sec-manufacturing",
+    name: "Manufacturing",
+    slug: "manufacturing",
+    description: "Industrialization and value-addition manufacturing projects.",
+    status: "active",
+    defaultMouTerms: {
+      termBullets: [
+        "ZIDA facilitates industrial-zone allocation and utility (power/water) connection applications within 90 days.",
+        "Investor commits to an indicative local value-addition/beneficiation percentage for locally-sourced inputs.",
+        "Parties agree on an indicative construction-to-commissioning timeline to guide the due-diligence schedule.",
+      ],
+      specialConditions: "Any hazardous-materials handling must meet EMA (Environmental Management Agency) permitting requirements ahead of commissioning.",
+    },
+  },
+  {
+    id: "sec-mining",
+    name: "Mining",
+    slug: "mining",
+    description: "Mining, exploration, and resource development opportunities.",
+    status: "active",
+    defaultMouTerms: {
+      termBullets: [
+        "ZIDA facilitates Ministry of Mines exploration/mining-title and EMA environmental-impact-assessment processing within the applicable statutory timelines.",
+        "Investor commits to an indicative local beneficiation/value-addition plan consistent with national minerals policy.",
+        "Parties agree on an indicative community development agreement framework for the host district.",
+      ],
+      specialConditions: "This MOU does not substitute for, and is without prejudice to, the formal mining-title/EPO application and EIA approval processes under applicable law.",
+    },
+  },
+  {
+    id: "sec-infrastructure",
+    name: "Infrastructure",
+    slug: "infrastructure",
+    description: "Housing, urban development, and SEZ infrastructure projects.",
+    status: "active",
+    defaultMouTerms: {
+      termBullets: [
+        "ZIDA facilitates SEZ designation, master-plan approval, or local-authority permitting within 90 days of a complete application.",
+        "Investor commits to an indicative phased delivery timeline and local-employment target for construction and operations.",
+        "Parties agree on indicative off-take/anchor-tenant arrangements where applicable.",
+      ],
+      specialConditions: "Any resettlement or land-use change triggers the applicable resettlement action plan and community-consultation requirements before groundbreaking.",
+    },
+  },
+  {
+    id: "sec-renewable-energy",
+    name: "Renewable Energy",
+    shortName: "Energy",
+    slug: "renewable-energy",
+    description: "Solar, biogas, and clean energy transition projects.",
+    status: "active",
+    defaultMouTerms: {
+      termBullets: [
+        "ZIDA facilitates ZERA (Zimbabwe Energy Regulatory Authority) generation-licence processing within the applicable statutory timeline.",
+        "Investor provides an indicative grid-interconnection or off-grid delivery plan, including any ZETDC power-purchase-agreement discussions.",
+        "Parties agree on indicative construction-to-first-power milestones to guide the due-diligence schedule.",
+      ],
+      specialConditions: "Any power-purchase-agreement terms remain subject to ZERA tariff approval and are non-binding until executed separately.",
+    },
+  },
+  {
+    id: "sec-tourism-financial",
+    name: "Tourism and Financial Services",
+    shortName: "Tourism & Finance",
+    slug: "tourism-and-financial-services",
+    description: "Tourism SEZ, hospitality, and financial services hub projects.",
+    status: "active",
+    defaultMouTerms: {
+      termBullets: [
+        "ZIDA facilitates tourism-facility licensing (ZTA) or financial-services licensing (RBZ/relevant regulator) within the applicable statutory timeline.",
+        "Investor commits to an indicative local-employment and skills-transfer target for hospitality/financial-services roles.",
+        "Parties agree on an indicative development or launch timeline to guide the due-diligence schedule.",
+      ],
+      specialConditions: "Any financial-services activity remains subject to the relevant regulator's prudential licensing and approval process, independent of this MOU.",
+    },
+  },
 ];
 
 export const strategicPillars: StrategicPillar[] = [

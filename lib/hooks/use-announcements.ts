@@ -12,9 +12,15 @@ export function matchesAudience(audience: AnnouncementAudience, role: AccountRol
     case "registered":
       return role !== null;
     case "qualified":
-      return role === "qualified" || role === "government" || role === "admin" || role === "super_admin";
+      return (
+        role === "qualified" ||
+        role === "government" ||
+        role === "ministry_admin" ||
+        role === "admin" ||
+        role === "super_admin"
+      );
     case "government":
-      return role === "government" || role === "admin" || role === "super_admin";
+      return role === "government" || role === "ministry_admin" || role === "admin" || role === "super_admin";
     case "admin":
       return role === "admin" || role === "super_admin";
     case "super_admin":

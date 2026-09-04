@@ -7,7 +7,10 @@ interface LeadCaptureContextValue {
   inquiries: LeadInquiry[];
   isLoading: boolean;
   addInquiry: (inquiry: Omit<LeadInquiry, "id" | "createdAt">) => Promise<void>;
-  updateInquiryStatus: (id: string, status: LeadInquiry["status"]) => Promise<void>;
+  /** `reason` is required by the server for every decision except resetting back to "pending" —
+   *  see the reason-required vetting workflow (Investor Qualification Vetting plan). Throws with
+   *  the server's error message on failure (e.g. KYC_INCOMPLETE) so callers can surface it. */
+  updateInquiryStatus: (id: string, status: LeadInquiry["status"], reason?: string) => Promise<void>;
   refresh: () => Promise<void>;
 }
 
@@ -43,15 +46,20 @@ export function LeadCaptureProvider({ children }: { children: React.ReactNode })
     setInquiries((prev) => [created, ...prev]);
   }, []);
 
-  const updateInquiryStatus = useCallback(async (id: string, status: LeadInquiry["status"]) => {
+  const updateInquiryStatus = useCallback(async (id: string, status: LeadInquiry["status"], reason?: string) => {
     const res = await fetch(`/api/inquiries/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, reason }),
     });
-    if (!res.ok) throw new Error("Failed to update inquiry");
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error ?? "Failed to update inquiry");
+    }
     const updated = (await res.json()) as LeadInquiry;
-    setInquiries((prev) => prev.map((inq) => (inq.id === id ? updated : inq)));
+    // Spread onto the existing row (not a full replace) so the GET-only `matchedUserId` enrichment
+    // — never returned by this PATCH response — survives the optimistic local update.
+    setInquiries((prev) => prev.map((inq) => (inq.id === id ? { ...inq, ...updated } : inq)));
   }, []);
 
   return (

@@ -7,10 +7,11 @@
  * fact, not a per-row one — fabricating a per-row flag to back that filter would misrepresent the
  * data, so it's tracked in BACKLOG.md instead of being built here.
  */
-export type TaxonomyCategory = "sectors" | "ministries" | "provinces" | "pillars" | "sdgs" | "contact";
+export type TaxonomyCategory = "sectors" | "subsectors" | "ministries" | "provinces" | "pillars" | "sdgs" | "contact";
 
 export const TAXONOMY_CATEGORY_LABELS: Record<TaxonomyCategory, string> = {
   sectors: "Sectors",
+  subsectors: "Subsectors",
   ministries: "Ministries",
   provinces: "Provinces",
   pillars: "Strategic Pillars",
@@ -18,7 +19,15 @@ export const TAXONOMY_CATEGORY_LABELS: Record<TaxonomyCategory, string> = {
   contact: "Contact Reasons",
 };
 
-export const TAXONOMY_CATEGORY_ORDER: TaxonomyCategory[] = ["sectors", "ministries", "provinces", "pillars", "sdgs", "contact"];
+export const TAXONOMY_CATEGORY_ORDER: TaxonomyCategory[] = [
+  "sectors",
+  "subsectors",
+  "ministries",
+  "provinces",
+  "pillars",
+  "sdgs",
+  "contact",
+];
 
 export type TaxonomyStatusFilter = "all" | "active" | "archived";
 export type TaxonomyCoverageFilter = "all" | "linked" | "unlinked";

@@ -22,6 +22,14 @@ export function formatInquiryType(type: string): string {
   return LEAD_INQUIRY_TYPE_LABELS[type] ?? type.replace(/_/g, " ");
 }
 
+/** Client-side heads-up mirror of the server's KYC-completeness check (app/api/inquiries/[id]/
+ *  route.ts) — checked against the inquiry row's own fields only (the server additionally
+ *  cross-checks the matched profile, so this can under-report completeness for a returning
+ *  applicant; it's a UI nicety, never the authorization boundary). */
+export function isInquiryKycComplete(inq: LeadInquiry): boolean {
+  return Boolean(inq.organization && inq.phone && inq.hqAddress && inq.businessRegistrationId && inq.websiteUrl);
+}
+
 export function describeInterest(inq: LeadInquiry): string {
   if (inq.ministryRepresented) return inq.ministryRepresented;
   if (inq.sectorIds?.length) {

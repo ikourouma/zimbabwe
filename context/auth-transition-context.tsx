@@ -9,13 +9,14 @@ import {
   type ReactNode,
 } from "react";
 
-export type AuthTransitionPhase = "idle" | "signing_in" | "signing_out";
+export type AuthTransitionPhase = "idle" | "signing_in" | "signing_up" | "signing_out";
 
 const MIN_DURATION_MS = 800;
 
 interface AuthTransitionContextValue {
   phase: AuthTransitionPhase;
   runSignInTransition: <T>(action: () => Promise<T>) => Promise<T>;
+  runSignUpTransition: <T>(action: () => Promise<T>) => Promise<T>;
   runSignOutTransition: <T>(action: () => Promise<T>) => Promise<T>;
 }
 
@@ -43,14 +44,19 @@ export function AuthTransitionProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const runSignUpTransition = useCallback(
+    <T,>(action: () => Promise<T>) => runWithMinDuration("signing_up", action, setPhase),
+    [],
+  );
+
   const runSignOutTransition = useCallback(
     <T,>(action: () => Promise<T>) => runWithMinDuration("signing_out", action, setPhase),
     [],
   );
 
   const value = useMemo(
-    () => ({ phase, runSignInTransition, runSignOutTransition }),
-    [phase, runSignInTransition, runSignOutTransition],
+    () => ({ phase, runSignInTransition, runSignUpTransition, runSignOutTransition }),
+    [phase, runSignInTransition, runSignUpTransition, runSignOutTransition],
   );
 
   return <AuthTransitionContext.Provider value={value}>{children}</AuthTransitionContext.Provider>;

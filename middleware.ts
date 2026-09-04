@@ -15,5 +15,5 @@ export const config = {
   // Targets the production route names (post Phase 3 route-renames), not the current
   // `-demo` routes — harmless no-op until those renames land, and avoids a second edit here
   // once they do.
-  matcher: ["/admin/:path*", "/super-admin/:path*", "/deal-room/:path*"],
+  matcher: ["/admin/:path*", "/super-admin/:path*", "/deal-room/:path*", "/ministry/:path*"],
 };

@@ -33,6 +33,11 @@ export function useAdminUsers() {
         jobTitle?: string | null;
         phone?: string | null;
         ministryId?: string | null;
+        hqAddress?: string | null;
+        businessRegistrationId?: string | null;
+        websiteUrl?: string | null;
+        executiveRepresentativeName?: string | null;
+        executiveRepresentativeTitle?: string | null;
         reason?: string;
       }
     ) => {
@@ -58,6 +63,7 @@ export function useAdminUsers() {
       jobTitle?: string;
       phone?: string;
       ministryId?: string;
+      justification?: string;
     }) => {
       const res = await fetch("/api/users/create", {
         method: "POST",

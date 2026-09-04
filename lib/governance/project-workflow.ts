@@ -2,14 +2,43 @@ import type { InvestmentProject, ProjectStatus } from "@/lib/types";
 
 export type WorkflowRole = "creator" | "reviewer" | "approver" | "super_admin";
 
-const TRANSITIONS: Record<ProjectStatus, ProjectStatus[]> = {
+/** `creator` tier — the proposal's own owner/co-editor (`qualified`, via `resolveProjectWorkflowRole`).
+ *  Can only push a draft (or a resubmission after feedback) into the queue; never touches anything
+ *  past `submitted_for_review` — approving/publishing is never this tier's call. */
+const CREATOR_TRANSITIONS: Record<ProjectStatus, ProjectStatus[]> = {
   draft: ["submitted_for_review"],
-  submitted_for_review: ["under_review", "draft"],
-  under_review: ["changes_requested", "approved", "archived"],
-  changes_requested: ["submitted_for_review", "draft"],
-  approved: ["published", "archived"],
-  published: ["archived"],
+  submitted_for_review: [],
+  under_review: [],
+  changes_requested: ["submitted_for_review"],
+  approved: [],
+  published: [],
   archived: [],
+};
+
+/** `reviewer` tier (Platform Feedback Batch v4, Phase 7) — `ministry_admin` on their own ministry's
+ *  projects and `government` platform-wide. Full stewardship from draft through Approved, including
+ *  the resubmit-after-`changes_requested` loop — but **never** `approved -> published` or
+ *  `published -> archived`. ZIDA (`admin`/`super_admin`, the `approver` tier below) is the sole
+ *  publish-authority gate; this is the one-line-in-spirit fix that closes both the ministry_admin
+ *  publish gap (they used to be `approver`) and the dormant `government` publish/unpublish gap (they
+ *  used to fall through to the generic `TRANSITIONS` table below, which included both). */
+const REVIEWER_TRANSITIONS: Record<ProjectStatus, ProjectStatus[]> = {
+  draft: ["submitted_for_review"],
+  submitted_for_review: ["under_review"],
+  under_review: ["changes_requested", "approved", "archived"],
+  changes_requested: ["submitted_for_review"],
+  approved: [],
+  published: [],
+  archived: [],
+};
+
+/** `approver` tier (`admin`, and `super_admin` via this same shared path) — everything `reviewer`
+ *  can do, plus the final `approved -> published` publish step. Also picks up
+ *  `submitted_for_review -> under_review` for free via the spread, closing the gap where a plain
+ *  `admin` previously had no way to move a fresh submission into Under Review themselves. */
+const APPROVER_TRANSITIONS: Record<ProjectStatus, ProjectStatus[]> = {
+  ...REVIEWER_TRANSITIONS,
+  approved: ["published"],
 };
 
 const SUPER_ADMIN_TRANSITIONS: Record<ProjectStatus, ProjectStatus[]> = {
@@ -33,36 +62,30 @@ export const REQUIRED_FIELDS: (keyof InvestmentProject)[] = [
   "description",
 ];
 
+/** Single source of truth for "which table governs this role" — used by both `canTransition()` and
+ *  `getAvailableActions()` so the Review Queue's buttons can never drift from what the server will
+ *  actually accept (Platform Feedback Batch v4, Phase 7 — closes the button/permission mismatch the
+ *  page's own copy already claimed to guarantee but didn't). */
+function transitionsFor(role: WorkflowRole): Record<ProjectStatus, ProjectStatus[]> {
+  if (role === "super_admin") return SUPER_ADMIN_TRANSITIONS;
+  if (role === "approver") return APPROVER_TRANSITIONS;
+  if (role === "reviewer") return REVIEWER_TRANSITIONS;
+  return CREATOR_TRANSITIONS;
+}
+
 export function canTransition(
   from: ProjectStatus,
   to: ProjectStatus,
   role: WorkflowRole
 ): boolean {
-  if (role === "super_admin") {
-    return SUPER_ADMIN_TRANSITIONS[from]?.includes(to) ?? false;
-  }
-  if (role === "creator") {
-    if (from === "draft" && to === "submitted_for_review") return true;
-    if (from === "changes_requested" && to === "submitted_for_review") return true;
-    return false;
-  }
-  if (role === "reviewer") {
-    return TRANSITIONS[from]?.includes(to) ?? false;
-  }
-  if (role === "approver") {
-    if (from === "under_review" && ["changes_requested", "approved", "archived"].includes(to)) return true;
-    if (from === "approved" && to === "published") return true;
-    return false;
-  }
-  return false;
+  return transitionsFor(role)[from]?.includes(to) ?? false;
 }
 
 export function getAvailableActions(
   project: InvestmentProject,
   role: WorkflowRole
 ): ProjectStatus[] {
-  const map = role === "super_admin" ? SUPER_ADMIN_TRANSITIONS : TRANSITIONS;
-  return map[project.projectStatus] ?? [];
+  return transitionsFor(role)[project.projectStatus] ?? [];
 }
 
 export function validateRequiredFields(
@@ -110,3 +133,24 @@ export function getInReviewCount(projects: InvestmentProject[]): number {
 export function isInReviewStatus(status: ProjectStatus): boolean {
   return IN_REVIEW_STATUSES.includes(status);
 }
+
+/** "in_review" is a synthetic value grouping submitted_for_review/under_review/changes_requested
+ *  (mirrors the Overview KPI card and isInReviewStatus) — not a real ProjectStatus. Shared by
+ *  every project registry's status-pill row (Pipeline, Saved Projects, My Proposals) so they
+ *  never drift from one another (Platform Feedback Batch v4, Phase 1 addendum). */
+export type StatusFilterValue = "all" | "in_review" | ProjectStatus;
+
+// 1:1 with DealRoomKanban's BOARD_COLUMNS (draft → submitted_for_review → under_review →
+// changes_requested → approved → published) — every real Kanban column gets its own pill instead
+// of grouping submitted_for_review/under_review/changes_requested into one "In Review" chip. The
+// synthetic "in_review" StatusFilterValue itself stays supported by callers purely for the legacy
+// ?status=in_review deep link from the Overview KPI cards — it deliberately isn't its own pill.
+export const STATUS_FILTER_CHIPS: { value: StatusFilterValue; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "draft", label: STATUS_LABELS.draft },
+  { value: "submitted_for_review", label: STATUS_LABELS.submitted_for_review },
+  { value: "under_review", label: STATUS_LABELS.under_review },
+  { value: "changes_requested", label: STATUS_LABELS.changes_requested },
+  { value: "approved", label: STATUS_LABELS.approved },
+  { value: "published", label: STATUS_LABELS.published },
+];

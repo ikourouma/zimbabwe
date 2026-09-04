@@ -8,12 +8,16 @@ import type { AccountRole } from "@/lib/auth/types";
 export const NDA_VERSION = "1.0";
 
 /**
- * The clickwrap only ever gates the `qualified` investor persona — admin/super_admin/government
- * are ZIDA-side oversight roles, not confidential-information recipients under the NDA, so they
- * are never asked to accept it (mirrors the existing check in the document download route).
+ * The clickwrap gates every non-staff role — `registered`, `qualified`, `government`, and
+ * `ministry_admin` — before they can access their own console (Platform Feedback Batch v3, Phase
+ * 3: broadened from `qualified`-only). `admin`/`super_admin` remain exempt: they're ZIDA-internal
+ * oversight roles, not confidential-information recipients under the NDA (mirrors the existing
+ * check in the document download route). `government`/`ministry_admin` were previously treated as
+ * staff for this purpose too, which was inconsistent with them being non-staff, ministry-scoped
+ * console users everywhere else in the platform.
  */
 export function requiresNdaAcceptance(role: AccountRole): boolean {
-  return role === "qualified";
+  return role === "registered" || role === "qualified" || role === "government" || role === "ministry_admin";
 }
 
 /** Shared 403 body for every server-side NDA gate (document downloads, MOU routes) so the

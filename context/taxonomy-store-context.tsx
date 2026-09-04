@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
-import type { ContactReason, Ministry, SDG, Sector, StrategicPillar } from "@/lib/types";
+import type { ContactReason, Ministry, SDG, Sector, StrategicPillar, Subsector } from "@/lib/types";
 import {
   contactReasons as seedContactReasons,
   ministries as seedMinistries,
@@ -23,6 +23,11 @@ interface TaxonomyStoreContextValue {
   addSector: (input: { name: string; shortName?: string; description?: string }) => Promise<void>;
   archiveSector: (id: string) => Promise<void>;
   removeSector: (id: string) => Promise<void>;
+  addSubsector: (input: { sectorId: string; name: string }) => Promise<void>;
+  updateSubsector: (id: string, updates: Partial<Subsector>) => Promise<void>;
+  approveSubsector: (id: string) => Promise<void>;
+  archiveSubsector: (id: string) => Promise<void>;
+  removeSubsector: (id: string) => Promise<void>;
   updatePillar: (id: string, updates: Partial<StrategicPillar>) => Promise<void>;
   addPillar: (input: { name: string; description?: string; strategicMandate?: string; policyAlignmentPrimary?: string }) => Promise<void>;
   archivePillar: (id: string) => Promise<void>;
@@ -39,6 +44,10 @@ interface TaxonomyStoreContextValue {
   renameProvince: (index: number, name: string) => Promise<void>;
   removeProvince: (index: number) => Promise<void>;
   resetTaxonomies: () => Promise<void>;
+  /** Re-fetches from GET /api/taxonomies without resetting anything — used after a mutation made
+   *  via a *different* endpoint (e.g. PATCH /api/ministries/[id]/case-manager) that this store
+   *  has no dedicated action for, so its cached `ministries` list stays in sync. */
+  refresh: () => Promise<void>;
 }
 
 const TaxonomyStoreContext = createContext<TaxonomyStoreContextValue | null>(null);
@@ -109,6 +118,26 @@ export function TaxonomyStoreProvider({ children }: { children: React.ReactNode 
 
   const removeSector = useCallback(async (id: string) => {
     setState(await patchTaxonomies({ action: "removeSector", id }));
+  }, []);
+
+  const addSubsector = useCallback(async (input: { sectorId: string; name: string }) => {
+    setState(await patchTaxonomies({ action: "addSubsector", ...input }));
+  }, []);
+
+  const updateSubsector = useCallback(async (id: string, updates: Partial<Subsector>) => {
+    setState(await patchTaxonomies({ action: "updateSubsector", id, updates }));
+  }, []);
+
+  const approveSubsector = useCallback(async (id: string) => {
+    setState(await patchTaxonomies({ action: "approveSubsector", id }));
+  }, []);
+
+  const archiveSubsector = useCallback(async (id: string) => {
+    setState(await patchTaxonomies({ action: "archiveSubsector", id }));
+  }, []);
+
+  const removeSubsector = useCallback(async (id: string) => {
+    setState(await patchTaxonomies({ action: "removeSubsector", id }));
   }, []);
 
   const updatePillar = useCallback(async (id: string, updates: Partial<StrategicPillar>) => {
@@ -184,6 +213,11 @@ export function TaxonomyStoreProvider({ children }: { children: React.ReactNode 
         addSector,
         archiveSector,
         removeSector,
+        addSubsector,
+        updateSubsector,
+        approveSubsector,
+        archiveSubsector,
+        removeSubsector,
         updatePillar,
         addPillar,
         archivePillar,
@@ -200,6 +234,7 @@ export function TaxonomyStoreProvider({ children }: { children: React.ReactNode 
         renameProvince,
         removeProvince,
         resetTaxonomies,
+        refresh,
       }}
     >
       {children}

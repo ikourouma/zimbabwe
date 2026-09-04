@@ -58,6 +58,11 @@ export interface Sector {
   description: string;
   defaultMouTerms?: MouTemplateDefaults | null;
   status: EntityStatus;
+  /** DB-backed, nested by fetchTaxonomies() — includes every status (active + pending_validation
+   *  suggestions awaiting super_admin review); callers that need the public/selectable set should
+   *  filter to `status === "active"` themselves (see the Propose-a-Project wizard's subsector
+   *  picker and the Taxonomies "Subsectors" tab). */
+  subsectors?: Subsector[];
 }
 
 export interface Subsector {
@@ -94,6 +99,25 @@ export type AnnouncementAudience = "all" | "registered" | "qualified" | "governm
 export type AnnouncementStyle = "info" | "success" | "warning" | "critical";
 export type AnnouncementStatus = "active" | "draft" | "archived";
 
+export type MarketingPopupStatus = "active" | "draft" | "archived";
+
+export interface MarketingPopup {
+  id: string;
+  title: string;
+  body: string;
+  subtext: string | null;
+  imageUrl: string | null;
+  linkHref: string | null;
+  linkLabel: string | null;
+  priority: number;
+  status: MarketingPopupStatus;
+  startsAt: string;
+  endsAt: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Announcement {
   id: string;
   title: string;
@@ -121,6 +145,9 @@ export interface Ministry {
    *  individual. Surfaced only in the gated Deal Room, never on public pages. Seeded later. */
   representativeTitle?: string;
   defaultMouTerms?: MouTemplateDefaults | null;
+  /** Default ZIDA Case Manager (admin/super_admin userId) for this ministry's projects — see
+   *  resolveProjectCaseManager. Settable via PATCH /api/ministries/[id]/case-manager. */
+  assignedStaffUserId?: string | null;
   status: EntityStatus;
 }
 
@@ -152,6 +179,11 @@ export interface InvestmentProject {
   slug: string;
   sectorId: string;
   subsectorId?: string;
+  /** Write-only: when a proposer picks "Other (not listed)" in the Propose-a-Project wizard, this
+   *  carries the free-text name so the server can create a `pending_validation` subsector row and
+   *  resolve it to a real `subsectorId` before the project itself is saved — never persisted or
+   *  returned on the project record (see the subsector-other handling in the projects routes). */
+  subsectorOther?: string;
   /** undefined/"zida_catalogue" = a real ZIDA 2025 deck project; "policy_initiative" = an illustrative
    *  pipeline concept derived from a named national policy/strategy document, not ZIDA-appraised. */
   pipelineType?: "zida_catalogue" | "policy_initiative";
@@ -161,6 +193,19 @@ export interface InvestmentProject {
   secondaryBeneficiaryMinistryIds?: string[];
   implementingAgencyId?: string;
   regulatorIds?: string[];
+  /** Per-project override of the assigned ZIDA Case Manager, taking precedence over the
+   *  ministry's own `assignedStaffUserId` default — see resolveProjectCaseManager. Admin/super_admin
+   *  only (see CREATOR_STRIPPED_FIELDS in PATCH /api/projects/[id]). Explicit `null` (vs.
+   *  `undefined`) on a PATCH body means "clear the override, fall back to the ministry default". */
+  assignedStaffUserId?: string | null;
+  /** "Assigned Reviewing Officer" (Platform Feedback Batch v4, Phase 6) — a lightweight per-project
+   *  assignment of one individual `government` reviewer, distinct from `assignedStaffUserId` (the
+   *  admin/super_admin-only Case Manager who "drives" the process). Settable by either the
+   *  project's own `ministry_admin` or `admin`/`super_admin` (see PATCH /api/projects/[id]).
+   *  Powers the `government` role's "My Assigned Projects" filter pill on the Pipeline — one
+   *  officer can be assigned across many projects, so it's "one officer per project", not
+   *  "one project per officer". Explicit `null` clears the assignment. */
+  assignedReviewingOfficerUserId?: string | null;
   projectOwner: string;
   location: string;
   province?: string;
@@ -175,6 +220,14 @@ export interface InvestmentProject {
   roi?: string;
   paybackPeriod?: string;
   projectedRevenue?: string;
+  investmentSource?: string;
+  capitalStructure?: string;
+  shareholderContribution?: string;
+  sectorExperienceYears?: string;
+  priorProjectsCompleted?: string;
+  annualTurnover?: string;
+  financingConfirmation?: string;
+  financingPartners?: string;
   opportunitySummary: string;
   description: string;
   scope: string[];
@@ -195,6 +248,15 @@ export interface InvestmentProject {
   dataVerificationStatus: DataVerificationStatus;
   reviewerNotes?: string;
   createdBy: string;
+  /** True only for proposals a qualified investor originated via "Propose a Project" — see
+   *  lib/db/schema/projects.ts for the ownership-gate rationale. Absent/false for every
+   *  staff-created project. */
+  investorSubmitted?: boolean;
+  /** Validated org teammates (Deal Room Feedback Batch v2, Phase 5) the proposal's owner has opted
+   *  into full co-editor rights on this specific proposal — read-only, derived from
+   *  `project_team_assignments`; managed exclusively via `/api/projects/[id]/team`, never through
+   *  the generic project PATCH (same "own dedicated endpoint" convention as `documentRecords`). */
+  teamAssignedUserIds?: string[];
   submittedBy?: string;
   reviewedBy?: string;
   approvedBy?: string;
@@ -250,6 +312,21 @@ export interface InvestorEngagement {
    *  an investor is following through post-MOU, independent of the formal compliance workflow.
    *  admin/super_admin only; undefined until staff first set it. */
   followThroughStatus?: FollowThroughStatus;
+  /** Delegate model (Team Ministry Traceability Batch, Phase 5) — a validated Team Member with
+   *  equal authority to the org admin on this one engagement. Never exclusive: `userId` (the org
+   *  admin) always retains full authority too, whether or not a delegate is assigned. */
+  assignedUserId?: string | null;
+  assignedBy?: string | null;
+  assignedAt?: string | null;
+  /** Primary-contact clarity (Phase 8, item 2) — advisory only, never an access gate. Falls back to
+   *  `userId` (the owner) when null, either because no Delegate has ever been assigned or because
+   *  it hasn't been explicitly switched. Switchable by either the owner or the Delegate. */
+  primaryContactUserId?: string | null;
+  /** Denormalized onto the list response (Platform Feedback Batch v3, Phase 8) — a LEFT JOIN onto
+   *  `engagement_mous` in GET /api/engagements, purely so the MOU registry (and any other engagement
+   *  list) can show/filter by MOU lifecycle stage without an extra per-row fetch. `null` if no MOU
+   *  has been created for this engagement yet (see getOrCreateMouForEngagement). */
+  mouStatus?: MouStatus | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -265,12 +342,20 @@ export type FollowThroughStatus = "on_track" | "at_risk" | "non_responsive" | "c
 export type MouStatus = "drafting" | "in_review" | "both_approved" | "finalized" | "ready_for_signature" | "executed";
 
 /** Structured MOU terms — deliberately a form, not a rich-text/redline editor. Correction
- *  requests happen via the Communication Hub thread scoped to the engagement instead. */
+ *  requests happen via the Communication Hub thread scoped to the engagement instead.
+ *  `purpose`/`scope`/`nonBindingStatement`/`governingLaw` (Phase 7 — MOU content upgrade) round
+ *  out the "concise base template" sections a standalone MOU document needs beyond the deal-specific
+ *  terms — all four are pre-filled with standard boilerplate by buildSeedContent() so ZIDA only
+ *  ever edits, never starts from a blank field. */
 export interface MouContent {
   parties?: string;
   projectReference?: string;
+  purpose?: string;
+  scope?: string;
   indicativeCapital?: string;
   termBullets?: string[];
+  nonBindingStatement?: string;
+  governingLaw?: string;
   effectiveDate?: string;
   specialConditions?: string;
 }
@@ -320,6 +405,21 @@ export interface EngagementMou {
   updatedAt: string;
 }
 
+/** A single reviewer note pinned to one MOU content field (Phase 7 — see
+ *  lib/db/schema/mou-comments.ts). Resolving doesn't delete the comment, it just clears from the
+ *  "unresolved" badge next to that field. */
+export interface MouFieldComment {
+  id: string;
+  mouId: string;
+  fieldKey: string;
+  authorUserId: string;
+  authorName: string;
+  body: string;
+  resolvedAt?: string | null;
+  resolvedBy?: string | null;
+  createdAt: string;
+}
+
 /** Actions accepted by POST /api/engagements/[id]/mou/actions — see lib/governance/mou-workflow.ts
  *  for the transition graph and role gates each one enforces. */
 export type MouAction =
@@ -345,16 +445,33 @@ export type MessageKind = "message" | "action";
 /** The editable engagement fields a correction Action Card may propose changing. */
 export type CorrectionField = "investorOrganization" | "ticketSize" | "signatoryTitle";
 
-/** Structured data behind an interactive Action Card (kind='action'). Models three workflows:
+/** Structured data behind an interactive Action Card (kind='action'). Models four workflows:
  *  - "correction": an investor's requested change to a locked engagement, which staff can Approve
  *    (optionally applying a proposed field value), Counter, or Decline.
  *  - "schedule_call": a proposed call/meeting the counterparty can Accept or Decline.
  *  - "delete_request": an investor's justified request to delete an *approved* engagement (the
  *    credibility record). Admin/Super Admin can Approve (soft-deletes), Decline, or Request a
  *    Briefing (proposes a call) before deciding; Government sees the same card for transparency
- *    but has no action buttons (view-only, no decision authority). */
+ *    but has no action buttons (view-only, no decision authority).
+ *  - "project_amendment_request": a requested field change to an approved/published project.
+ *    Filed by either (a) the investor-owner on their own Propose-a-Project submission (Investor
+ *    Dashboard Expansion plan, Phase 5) — the post-submit-lock equivalent of "correction" but for
+ *    `projects` instead of `investor_engagements`, single-stage, admin/super_admin-only decision;
+ *    or (b) a `government` reviewer on their own ministry's project (Platform Feedback Batch v4,
+ *    Phase 8) — a **two-stage** chain: the requester's own `ministry_admin` decides first
+ *    (`status: "open"` -> approve escalates to `"escalated"`, decline is terminal), then
+ *    admin/super_admin makes the final call (`"escalated"` -> `"resolved"`/`"declined"`). Falls
+ *    back to routing straight to `"escalated"` at filing time if the requester's ministry has no
+ *    active `ministry_admin`. Super Admin may override and decide an `"open"` government-filed
+ *    card directly, skipping the ministry stage, per the confirmed escalation-oversight model. The
+ *    target project is `card.projectId` (every ProjectMessage already carries one); Approve
+ *    applies `proposedChanges` directly onto the live project row, only at the terminal stage.
+ *  - "ministry_association_request" (Platform Feedback Batch v4, Phase 6): a `ministry_admin` or
+ *    `government` reviewer viewing a *different* ministry's project asks for their own ministry to
+ *    be added as a secondary beneficiary — admin/super_admin-only decision; Approve inserts
+ *    `requestingMinistryId` into that project's `projectSecondaryMinistries` join rows. */
 export interface MessageActionPayload {
-  type: "correction" | "schedule_call" | "delete_request";
+  type: "correction" | "schedule_call" | "delete_request" | "project_amendment_request" | "ministry_association_request";
   engagementId?: string;
   reason?: string;
   /** Optional concrete change proposal; when present, Approve applies it to the engagement. */
@@ -365,7 +482,26 @@ export interface MessageActionPayload {
   /** schedule_call: the proposed date/time (ISO) and optional mode/location note. */
   proposedTime?: string;
   callMode?: string;
-  status: "open" | "resolved" | "declined" | "briefing_requested";
+  /** project_amendment_request: the field(s) the investor-owner wants changed on their own live
+   *  project, keyed by InvestmentProject field name — display-only until Approve applies them. */
+  proposedChanges?: Partial<InvestmentProject>;
+  /** ministry_association_request: the requesting ministry — denormalized name so the Action Card
+   *  never needs a client-side taxonomy lookup to render. Reused by a `government`-filed
+   *  project_amendment_request (Phase 8) to denormalize the *requester's* own ministry — that's
+   *  who the "escalated" stage-1 decision routes to, independent of the target project's own
+   *  primary/secondary beneficiary ministries. */
+  requestingMinistryId?: string;
+  requestingMinistryName?: string;
+  /** "escalated" (Phase 8): a government-filed amendment request's own ministry_admin has
+   *  approved it — now awaiting admin/super_admin's final decision. Every other card type only
+   *  ever uses the original four statuses. */
+  status: "open" | "escalated" | "resolved" | "declined" | "briefing_requested";
+  /** Phase 8: stamped when a ministry_admin approves a government-filed amendment request's
+   *  first stage (moving it from "open" to "escalated") — the queue/thread's "ministry-approved,
+   *  awaiting ZIDA" trail, distinct from `resolvedByName`/`resolvedAt` which only ever stamp the
+   *  final terminal decision. */
+  firstStageApprovedByName?: string;
+  firstStageApprovedAt?: string;
   resolvedByName?: string;
   resolvedAt?: string;
 }
@@ -405,6 +541,9 @@ export interface ProjectMessage {
   /** 'message' (default) or 'action' (interactive Action Card, see `payload`). */
   kind?: MessageKind;
   payload?: MessageActionPayload | null;
+  /** Optional subject line — free text from MessageThread's composer, or a curated reason from
+   *  the Communication Hub's new-thread composer (Platform Feedback Batch v4, Phase 2). */
+  subject?: string | null;
   body: string;
   attachments?: MessageAttachment[];
   createdAt: string;
@@ -423,13 +562,34 @@ export interface NotificationPreferences {
   engagementUpdates: boolean;
   newMessages: boolean;
   mouActivity: boolean;
+  /** Team & assignment changes (Team Ministry Traceability Batch, Phase 8) — org-invite approved,
+   *  co-editor/Delegate assigned or unassigned, Case Manager assigned. Kept as its own toggle
+   *  rather than folded into `engagementUpdates` since it fires for non-engagement events too
+   *  (invite approval, proposal co-editor changes). */
+  teamActivity: boolean;
 }
 
 export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   engagementUpdates: true,
   newMessages: true,
   mouActivity: true,
+  teamActivity: true,
 };
+
+/**
+ * Immutable point-in-time snapshot of the actor who created/invited an account (Team Ministry
+ * Traceability Batch, Phase 7) — captured once onto `profiles.createdByContext` at creation time
+ * and never rewritten, so the audit trail still reads correctly even after the actor's own
+ * role/org/ministry changes or the actor account is later removed. `ministryName` is denormalized
+ * here for the same reason: the ministry itself could be renamed later.
+ */
+export interface CreatedByContext {
+  actorName: string;
+  actorRole: import("@/lib/auth/types").AccountRole;
+  organization: string | null;
+  ministryId: string | null;
+  ministryName: string | null;
+}
 
 export interface LeadInquiry {
   id: string;
@@ -449,6 +609,7 @@ export interface LeadInquiry {
   contactReasonId?: string;
   projectId?: string;
   createdAt: string;
+  updatedAt?: string;
   /** Strategic Partnerships & Inquiries wizard fields — captured only for that flow. */
   engagementType?: "investor" | "government_dfi" | "strategic_partner";
   investorType?: string;
@@ -457,9 +618,27 @@ export interface LeadInquiry {
   partnershipType?: string;
   ministryRepresented?: string;
   natureOfEngagement?: string;
-  /** Demo-only admin review state — a client-side record of intent for the demo narrative, not a
-   *  real backend authorization. Undefined on existing/older stored records is treated as "pending". */
-  status?: "pending" | "approved" | "declined";
+  /** Soft-linked submitter account id (Investor Qualification Vetting plan) — set when the
+   *  wizard is filled out signed-in, so the draft-autosave/resume flow and the admin "Open
+   *  Dossier" link can key off a real id instead of a fragile email match. */
+  userId?: string;
+  /** Institutional KYC fields, now captured up-front in the wizard (investor-only, required)
+   *  instead of only after qualification at the NDA gate — mirrors profiles' equivalent fields. */
+  hqAddress?: string;
+  businessRegistrationId?: string;
+  websiteUrl?: string;
+  /** Staff-authored message shown back to the applicant on decline or "changes requested". */
+  reviewNotes?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  /** Admin review state. "draft" = applicant-owned, editable, pre-submission (wizard autosave).
+   *  "changes_requested" = sent back to the applicant for revision, not declined. Undefined on
+   *  existing/older stored records is treated as "pending". */
+  status?: "draft" | "pending" | "changes_requested" | "approved" | "declined";
+  /** Server-resolved (GET /api/inquiries only) — the applicant's Neon Auth account id, preferring
+   *  the soft-linked `userId` and falling back to an email match. Powers the admin "Open Dossier"
+   *  link; absent when no matching account exists yet. */
+  matchedUserId?: string;
 }
 
 /** Institutional capital brackets for the registry quick-chips. `assessment_pending` matches
@@ -511,6 +690,33 @@ export interface SavedSearch {
   createdAt: string;
 }
 
+/** A signed-in user's per-project bookmark (Investor Dashboard Expansion plan) — distinct from
+ *  `SavedSearch`, which snapshots a filter set rather than an individual project. */
+export interface WatchlistEntry {
+  id: string;
+  projectId: string;
+  createdAt: string;
+}
+
+/** Safe, no-PII aggregate marketplace stats (see lib/db/queries/platform-stats.ts) — open to any
+ *  authenticated role, powers the Investor Dashboard Overview's platform panel. */
+export interface PlatformStats {
+  publishedProjectCount: number;
+  totalCapitalRepresentedMillions: number;
+  projectsBySector: { sectorId: string; sectorName: string; count: number }[];
+  qualifiedInvestorCount: number;
+}
+
+/** The caller's own accurate (uncapped) activity counters — powers the Investor Dashboard's "My
+ *  Analytics" snapshot card. */
+export interface MyAnalyticsSnapshot {
+  savedProjects: number;
+  engagements: number;
+  documentsDownloaded: number;
+  documentsPreviewed: number;
+  messagesSent: number;
+}
+
 /** Mirrors `audit_logs` — every governance mutation (project/inquiry/engagement/taxonomy/
  *  settings) writes one of these (see lib/db/queries/audit.ts). Powers the Super Admin Audit
  *  Log page and the dashboard activity feeds. */
@@ -533,6 +739,66 @@ export interface AuditLogEntry {
 /** Account lifecycle status (profiles.account_status). "deactivated" is the soft-archive terminal
  *  state applied from the Users & Roles console; "suspended" is a reversible hold. */
 export type AccountStatus = "active" | "suspended" | "pending" | "deactivated";
+
+/** `org_invites.status` (Deal Room Feedback Batch v2, Phase 5). `pending_validation` = awaiting
+ *  ZIDA staff review; `active` = validated, real account provisioned/linked; `revoked` = either the
+ *  owner cancelled it pre-validation or staff rejected it. */
+export type OrgInviteStatus = "pending_validation" | "active" | "revoked";
+
+/** A qualified investor's own team-member invite, as surfaced on their My Profile "My Team" panel
+ *  (owner-scoped) and, for staff, the platform-wide validation queue (see lib/db/queries/org-team.ts). */
+export interface OrgInvite {
+  id: string;
+  ownerUserId: string;
+  /** Present on the staff validation queue only — the inviting investor's own display name/org,
+   *  so a reviewer has context without opening a second record. Absent on the owner's own list
+   *  (redundant there — it's always "you"). */
+  ownerName?: string;
+  ownerOrganization?: string | null;
+  /** Ministry-desk equivalent of `ownerOrganization` — set only when the inviting owner is a
+   *  `ministry_admin` (Platform Feedback Batch v3, Phase 2). Staff validation queue context only. */
+  ownerMinistryName?: string | null;
+  /** The role this invitee will be granted on approval — derived server-side from the owner's own
+   *  role (see approveOrgInvite's role-mirroring), surfaced on the staff validation queue so a
+   *  reviewer knows what they're approving before they decide. Staff validation queue context only. */
+  resultingRole?: AccountRole;
+  inviteEmail: string;
+  inviteName: string;
+  /** Optional context captured on the owner's own invite form (Phase 2) — surfaced to the ZIDA
+   *  reviewer before Approve/Reject so decisions are never made blind on just a name/email. */
+  justification?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  status: OrgInviteStatus;
+  invitedUserId?: string | null;
+  /** The invited user's own `profiles.accountStatus` (Phase 3, Team member lifecycle) — an
+   *  `active` org invite can still have its person temporarily `suspended` (blocks their platform
+   *  access via requireRole's ACCOUNT_INACTIVE check, without removing them from the roster or
+   *  falling their assignments back to the owner, unlike Archive/`revoked`). Undefined when there's
+   *  no linked account yet (still `pending_validation`). */
+  invitedUserAccountStatus?: AccountStatus | null;
+  createdAt: string;
+  validatedAt?: string | null;
+  validatedBy?: string | null;
+}
+
+/** One validated teammate assigned to a specific proposal (Phase 5) — the shape returned by
+ *  GET /api/projects/[id]/team, joined with the assignee's display name/email for the picker UI. */
+export interface ProjectTeamMember {
+  userId: string;
+  name: string;
+  email: string;
+  assignedBy: string;
+  assignedAt: string;
+}
+
+/** "Currently working on" summary for one active team member — powers the /deal-room/teams and
+ *  /ministry/teams roster's per-row assignment column (Team Ministry Traceability Batch, Phase 4).
+ *  `engagements` is populated once Phase 5's delegate model ships. */
+export interface TeamAssignmentSummary {
+  proposals: { id: string; title: string }[];
+  engagements: { id: string; title: string }[];
+}
 
 /** A `profiles` row joined with its Neon Auth user record — the shape the Super Admin
  *  "Users & Roles" console operates on (see app/api/users/route.ts). */
@@ -557,6 +823,11 @@ export interface AdminUserRecord {
    *  a boolean is exposed in this bulk directory row — the raw registration id itself is PII kept
    *  to the single-user UserDossier fetch. Backs the Institutional Accreditation filter. */
   hasCompletedKyc: boolean;
+  /** Chain-of-custody (Team Ministry Traceability Batch, Phase 7) — null for self-service signups
+   *  and any profile that predates this column. Backs the "Chain of custody" line in
+   *  user-detail-drawer.tsx's Institutional tab. */
+  createdByUserId: string | null;
+  createdByContext: CreatedByContext | null;
 }
 
 /** One engagement row as summarized inside a user's Institutional Compliance Dossier (Portfolio &
@@ -593,6 +864,8 @@ export interface UserDossier extends AdminUserRecord {
   hqAddress: string | null;
   businessRegistrationId: string | null;
   websiteUrl: string | null;
+  executiveRepresentativeName: string | null;
+  executiveRepresentativeTitle: string | null;
   ndaVersion: string | null;
   ndaAcceptedIp: string | null;
   ndaAcceptedTitle: string | null;

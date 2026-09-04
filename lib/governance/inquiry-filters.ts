@@ -10,18 +10,27 @@ import { isWithinTimeHorizon, type TimeHorizon } from "@/lib/utils/time-horizon"
  *    unambiguously "one" of those four buckets, so collapsing them would misrepresent the data.
  *  - Sector Interest matches `sectorIds`, only ever populated by the Strategic Partnerships wizard
  *    — every other inquiry type honestly has no sector data yet, never fabricated.
- *  - Status only offers the three states the schema actually supports (pending/approved/declined)
- *    — there is no "Under Review" or "Archived" status anywhere in the data model.
+ *  - Status offers the states the schema actually supports. "draft" (applicant-owned, editable,
+ *    pre-submission wizard autosave) is deliberately excluded from INQUIRY_STATUS_ORDER — GET
+ *    /api/inquiries never returns draft rows to the admin queue in the first place (see the
+ *    Investor Qualification Vetting plan), so there's nothing for that pill to filter.
  */
 export type InquiryStatusFilter = "all" | NonNullable<LeadInquiry["status"]>;
 
 export const INQUIRY_STATUS_LABELS: Record<NonNullable<LeadInquiry["status"]>, string> = {
+  draft: "Draft",
   pending: "Pending",
+  changes_requested: "Changes Requested",
   approved: "Approved",
   declined: "Declined",
 };
 
-export const INQUIRY_STATUS_ORDER: NonNullable<LeadInquiry["status"]>[] = ["pending", "approved", "declined"];
+export const INQUIRY_STATUS_ORDER: NonNullable<LeadInquiry["status"]>[] = [
+  "pending",
+  "changes_requested",
+  "approved",
+  "declined",
+];
 
 export const INQUIRY_TYPE_ORDER: LeadInquiry["type"][] = [
   "contact",

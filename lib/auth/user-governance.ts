@@ -2,10 +2,16 @@ import type { AccountRole } from "@/lib/auth/types";
 
 /** Role tiers a console admin (ZIDA staff) may create or assign. Admins operate strictly below the
  *  platform-owner (super_admin) tier and can never mint another admin or super_admin — only the
- *  super_admin (Afronovation) can. Super_admin may assign any role. */
+ *  super_admin (Afronovation) can. Super_admin may assign any role. `ministry_admin` gets a single,
+ *  narrow exception (Platform Feedback Batch v3, Phase 1): they may create ordinary `government`-
+ *  role staff for their own ministry (force-locked server-side in POST /api/users/create), but
+ *  never another `ministry_admin` peer — a second Ministry Admin seat stays a distinct,
+ *  ZIDA-validated action via the org-invite pipeline, not a routine direct creation. */
 export function assignableRoles(actorRole: AccountRole): AccountRole[] {
-  if (actorRole === "super_admin") return ["registered", "qualified", "government", "admin", "super_admin"];
-  if (actorRole === "admin") return ["registered", "qualified", "government"];
+  if (actorRole === "super_admin")
+    return ["registered", "qualified", "government", "ministry_admin", "admin", "super_admin"];
+  if (actorRole === "admin") return ["registered", "qualified", "government", "ministry_admin"];
+  if (actorRole === "ministry_admin") return ["government"];
   return [];
 }
 

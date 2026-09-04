@@ -16,6 +16,8 @@ export interface CurrentUserContext {
   /** ISO timestamp of the investor's clickwrap NDA acceptance, or null if not yet accepted —
    *  drives the Deal Room NdaGate (see components/deal-room/nda-gate.tsx). */
   ndaAcceptedAt: string | null;
+  ndaVersion: string | null;
+  ndaAcceptedIp: string | null;
   /** Server-persisted notification preferences, falling back to all-on defaults. */
   notificationPrefs: NotificationPreferences;
   /** R2 key of the uploaded avatar, or null (falls back to initials). */
@@ -27,11 +29,22 @@ export interface CurrentUserContext {
   hqAddress: string | null;
   businessRegistrationId: string | null;
   websiteUrl: string | null;
+  // The authorized company representative on file (Deal Room Feedback Batch v2, item 6) — used
+  // to prepopulate "Propose a Project"'s read-only Project Owner / Authorized Representative
+  // fields from the investor's own profile instead of asking for them on every proposal.
+  executiveRepresentativeName: string | null;
+  executiveRepresentativeTitle: string | null;
+  /** R2 key of the uploaded business registration document, or null (My Profile document vault). */
+  businessRegistrationDocKey: string | null;
   // Derived booleans matching useDemoPersona()'s shape 1:1, so swapping a component from the
   // demo hook to this real one (Phase 3 context-cutover) is a near no-op for consumers.
   isRegistered: boolean;
   isQualified: boolean;
   isGovernment: boolean;
+  /** Beneficiary-ministry official scoped to `ministryId` (Deal Room Feedback Batch v2, Phase 6) —
+   *  console-admin-like authority over that one ministry's pipeline only. See lib/entitlements/
+   *  ministry-scope.ts for the actual data-visibility enforcement. */
+  isMinistryAdmin: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
 }
@@ -64,6 +77,8 @@ export async function getCurrentUser(): Promise<CurrentUserContext | null> {
     organization: profile?.organization ?? null,
     ministryId: profile?.ministryId ?? null,
     ndaAcceptedAt: profile?.ndaAcceptedAt?.toISOString() ?? null,
+    ndaVersion: profile?.ndaVersion ?? null,
+    ndaAcceptedIp: profile?.ndaAcceptedIp ?? null,
     notificationPrefs: { ...DEFAULT_NOTIFICATION_PREFERENCES, ...(profile?.notificationPrefs ?? {}) },
     avatarKey: profile?.avatarKey ?? null,
     jobTitle: profile?.jobTitle ?? null,
@@ -71,9 +86,13 @@ export async function getCurrentUser(): Promise<CurrentUserContext | null> {
     hqAddress: profile?.hqAddress ?? null,
     businessRegistrationId: profile?.businessRegistrationId ?? null,
     websiteUrl: profile?.websiteUrl ?? null,
+    executiveRepresentativeName: profile?.executiveRepresentativeName ?? null,
+    executiveRepresentativeTitle: profile?.executiveRepresentativeTitle ?? null,
+    businessRegistrationDocKey: profile?.businessRegistrationDocKey ?? null,
     isRegistered: true, // any authenticated session is at least "registered"
     isQualified: role === "qualified" || role === "government" || role === "admin" || role === "super_admin",
     isGovernment: role === "government",
+    isMinistryAdmin: role === "ministry_admin",
     isAdmin: role === "admin" || role === "super_admin",
     isSuperAdmin: role === "super_admin",
   };

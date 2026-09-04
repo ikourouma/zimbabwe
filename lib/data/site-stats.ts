@@ -76,6 +76,14 @@ export function getSectorStats(sectorId: string, projects: InvestmentProject[] =
   };
 }
 
+/** Same shape as getSectorStats but scoped to one subsector — backs the linked-project count
+ *  shown in the Taxonomies "Subsectors" tab and its delete-guard (item 4/Phase 4). */
+export function getSubsectorStats(subsectorId: string, projects: InvestmentProject[] = zimbabweProjects) {
+  const subsectorProjects = projects.filter((p) => p.subsectorId === subsectorId);
+  const published = subsectorProjects.filter((p) => p.projectStatus === "published");
+  return { total: subsectorProjects.length, published: published.length };
+}
+
 /** Reactive-friendly: pass the live `projects` array from useProjectStore() so admin edits in
  *  /admin-demo flow through in real time; defaults to the static seed for non-reactive callers. */
 export function getPillarStats(pillarId: string, projects: InvestmentProject[] = zimbabweProjects) {

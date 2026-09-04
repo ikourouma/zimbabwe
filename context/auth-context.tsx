@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { authClient } from "@/lib/auth/client";
-import { DEFAULT_NOTIFICATION_PREFERENCES, type DemoPersona, type NotificationPreferences } from "@/lib/types";
+import { DEFAULT_NOTIFICATION_PREFERENCES, type AccountStatus, type DemoPersona, type NotificationPreferences } from "@/lib/types";
 import type { AccountRole } from "@/lib/auth/types";
 
 interface MeResponse {
@@ -10,6 +10,7 @@ interface MeResponse {
   persona: DemoPersona;
   userId?: string;
   role?: AccountRole;
+  accountStatus?: AccountStatus;
   email?: string;
   name?: string;
   organization?: string | null;
@@ -18,12 +19,17 @@ interface MeResponse {
   notificationPrefs?: NotificationPreferences;
   avatarKey?: string | null;
   phone?: string | null;
+  jobTitle?: string | null;
   hqAddress?: string | null;
   businessRegistrationId?: string | null;
   websiteUrl?: string | null;
+  executiveRepresentativeName?: string | null;
+  executiveRepresentativeTitle?: string | null;
+  businessRegistrationDocKey?: string | null;
   isRegistered: boolean;
   isQualified: boolean;
   isGovernment: boolean;
+  isMinistryAdmin: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
 }
@@ -34,9 +40,11 @@ interface AuthContextValue {
    *  engagement?). Server routes always re-verify ownership; this is UI affordance only. */
   userId: string | null;
   role: AccountRole | null;
+  accountStatus: AccountStatus;
   isRegistered: boolean;
   isQualified: boolean;
   isGovernment: boolean;
+  isMinistryAdmin: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
   isLoading: boolean;
@@ -44,9 +52,10 @@ interface AuthContextValue {
   email: string | null;
   name: string | null;
   organization: string | null;
-  /** Only set for `government` accounts tied to a specific beneficiary ministry — used to scope
-   *  "my activity" views to engagements on that ministry's own projects (see
-   *  PersonalActivityReport). Null for every other role. */
+  /** Set for `government` and `ministry_admin` accounts tied to a specific beneficiary ministry —
+   *  used to scope "my activity" views (see PersonalActivityReport) and, for `ministry_admin`, the
+   *  entire /ministry console's data visibility (see lib/entitlements/ministry-scope.ts). Null for
+   *  every other role. */
   ministryId: string | null;
   /** null = investor has not yet accepted the Deal Room NDA (or not applicable). */
   ndaAcceptedAt: string | null;
@@ -55,10 +64,16 @@ interface AuthContextValue {
   /** R2 avatar key, or null when the user has no uploaded avatar (falls back to initials). */
   avatarKey: string | null;
   phone: string | null;
+  jobTitle: string | null;
   /** Institutional KYC fields, collected at Tier-2 NDA acceptance — see nda-gate.tsx. */
   hqAddress: string | null;
   businessRegistrationId: string | null;
   websiteUrl: string | null;
+  /** The authorized company representative on file — editable on the My Profile page, used to
+   *  prepopulate "Propose a Project"'s read-only owner/representative fields. */
+  executiveRepresentativeName: string | null;
+  executiveRepresentativeTitle: string | null;
+  businessRegistrationDocKey: string | null;
   refresh: () => Promise<void>;
 }
 
@@ -68,9 +83,11 @@ const PUBLIC_DEFAULT: AuthContextValue = {
   persona: "public",
   userId: null,
   role: null,
+  accountStatus: "active",
   isRegistered: false,
   isQualified: false,
   isGovernment: false,
+  isMinistryAdmin: false,
   isAdmin: false,
   isSuperAdmin: false,
   isLoading: true,
@@ -83,9 +100,13 @@ const PUBLIC_DEFAULT: AuthContextValue = {
   notificationPrefs: DEFAULT_NOTIFICATION_PREFERENCES,
   avatarKey: null,
   phone: null,
+  jobTitle: null,
   hqAddress: null,
   businessRegistrationId: null,
   websiteUrl: null,
+  executiveRepresentativeName: null,
+  executiveRepresentativeTitle: null,
+  businessRegistrationDocKey: null,
   refresh: async () => {},
 };
 
@@ -107,9 +128,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         persona: me.persona,
         userId: me.userId ?? null,
         role: me.role ?? null,
+        accountStatus: me.accountStatus ?? "active",
         isRegistered: me.isRegistered,
         isQualified: me.isQualified,
         isGovernment: me.isGovernment,
+        isMinistryAdmin: me.isMinistryAdmin,
         isAdmin: me.isAdmin,
         isSuperAdmin: me.isSuperAdmin,
         isAuthenticated: me.authenticated,
@@ -121,18 +144,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         notificationPrefs: me.notificationPrefs ?? DEFAULT_NOTIFICATION_PREFERENCES,
         avatarKey: me.avatarKey ?? null,
         phone: me.phone ?? null,
+        jobTitle: me.jobTitle ?? null,
         hqAddress: me.hqAddress ?? null,
         businessRegistrationId: me.businessRegistrationId ?? null,
         websiteUrl: me.websiteUrl ?? null,
+        executiveRepresentativeName: me.executiveRepresentativeName ?? null,
+        executiveRepresentativeTitle: me.executiveRepresentativeTitle ?? null,
+        businessRegistrationDocKey: me.businessRegistrationDocKey ?? null,
       });
     } catch {
       setProfile({
         persona: "public",
         userId: null,
         role: null,
+        accountStatus: "active",
         isRegistered: false,
         isQualified: false,
         isGovernment: false,
+        isMinistryAdmin: false,
         isAdmin: false,
         isSuperAdmin: false,
         isAuthenticated: false,
@@ -144,9 +173,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         notificationPrefs: DEFAULT_NOTIFICATION_PREFERENCES,
         avatarKey: null,
         phone: null,
+        jobTitle: null,
         hqAddress: null,
         businessRegistrationId: null,
         websiteUrl: null,
+        executiveRepresentativeName: null,
+        executiveRepresentativeTitle: null,
+        businessRegistrationDocKey: null,
       });
     } finally {
       setProfileLoaded(true);
@@ -160,9 +193,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         persona: "public",
         userId: null,
         role: null,
+        accountStatus: "active",
         isRegistered: false,
         isQualified: false,
         isGovernment: false,
+        isMinistryAdmin: false,
         isAdmin: false,
         isSuperAdmin: false,
         isAuthenticated: false,
@@ -174,9 +209,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         notificationPrefs: DEFAULT_NOTIFICATION_PREFERENCES,
         avatarKey: null,
         phone: null,
+        jobTitle: null,
         hqAddress: null,
         businessRegistrationId: null,
         websiteUrl: null,
+        executiveRepresentativeName: null,
+        executiveRepresentativeTitle: null,
+        businessRegistrationDocKey: null,
       });
       setProfileLoaded(true);
       return;
@@ -210,6 +249,7 @@ export function useDemoPersona() {
     isRegistered: auth.isRegistered,
     isQualified: auth.isQualified,
     isGovernment: auth.isGovernment,
+    isMinistryAdmin: auth.isMinistryAdmin,
     isAdmin: auth.isAdmin,
     isSuperAdmin: auth.isSuperAdmin,
     isLoading: auth.isLoading,
