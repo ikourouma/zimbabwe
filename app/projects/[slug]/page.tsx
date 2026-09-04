@@ -41,6 +41,7 @@ import { ExecutiveCard } from "@/components/system/executive-card";
 import { RegistrationPrompt } from "@/components/shared/registration-prompt";
 import { StatusBadge } from "@/components/projects/status-badge";
 import { ProjectCard } from "@/components/projects/project-card";
+import { WatchlistButton } from "@/components/projects/watchlist-button";
 import { SdgBadge } from "@/components/ui/sdg-badge";
 import { WorkspaceAccessCta } from "@/components/deal-room/workspace-access-cta";
 import { ProjectEngageCta } from "@/components/deal-room/project-engage-cta";
@@ -138,12 +139,15 @@ export default function ProjectDetailPage({
 
         {/* Hero */}
         <div className="mb-10 max-w-4xl">
-          <div className="flex flex-wrap gap-2 mb-4">
-            <Badge>{getSectorDisplayName(sector)}</Badge>
-            {subsector && <span className="status-badge status-badge-info">{subsector.name}</span>}
-            {project.pipelineType === "policy_initiative" && (
-              <span className="status-badge status-badge-pending">{pd.policyInitiativeBadge}</span>
-            )}
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <div className="flex flex-wrap gap-2">
+              <Badge>{getSectorDisplayName(sector)}</Badge>
+              {subsector && <span className="status-badge status-badge-info">{subsector.name}</span>}
+              {project.pipelineType === "policy_initiative" && (
+                <span className="status-badge status-badge-pending">{pd.policyInitiativeBadge}</span>
+              )}
+            </div>
+            <WatchlistButton projectId={project.id} dark />
           </div>
           <h1
             className="font-light text-white mb-4"

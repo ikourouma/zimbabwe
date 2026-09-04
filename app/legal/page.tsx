@@ -34,7 +34,7 @@ export default function LegalPage() {
         style={{ color: "var(--color-text-secondary)" }}
       >
         The following policies govern usage, data handling, and interaction frameworks for the{" "}
-        {platformName.full} — a demonstration environment managed by Afronovation, Inc. and configured
+        {platformName.full} — an operational platform managed by Afronovation, Inc. and configured
         for Zimbabwe&apos;s investment promotion ecosystem.
       </p>
 
@@ -47,7 +47,7 @@ export default function LegalPage() {
       >
         <h2 className="text-base font-bold text-white mb-3">ZIDA & Government Disclaimer</h2>
         <p className="text-sm leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
-          This platform is a proprietary Afronovation SaaS demonstration configured for Zimbabwe. It
+          This platform is a proprietary Afronovation SaaS system configured for Zimbabwe. It
           does not constitute an official ZIDA, Government of Zimbabwe, or Ministry portal. Project data
           is derived from the ZIDA 2025 Projects deck for executive review and investor discovery — all
           catalogue entries, ministry mappings, and capital estimates are pending official validation by
@@ -70,12 +70,12 @@ export default function LegalPage() {
             <p>
               <strong className="text-white">1. Acceptance of Terms:</strong> By accessing the Zimbabwe
               Digital Investment Platform, you agree to comply with these Terms of Service. Access to
-              expanded project details is limited to registered demo users within this showcase environment.
+              expanded project details is limited to registered users according to their role and entitlement.
             </p>
             <p>
               <strong className="text-white">2. Platform Usage:</strong> The platform is provided solely
               for reviewing, discovering, and engaging with ZIDA catalogue investment opportunities in a
-              demonstration context. Unauthorized data extraction, credential sharing, or misuse is prohibited.
+              governed operational context. Unauthorized data extraction, credential sharing, or misuse is prohibited.
             </p>
             <p>
               <strong className="text-white">3. Intellectual Property:</strong> Platform architecture,
@@ -108,15 +108,16 @@ export default function LegalPage() {
               with designated authorities.
             </p>
             <p>
-              <strong className="text-white">2. Information Collection:</strong> This demo collects name,
-              email, organization, and investor profile information during registration and contact flows.
-              Data is stored locally in your browser session for showcase purposes only — no production backend
-              is connected.
+              <strong className="text-white">2. Information Collection:</strong> The platform collects name,
+              email, organization, and investor profile information during registration, inquiries, and
+              contact flows. Account, inquiry, project, and engagement records are stored in the platform
+              database. Authentication is handled by the configured identity provider.
             </p>
             <p>
-              <strong className="text-white">3. Demo Persona Storage:</strong> Registration state and lead
-              inquiries are persisted in local storage to simulate entitlement tiers (public, registered,
-              qualified). Clear your browser data to reset your demo session.
+              <strong className="text-white">3. Account and Session Data:</strong> Role, qualification, and
+              workspace access are determined from your signed-in account. Cookie consent and language
+              preference are stored in the browser. Contact ZIDA or legal@afronovation.com to request
+              account review or deletion.
             </p>
           </div>
         </section>
@@ -133,13 +134,12 @@ export default function LegalPage() {
           <div className="space-y-4 text-sm leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
             <p>
               <strong className="text-white">1. Essential Storage:</strong> We use browser local storage
-              to manage demo persona state, cookie consent preferences, and lead capture records. These are
-              strictly necessary for the showcase platform to function.
+              for cookie consent and language preference. These are strictly necessary for the site to
+              remember your choices.
             </p>
             <p>
-              <strong className="text-white">2. Analytics:</strong> This demonstration environment does not
-              use third-party tracking or advertising cookies. No external analytics services are connected
-              in the MVP showcase.
+              <strong className="text-white">2. Analytics:</strong> This environment does not use
+              third-party tracking or advertising cookies. No external analytics services are connected.
             </p>
             <p>
               <strong className="text-white">3. Managing Preferences:</strong> You may dismiss the cookie

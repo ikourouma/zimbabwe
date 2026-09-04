@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts";
@@ -57,7 +57,7 @@ export default function SuperAdminOverviewPage() {
     return (
       <AccessGate
         title="Sign in required"
-        description="Use a super admin pilot account to view platform-wide analytics and controls."
+        description="Sign in with a super admin account to view platform-wide analytics and controls."
       />
     );
   }

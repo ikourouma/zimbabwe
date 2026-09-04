@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { ClipboardList, Landmark } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { AccessGate } from "@/components/dashboard/access-gate";
 import { PersonalActivityReport } from "@/components/reports/personal-activity-report";
 import { GovernmentExecutiveReport } from "@/components/reports/government-executive-report";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { ElevatedTabsList, ElevatedTabsTrigger } from "@/components/ui/elevated-tabs";
 
 type ReportScope = "personal" | "national";
 
@@ -44,14 +46,10 @@ export default function DealRoomReportsPage() {
       </div>
 
       <Tabs value={scope} onValueChange={(v) => setScope(v as ReportScope)} className="w-full">
-        <TabsList className="bg-white/5 border-white/10 mb-5 flex-wrap h-auto">
-          <TabsTrigger value="personal" className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/60">
-            My Activity Summary
-          </TabsTrigger>
-          <TabsTrigger value="national" className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/60">
-            National Executive Briefing
-          </TabsTrigger>
-        </TabsList>
+        <ElevatedTabsList className="mb-5">
+          <ElevatedTabsTrigger value="personal" icon={ClipboardList}>My Activity Summary</ElevatedTabsTrigger>
+          <ElevatedTabsTrigger value="national" icon={Landmark}>National Executive Briefing</ElevatedTabsTrigger>
+        </ElevatedTabsList>
 
         <TabsContent value="personal">
           <PersonalActivityReport />

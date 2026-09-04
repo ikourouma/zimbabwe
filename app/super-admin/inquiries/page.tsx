@@ -1,15 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Check, ShieldAlert, X } from "lucide-react";
+import { ShieldAlert } from "lucide-react";
 import { useLeadCapture } from "@/context/lead-capture-context";
 import { useTaxonomyStore } from "@/context/taxonomy-store-context";
 import { useAuth } from "@/context/auth-context";
 import type { LeadInquiry } from "@/lib/types";
 import { AccessGate } from "@/components/dashboard/access-gate";
-import { Button } from "@/components/ui/button";
 import { InquiryFiltersBar } from "@/components/dashboard/inquiry-filters-bar";
+import { InquiryDecisionModal, type InquiryDecisionAction } from "@/components/dashboard/inquiry-decision-modal";
+import { InquiryDetailDrawer } from "@/components/dashboard/inquiry-detail-drawer";
+import { InquiryKanbanView, InquiryListView, InquiryMatrixView, InquiryTableView } from "@/components/dashboard/inquiry-views";
+import { PipelineViewSwitcher, type PipelineView } from "@/components/deal-room/pipeline-view-switcher";
 import {
   DEFAULT_INQUIRY_FILTERS,
   INQUIRY_STATUS_LABELS,
@@ -17,8 +20,7 @@ import {
   type InquiryFilters,
   type InquiryStatusFilter,
 } from "@/lib/governance/inquiry-filters";
-import { cn } from "@/lib/utils";
-import { formatInquiryType } from "@/lib/utils/inquiry-display";
+import { formatInquiryType, isInquiryKycComplete } from "@/lib/utils/inquiry-display";
 
 /** Routing category that marks a contact reason as addressed straight to the platform owner
  *  (Super Admin) rather than the shared ZIDA admin queue — see "Platform / Executive Escalation"
@@ -26,17 +28,16 @@ import { formatInquiryType } from "@/lib/utils/inquiry-display";
  *  /admin/inquiries (which shows every inquiry, including these). */
 const EXECUTIVE_ROUTING_CATEGORY = "executive";
 
-function statusDotColor(status: LeadInquiry["status"]) {
-  if (status === "approved") return "#4ade80";
-  if (status === "declined") return "#9ca3af";
-  return "#fde047";
-}
+const VIEW_STORAGE_KEY = "zimbabwe.inquiries.super-admin.view";
 
 /**
  * Super Admin's dedicated inbox for inquiries specifically addressed to the platform owner
  * (Afronovation) — filtered to the "Platform / Executive Escalation" contact reason (or any future
  * contact reason tagged with the same "executive" routing category), so board-level or
- * platform-governance matters don't get lost in the shared ZIDA admin inquiries queue.
+ * platform-governance matters don't get lost in the shared ZIDA admin inquiries queue. Same
+ * Kanban/List/Table/Matrix view switcher + detail drawer as /admin/inquiries (Platform Feedback
+ * Batch v4, Phase 7) — the two pages share InquiryDetailDrawer/inquiry-views.tsx, differing only in
+ * this page's own executive-only pre-filter and its own Users & Roles link base path.
  */
 export default function SuperAdminInquiriesPage() {
   const { inquiries, updateInquiryStatus, isLoading } = useLeadCapture();
@@ -45,6 +46,22 @@ export default function SuperAdminInquiriesPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<InquiryStatusFilter>("all");
   const [filters, setFilters] = useState<InquiryFilters>(DEFAULT_INQUIRY_FILTERS);
+  const [view, setView] = useState<PipelineView>("kanban");
+  const [pendingDecision, setPendingDecision] = useState<{ inquiry: LeadInquiry; action: InquiryDecisionAction } | null>(
+    null
+  );
+
+  useEffect(() => {
+    const savedView = localStorage.getItem(VIEW_STORAGE_KEY) as PipelineView | null;
+    if (savedView === "kanban" || savedView === "list" || savedView === "table" || savedView === "matrix") {
+      setView(savedView);
+    }
+  }, []);
+
+  const applyView = (next: PipelineView) => {
+    setView(next);
+    localStorage.setItem(VIEW_STORAGE_KEY, next);
+  };
 
   const executiveReasonIds = useMemo(
     () => new Set(contactReasons.filter((cr) => cr.routingCategory === EXECUTIVE_ROUTING_CATEGORY).map((cr) => cr.id)),
@@ -87,14 +104,31 @@ export default function SuperAdminInquiriesPage() {
     toast.success(`Exported ${filtered.length} inquiries`);
   };
 
-  const selected = filtered.find((i) => i.id === selectedId) ?? filtered[0] ?? null;
+  const selected = filtered.find((i) => i.id === selectedId) ?? null;
 
-  const handleStatus = async (id: string, status: NonNullable<LeadInquiry["status"]>) => {
+  const resetToPending = async (id: string) => {
     try {
-      await updateInquiryStatus(id, status);
-      toast.success(status === "approved" ? "Inquiry approved" : status === "declined" ? "Inquiry declined" : "Status reset");
+      await updateInquiryStatus(id, "pending");
+      toast.success("Status reset");
     } catch {
       toast.error("Failed to update inquiry");
+    }
+  };
+
+  const confirmDecision = async (reason: string) => {
+    if (!pendingDecision) return;
+    try {
+      await updateInquiryStatus(pendingDecision.inquiry.id, pendingDecision.action, reason);
+      toast.success(
+        pendingDecision.action === "approved"
+          ? "Inquiry approved"
+          : pendingDecision.action === "declined"
+            ? "Inquiry declined"
+            : "Request for more information sent"
+      );
+      setPendingDecision(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update inquiry");
     }
   };
 
@@ -102,7 +136,7 @@ export default function SuperAdminInquiriesPage() {
     return (
       <AccessGate
         title="Sign in required"
-        description="Use a super admin pilot account to review inquiries addressed to the platform owner."
+        description="Sign in with a super admin account to review inquiries addressed to the platform owner."
       />
     );
   }
@@ -111,17 +145,20 @@ export default function SuperAdminInquiriesPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: "rgba(255,211,0,0.12)" }}>
-          <ShieldAlert className="h-4.5 w-4.5" style={{ color: "var(--color-gold)" }} />
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: "rgba(255,211,0,0.12)" }}>
+            <ShieldAlert className="h-4.5 w-4.5" style={{ color: "var(--color-gold)" }} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold text-white">Platform Admin Inquiries</h1>
+            <p className="text-sm mt-1" style={{ color: "var(--color-text-secondary)" }}>
+              {executiveInquiries.length} inquiries submitted under &ldquo;Platform / Executive Escalation&rdquo; — addressed
+              directly to the platform owner, separate from the shared ZIDA admin queue.
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-semibold text-white">Platform Admin Inquiries</h1>
-          <p className="text-sm mt-1" style={{ color: "var(--color-text-secondary)" }}>
-            {executiveInquiries.length} inquiries submitted under &ldquo;Platform / Executive Escalation&rdquo; — addressed
-            directly to the platform owner, separate from the shared ZIDA admin queue.
-          </p>
-        </div>
+        <PipelineViewSwitcher view={view} onChange={applyView} />
       </div>
 
       <InquiryFiltersBar
@@ -136,137 +173,42 @@ export default function SuperAdminInquiriesPage() {
       />
 
       {busy ? (
-        <div className="grid gap-4 lg:grid-cols-[340px_1fr]">
-          <div className="dashboard-panel p-4 space-y-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="space-y-1.5">
-                <div className="dashboard-skeleton h-3.5 w-2/3" />
-                <div className="dashboard-skeleton h-3 w-1/2" />
-              </div>
-            ))}
-          </div>
-          <div className="dashboard-panel p-6 space-y-3">
-            <div className="dashboard-skeleton h-5 w-1/3" />
-            <div className="dashboard-skeleton h-3.5 w-full" />
-          </div>
+        <div className="space-y-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="dashboard-panel p-5 space-y-2">
+              <div className="dashboard-skeleton h-3.5 w-1/3" />
+              <div className="dashboard-skeleton h-3 w-1/2" />
+            </div>
+          ))}
         </div>
       ) : executiveInquiries.length === 0 ? (
         <div className="dashboard-panel p-10 text-center" style={{ color: "var(--color-text-muted)" }}>
           No inquiries have been addressed to the Platform Admin yet.
         </div>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[340px_1fr]">
-          <div className="dashboard-panel overflow-hidden">
-            <ul className="max-h-[640px] overflow-y-auto">
-              {filtered.map((inq) => (
-                <li key={inq.id}>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedId(inq.id)}
-                    className={cn(
-                      "w-full text-left px-4 py-3 border-b transition-colors hover:bg-white/5",
-                      selected?.id === inq.id && "bg-white/5"
-                    )}
-                    style={{ borderColor: "rgba(255,255,255,0.05)" }}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-medium text-white truncate">{inq.name}</p>
-                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: statusDotColor(inq.status) }} />
-                    </div>
-                    <p className="text-xs truncate mt-0.5" style={{ color: "var(--color-text-muted)" }}>
-                      {inq.email}
-                    </p>
-                    <p className="text-[11px] mt-1" style={{ color: "var(--color-text-muted)" }}>
-                      {new Date(inq.createdAt).toLocaleDateString()}
-                    </p>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="dashboard-panel p-6">
-            {!selected ? (
-              <p style={{ color: "var(--color-text-muted)" }}>No inquiry matches your search.</p>
-            ) : (
-              <div>
-                <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
-                  <div>
-                    <h2 className="text-lg font-semibold text-white">{selected.name}</h2>
-                    <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-                      {selected.email}
-                      {selected.phone ? ` · ${selected.phone}` : ""}
-                      {selected.organization ? ` · ${selected.organization}` : ""}
-                    </p>
-                  </div>
-                  <span
-                    className="text-xs px-2.5 py-1 rounded-full font-semibold"
-                    style={{
-                      backgroundColor:
-                        selected.status === "approved"
-                          ? "rgba(0,100,0,0.2)"
-                          : selected.status === "declined"
-                            ? "rgba(255,255,255,0.08)"
-                            : "rgba(255,211,0,0.15)",
-                      color:
-                        selected.status === "approved" ? "#86efac" : selected.status === "declined" ? "#d1d5db" : "#fde047",
-                    }}
-                  >
-                    {(selected.status ?? "pending").toUpperCase()}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-wide" style={{ color: "var(--color-text-muted)" }}>
-                      Type
-                    </p>
-                    <p className="text-sm mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
-                      {formatInquiryType(selected.type)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] uppercase tracking-wide" style={{ color: "var(--color-text-muted)" }}>
-                      Submitted
-                    </p>
-                    <p className="text-sm mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
-                      {new Date(selected.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-
-                {selected.message && (
-                  <div className="mb-4">
-                    <p className="text-[11px] uppercase tracking-wide mb-1" style={{ color: "var(--color-text-muted)" }}>
-                      Message
-                    </p>
-                    <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-                      {selected.message}
-                    </p>
-                  </div>
-                )}
-
-                <div className="flex flex-wrap gap-2">
-                  {(selected.status ?? "pending") === "pending" ? (
-                    <>
-                      <Button size="sm" onClick={() => handleStatus(selected.id, "approved")}>
-                        <Check className="h-3.5 w-3.5" /> Approve
-                      </Button>
-                      <Button size="sm" variant="destructive" onClick={() => handleStatus(selected.id, "declined")}>
-                        <X className="h-3.5 w-3.5" /> Decline
-                      </Button>
-                    </>
-                  ) : (
-                    <Button size="sm" variant="ghost" onClick={() => handleStatus(selected.id, "pending")}>
-                      Reset to pending
-                    </Button>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <>
+          {view === "kanban" && <InquiryKanbanView inquiries={filtered} selectedId={selectedId} onCardClick={(i) => setSelectedId(i.id)} />}
+          {view === "list" && <InquiryListView inquiries={filtered} selectedId={selectedId} onCardClick={(i) => setSelectedId(i.id)} />}
+          {view === "table" && <InquiryTableView inquiries={filtered} onCardClick={(i) => setSelectedId(i.id)} />}
+          {view === "matrix" && <InquiryMatrixView inquiries={filtered} selectedId={selectedId} onCardClick={(i) => setSelectedId(i.id)} />}
+        </>
       )}
+
+      <InquiryDetailDrawer
+        inquiry={selected}
+        onClose={() => setSelectedId(null)}
+        usersHref={(userId) => `/super-admin/users?userId=${userId}`}
+        onDecide={(inquiry, action) => setPendingDecision({ inquiry, action })}
+        onResetToPending={resetToPending}
+      />
+
+      <InquiryDecisionModal
+        inquiry={pendingDecision?.inquiry ?? null}
+        action={pendingDecision?.action ?? null}
+        kycComplete={pendingDecision ? isInquiryKycComplete(pendingDecision.inquiry) : true}
+        onConfirm={confirmDecision}
+        onCancel={() => setPendingDecision(null)}
+      />
     </div>
   );
 }

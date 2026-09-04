@@ -11,7 +11,7 @@ export default function SuperAdminProjectsPage() {
     return (
       <AccessGate
         title="Sign in required"
-        description="Use a super admin pilot account to browse and govern the full project registry."
+        description="Sign in with a super admin account to browse and govern the full project registry."
       />
     );
   }

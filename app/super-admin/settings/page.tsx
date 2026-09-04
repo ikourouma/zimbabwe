@@ -1,51 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { Check, X } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useSiteSettings } from "@/context/site-settings-context";
-import { getRequiredLevelForField, type AccessLevel } from "@/lib/entitlements/visibility";
 import { AccessGate } from "@/components/dashboard/access-gate";
+import { EntitlementMatrixManager } from "@/components/dashboard/entitlement-matrix-manager";
 import { AnnouncementsManager } from "@/components/dashboard/announcements-manager";
 import { MarketingCmsManager } from "@/components/dashboard/marketing-cms-manager";
+import { MarketingPopupsManager } from "@/components/dashboard/marketing-popups-manager";
+import { PublicNavVisibilityManager } from "@/components/dashboard/public-nav-visibility-manager";
 import type { BannerDisplayMode } from "@/context/site-settings-context";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const ACCESS_LEVEL_ORDER: AccessLevel[] = ["public", "registered", "qualified", "admin"];
-const ACCESS_LEVEL_LABELS: Record<AccessLevel, string> = {
-  public: "Public",
-  registered: "Registered",
-  qualified: "Qualified",
-  admin: "Admin",
-};
-
-function levelMeets(level: AccessLevel, required: AccessLevel) {
-  return ACCESS_LEVEL_ORDER.indexOf(level) >= ACCESS_LEVEL_ORDER.indexOf(required);
-}
-
-interface FieldVisibilityRow {
-  label: string;
-  requiredLevel: AccessLevel;
-  interactive?: "cost-structure";
-}
-
-const FIELD_VISIBILITY_ROWS: FieldVisibilityRow[] = [
-  { label: "Title, Sector & Location", requiredLevel: getRequiredLevelForField("title") },
-  { label: "Opportunity Summary", requiredLevel: getRequiredLevelForField("opportunitySummary") },
-  { label: "Cost Structure", requiredLevel: getRequiredLevelForField("capitalRequired"), interactive: "cost-structure" },
-  { label: "Description & Scope", requiredLevel: getRequiredLevelForField("description") },
-  { label: "Financial Indicators (IRR / NPV / ROI)", requiredLevel: getRequiredLevelForField("irr") },
-  { label: "Documents & Investor Pack", requiredLevel: getRequiredLevelForField("documents") },
-  { label: "Data Verification Status", requiredLevel: getRequiredLevelForField("dataVerificationStatus") },
-];
-
 export default function SuperAdminSettingsPage() {
   const { isSuperAdmin, isLoading: authLoading } = useAuth();
   const {
-    costStructureHidden,
-    setCostStructureHidden,
     flashBannerEnabled,
     flashBannerMessage,
     flashBannerCtaLabel,
@@ -69,48 +40,13 @@ export default function SuperAdminSettingsPage() {
     }
   };
 
-  const [banner, setBanner] = useState({
-    enabled: flashBannerEnabled,
-    message: flashBannerMessage ?? "",
-    ctaLabel: flashBannerCtaLabel ?? "",
-    ctaHref: flashBannerCtaHref ?? "",
-  });
-  const [hydrated, setHydrated] = useState(false);
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (hydrated || isLoading) return;
-    setBanner({
-      enabled: flashBannerEnabled,
-      message: flashBannerMessage ?? "",
-      ctaLabel: flashBannerCtaLabel ?? "",
-      ctaHref: flashBannerCtaHref ?? "",
-    });
-    setHydrated(true);
-  }, [hydrated, isLoading, flashBannerEnabled, flashBannerMessage, flashBannerCtaLabel, flashBannerCtaHref]);
-
-  const handleSaveBanner = async () => {
-    setSaving(true);
-    try {
-      await updateFlashBanner({
-        flashBannerEnabled: banner.enabled,
-        flashBannerMessage: banner.message || null,
-        flashBannerCtaLabel: banner.ctaLabel || null,
-        flashBannerCtaHref: banner.ctaHref || null,
-      });
-      toast.success("Flash banner updated");
-    } catch {
-      toast.error("Failed to update flash banner");
-    } finally {
-      setSaving(false);
-    }
-  };
 
   if (!authLoading && !isSuperAdmin) {
     return (
       <AccessGate
         title="Sign in required"
-        description="Use a super admin pilot account to manage tenant and site-wide settings."
+        description="Sign in with a super admin account to manage tenant and site-wide settings."
       />
     );
   }
@@ -120,7 +56,7 @@ export default function SuperAdminSettingsPage() {
       <div>
         <h1 className="text-2xl font-semibold text-white">Site Settings</h1>
         <p className="text-sm mt-1" style={{ color: "var(--color-text-secondary)" }}>
-          Tenant configuration, the sitewide flash banner, and entitlement kill switches.
+          Tenant configuration, public nav visibility, marketing popups, announcements, and entitlement kill switches.
         </p>
       </div>
 
@@ -177,141 +113,52 @@ export default function SuperAdminSettingsPage() {
         </div>
       </section>
 
+      <PublicNavVisibilityManager />
+
+      <MarketingPopupsManager />
+
       <AnnouncementsManager />
 
       <MarketingCmsManager />
 
       <section className="dashboard-panel p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-white">Flash Banner (legacy)</h2>
-          <label className="flex items-center gap-2 text-xs" style={{ color: "var(--color-text-muted)" }}>
-            <input
-              type="checkbox"
-              checked={banner.enabled}
-              onChange={(e) => setBanner({ ...banner, enabled: e.target.checked })}
-              className="h-3.5 w-3.5"
-            />
-            Enabled sitewide
-          </label>
-        </div>
-        <p className="text-xs mb-4" style={{ color: "var(--color-text-muted)" }}>
-          Shown above the header on every page when enabled. Leave the CTA fields blank to show a message with no
-          link.
+        <h2 className="text-sm font-semibold text-white mb-1">Flash Banner (do not use)</h2>
+        <p className="text-xs mb-3" style={{ color: "var(--color-text-muted)" }}>
+          Retired. Use Announcements above for public-site messaging. This singleton banner is kept only so an
+          already-enabled message can be turned off.
         </p>
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs font-medium mb-1 block" style={{ color: "var(--color-text-muted)" }}>Message</label>
-            <textarea
-              value={banner.message}
-              onChange={(e) => setBanner({ ...banner, message: e.target.value })}
-              rows={2}
-              className="dashboard-input"
-              placeholder="e.g. Demo showcase — seeded data pending official validation."
-            />
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="text-xs font-medium mb-1 block" style={{ color: "var(--color-text-muted)" }}>CTA Label</label>
-              <input
-                value={banner.ctaLabel}
-                onChange={(e) => setBanner({ ...banner, ctaLabel: e.target.value })}
-                className="dashboard-input"
-                placeholder="Learn more"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium mb-1 block" style={{ color: "var(--color-text-muted)" }}>CTA Link</label>
-              <input
-                value={banner.ctaHref}
-                onChange={(e) => setBanner({ ...banner, ctaHref: e.target.value })}
-                className="dashboard-input"
-                placeholder="/platform"
-              />
-            </div>
-          </div>
-          <Button onClick={handleSaveBanner} disabled={saving || isLoading}>
-            {saving ? "Saving…" : "Save Flash Banner"}
+        {flashBannerEnabled ? (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={saving || isLoading}
+            onClick={async () => {
+              setSaving(true);
+              try {
+                await updateFlashBanner({
+                  flashBannerEnabled: false,
+                  flashBannerMessage: flashBannerMessage,
+                  flashBannerCtaLabel: flashBannerCtaLabel,
+                  flashBannerCtaHref: flashBannerCtaHref,
+                });
+                toast.success("Legacy flash banner disabled");
+              } catch {
+                toast.error("Failed to disable flash banner");
+              } finally {
+                setSaving(false);
+              }
+            }}
+          >
+            {saving ? "Disabling…" : "Disable legacy flash banner"}
           </Button>
-        </div>
+        ) : (
+          <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+            Currently off.
+          </p>
+        )}
       </section>
 
-      <section className="dashboard-panel p-5">
-        <h2 className="text-sm font-semibold text-white mb-1">Field Visibility Matrix</h2>
-        <p className="text-xs mb-4" style={{ color: "var(--color-text-muted)" }}>
-          Reference view of entitlement rules by field group. Cost Structure has a live sitewide kill switch — every
-          other row reflects the platform&apos;s existing, non-editable access rules.
-        </p>
-        <div className="overflow-x-auto">
-          <table className="dashboard-table">
-            <thead>
-              <tr>
-                <th>Field Group</th>
-                {ACCESS_LEVEL_ORDER.map((level) => (
-                  <th key={level} className="text-center">{ACCESS_LEVEL_LABELS[level]}</th>
-                ))}
-                <th className="text-right">Sitewide Control</th>
-              </tr>
-            </thead>
-            <tbody>
-              {FIELD_VISIBILITY_ROWS.map((row) => {
-                const isCostStructure = row.interactive === "cost-structure";
-                const rowHidden = isCostStructure && costStructureHidden;
-                return (
-                  <tr key={row.label}>
-                    <td className="font-medium text-white">
-                      {row.label}
-                      {rowHidden && (
-                        <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: "rgba(255,211,0,0.15)", color: "#fde047" }}>
-                          Hidden sitewide
-                        </span>
-                      )}
-                    </td>
-                    {ACCESS_LEVEL_ORDER.map((level) => {
-                      const meets = levelMeets(level, row.requiredLevel) && !rowHidden;
-                      return (
-                        <td key={level} className="text-center">
-                          {meets ? (
-                            <Check className="h-4 w-4 inline" style={{ color: "#4ade80" }} />
-                          ) : (
-                            <X className={cn("h-4 w-4 inline")} style={{ color: "var(--color-text-muted)", opacity: 0.5 }} />
-                          )}
-                        </td>
-                      );
-                    })}
-                    <td className="text-right">
-                      {isCostStructure ? (
-                        <div className="flex items-center justify-end gap-2">
-                          <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-                            {costStructureHidden ? "Hidden" : "Visible"}
-                          </span>
-                          <button
-                            type="button"
-                            role="switch"
-                            aria-checked={!costStructureHidden}
-                            onClick={() => {
-                              setCostStructureHidden(!costStructureHidden);
-                              toast.success(costStructureHidden ? "Cost Structure shown sitewide" : "Cost Structure hidden sitewide");
-                            }}
-                            className="relative h-5 w-9 rounded-full transition-colors"
-                            style={{ backgroundColor: costStructureHidden ? "rgba(255,255,255,0.15)" : "var(--color-zim-accent)" }}
-                          >
-                            <span
-                              className="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform"
-                              style={{ transform: costStructureHidden ? "translateX(0)" : "translateX(16px)" }}
-                            />
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>Fixed rule</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <EntitlementMatrixManager />
     </div>
   );
 }

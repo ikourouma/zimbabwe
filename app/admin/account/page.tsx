@@ -11,7 +11,7 @@ export default function AdminAccountPage() {
     return (
       <AccessGate
         title="Sign in required"
-        description="Use an admin pilot account to manage your account and security settings."
+        description="Sign in with an admin account to manage your account and security settings."
       />
     );
   }

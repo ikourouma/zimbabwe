@@ -15,7 +15,7 @@ const STATIC_ROUTES = [
   "/zimbabwe",
   "/contact",
   "/legal",
-  "/register",
+  "/auth/sign-up",
   "/strategic-partnerships",
   "/faq",
 ];

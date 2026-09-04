@@ -11,7 +11,7 @@ export default function SuperAdminCommunicationPage() {
     return (
       <AccessGate
         title="Sign in required"
-        description="Use a super admin pilot account to read and reply to investor questions."
+        description="Sign in with a super admin account to read and reply to investor questions."
       />
     );
   }

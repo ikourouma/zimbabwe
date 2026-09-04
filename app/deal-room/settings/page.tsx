@@ -5,9 +5,9 @@ import { DealRoomAccessGate } from "@/components/deal-room/deal-room-access-gate
 import { AccountView } from "@/components/account/account-view";
 
 export default function DealRoomSettingsPage() {
-  const { isQualified, isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
-  if (!isLoading && !isQualified) {
+  if (!isLoading && !isAuthenticated) {
     return <DealRoomAccessGate isAuthenticated={isAuthenticated} />;
   }
 

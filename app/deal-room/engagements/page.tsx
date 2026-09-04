@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Archive, ChevronDown, Plus } from "lucide-react";
+import { ChevronDown, Plus } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useDealRoomStore } from "@/context/deal-room-store-context";
 import { useProjectStore } from "@/context/project-store-context";
@@ -13,24 +13,43 @@ import {
   ENGAGEMENT_STATUS_LABELS,
   getAvailableEngagementActions,
 } from "@/lib/governance/engagement-workflow";
+import {
+  DEFAULT_ENGAGEMENT_FILTERS,
+  matchesEngagementRow,
+  type EngagementFilters,
+  type EngagementStatusFilter,
+} from "@/lib/governance/engagement-filters";
 import { DealRoomAccessGate } from "@/components/deal-room/deal-room-access-gate";
+import { QualificationRequiredNotice } from "@/components/deal-room/qualification-required-notice";
 import { EngagementStatusPill as StatusPill } from "@/components/deal-room/engagement-status-pill";
 import { EngagementDetailDrawer } from "@/components/deal-room/engagement-detail-drawer";
 import { NewEngagementWizard } from "@/components/deal-room/new-engagement-wizard";
+import { EngagementFiltersBar, Pill } from "@/components/dashboard/engagement-filters-bar";
+import { projectMatchesMinistry } from "@/lib/entitlements/ministry-scope";
+import { EngagementKanbanView, EngagementListView, EngagementMatrixView } from "@/components/dashboard/engagement-views";
+import { PipelineViewSwitcher, type PipelineView } from "@/components/deal-room/pipeline-view-switcher";
 import { DataTable } from "@/components/dashboard/data-table";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
+const VIEW_KEY = "zimbabwe.dealRoom.engagementsView";
+
 export default function DealRoomEngagementsPage() {
-  const { isQualified, isAuthenticated, role, name, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isQualified, role, name, ministryId, isLoading: authLoading } = useAuth();
   const { engagements, updateEngagementStatus, addEngagement, refresh, isLoading } = useDealRoomStore();
   const { projects, getProject } = useProjectStore();
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showArchived, setShowArchived] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<EngagementStatusFilter>("all");
+  const [filters, setFilters] = useState<EngagementFilters>(DEFAULT_ENGAGEMENT_FILTERS);
+  const [view, setView] = useState<PipelineView>("table");
+  // Government Reviewer ministry-scoping (Platform Feedback Batch v4, Phase 6) — additive,
+  // off-by-default narrowing to engagements on their own ministry's projects; see the identical
+  // convention/rationale on /deal-room/pipeline.
+  const [myMinistryOnly, setMyMinistryOnly] = useState(false);
 
   // GET /api/engagements excludes archived rows by default (they're hidden from every other
-  // pipeline view too) — this page's "Show archived" toggle needs its own archived-inclusive
+  // pipeline view too) — this page's "Include archived" filter needs its own archived-inclusive
   // fetch rather than the shared store's default-filtered list.
   const [archivedOnly, setArchivedOnly] = useState<InvestorEngagement[]>([]);
   const loadArchived = useCallback(async () => {
@@ -51,9 +70,34 @@ export default function DealRoomEngagementsPage() {
     await Promise.all([refresh(), loadArchived()]);
   }, [refresh, loadArchived]);
 
+  useEffect(() => {
+    const saved = localStorage.getItem(VIEW_KEY) as PipelineView | null;
+    if (saved === "kanban" || saved === "list" || saved === "table" || saved === "matrix") setView(saved);
+  }, []);
+
+  const changeView = (next: PipelineView) => {
+    setView(next);
+    localStorage.setItem(VIEW_KEY, next);
+  };
+
   const workflowRole = role ? roleToWorkflowRole(role) : null;
   const canManage = workflowRole !== null;
   const canSelfInitiate = role === "qualified";
+
+  const projectTitleOf = useCallback((projectId: string) => getProject(projectId)?.title ?? "Unknown project", [getProject]);
+
+  // Superset the store's default (archived-excluded) list with the archived-inclusive fetch, then
+  // let matchesEngagementRow apply search/status/archived-visibility uniformly — same two-source
+  // pattern the previous flat table used, just shared across every view now instead of one table.
+  const allEngagements = useMemo(() => [...engagements, ...archivedOnly], [engagements, archivedOnly]);
+  const filteredEngagements = useMemo(() => {
+    const matched = allEngagements.filter((e) => matchesEngagementRow(e, projectTitleOf(e.projectId), statusFilter, filters));
+    if (role !== "government" || !myMinistryOnly || !ministryId) return matched;
+    return matched.filter((e) => {
+      const project = getProject(e.projectId);
+      return project ? projectMatchesMinistry(project, ministryId) : false;
+    });
+  }, [allEngagements, projectTitleOf, statusFilter, filters, role, myMinistryOnly, ministryId, getProject]);
 
   const columns: ColumnDef<InvestorEngagement, unknown>[] = useMemo(
     () => [
@@ -65,18 +109,8 @@ export default function DealRoomEngagementsPage() {
           // otherwise force the whole table wider than its panel (same fix as the Users workspace
           // and ReportStat's overflow bug).
           <div className="min-w-0 max-w-[200px]">
-            <p className="flex items-center gap-1.5 text-white font-medium">
-              <span className="truncate" title={row.original.investorName}>
-                {row.original.investorName}
-              </span>
-              {row.original.archivedAt && (
-                <span
-                  className="inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium"
-                  style={{ backgroundColor: "rgba(148,163,184,0.15)", color: "var(--color-text-muted)" }}
-                >
-                  <Archive className="h-2.5 w-2.5" /> Archived
-                </span>
-              )}
+            <p className="truncate text-white font-medium" title={row.original.investorName}>
+              {row.original.investorName}
             </p>
             {row.original.investorOrganization && (
               <p className="truncate text-xs" style={{ color: "var(--color-text-muted)" }} title={row.original.investorOrganization}>
@@ -89,8 +123,8 @@ export default function DealRoomEngagementsPage() {
       {
         id: "project",
         header: "Project",
-        accessorFn: (row) => getProject(row.projectId)?.title ?? "Unknown project",
-        cell: ({ row }) => (getProject(row.original.projectId)?.title ?? "Unknown project").slice(0, 50),
+        accessorFn: (row) => projectTitleOf(row.projectId),
+        cell: ({ row }) => projectTitleOf(row.original.projectId).slice(0, 50),
       },
       {
         accessorKey: "status",
@@ -142,14 +176,8 @@ export default function DealRoomEngagementsPage() {
         cell: ({ row }) => new Date(row.original.updatedAt).toLocaleDateString(),
       },
     ],
-    [canManage, getProject, updateEngagementStatus]
+    [canManage, projectTitleOf, updateEngagementStatus]
   );
-
-  const visibleEngagements = useMemo(
-    () => (showArchived ? [...engagements, ...archivedOnly] : engagements),
-    [engagements, archivedOnly, showArchived]
-  );
-  const archivedCount = archivedOnly.length;
 
   // Publish (draft -> submitted) helper handed to the wizard, mirroring the drawer's publish call.
   const publishEngagement = async (id: string, payload: Record<string, unknown>): Promise<boolean> => {
@@ -167,53 +195,92 @@ export default function DealRoomEngagementsPage() {
     return true;
   };
 
-  if (!authLoading && !isQualified) {
+  if (!authLoading && !isAuthenticated) {
     return <DealRoomAccessGate isAuthenticated={isAuthenticated} />;
+  }
+  if (!authLoading && !isQualified) {
+    return (
+      <QualificationRequiredNotice
+        feature="Engagements"
+        description="Track and log formal investor engagements on active projects once your investor profile is qualified."
+      />
+    );
   }
 
   return (
     <div>
-      <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-white">Engagements</h1>
-          <p className="text-sm mt-1" style={{ color: "var(--color-text-secondary)" }}>
-            {engagements.length} investor engagements tracked across the pipeline.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {archivedCount > 0 && (
-            <label className="flex items-center gap-1.5 text-xs cursor-pointer" style={{ color: "var(--color-text-muted)" }}>
-              <input
-                type="checkbox"
-                checked={showArchived}
-                onChange={(e) => setShowArchived(e.target.checked)}
-                className="accent-current"
-              />
-              Show archived ({archivedCount})
-            </label>
-          )}
-          {(canManage || canSelfInitiate) && (
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-white">Engagements</h1>
+        <p className="text-sm mt-1" style={{ color: "var(--color-text-secondary)" }}>
+          {engagements.length} investor engagements tracked across the pipeline.
+        </p>
+      </div>
+
+      <EngagementFiltersBar
+        engagements={allEngagements}
+        projectTitleOf={projectTitleOf}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        filters={filters}
+        onFiltersChange={setFilters}
+        toolbarEnd={
+          (canManage || canSelfInitiate) && (
             <Button onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4" /> New Engagement
             </Button>
-          )}
-        </div>
-      </div>
-
-      <DataTable
-        columns={columns}
-        data={visibleEngagements}
-        isLoading={isLoading || authLoading}
-        searchPlaceholder="Search engagements…"
-        emptyMessage="No investor engagements recorded yet."
-        onRowClick={(row) => setSelectedId(row.id)}
+          )
+        }
+        viewSwitcher={<PipelineViewSwitcher view={view} onChange={changeView} />}
+        extraPills={
+          role === "government" &&
+          ministryId && (
+            <Pill active={myMinistryOnly} onClick={() => setMyMinistryOnly((v) => !v)}>
+              My Ministry Only (
+              {allEngagements.filter((e) => {
+                const project = getProject(e.projectId);
+                return project ? projectMatchesMinistry(project, ministryId) : false;
+              }).length}
+              )
+            </Pill>
+          )
+        }
       />
 
+      {view === "kanban" && (
+        <EngagementKanbanView
+          engagements={filteredEngagements}
+          projectTitleOf={projectTitleOf}
+          onCardClick={(e) => setSelectedId(e.id)}
+        />
+      )}
+      {view === "list" && (
+        <EngagementListView
+          engagements={filteredEngagements}
+          projectTitleOf={projectTitleOf}
+          onCardClick={(e) => setSelectedId(e.id)}
+        />
+      )}
+      {view === "matrix" && (
+        <EngagementMatrixView
+          engagements={filteredEngagements}
+          projectTitleOf={projectTitleOf}
+          onCardClick={(e) => setSelectedId(e.id)}
+        />
+      )}
+      {view === "table" && (
+        <DataTable
+          columns={columns}
+          data={filteredEngagements}
+          isLoading={isLoading || authLoading}
+          emptyMessage="No investor engagements recorded yet."
+          onRowClick={(row) => setSelectedId(row.id)}
+          hideSearch
+        />
+      )}
+
       <EngagementDetailDrawer
-        engagement={visibleEngagements.find((e) => e.id === selectedId) ?? null}
-        projectTitle={
-          selectedId ? getProject(visibleEngagements.find((e) => e.id === selectedId)?.projectId ?? "")?.title : undefined
-        }
+        engagement={filteredEngagements.find((e) => e.id === selectedId) ?? allEngagements.find((e) => e.id === selectedId) ?? null}
+        projectTitle={selectedId ? projectTitleOf(allEngagements.find((e) => e.id === selectedId)?.projectId ?? "") : undefined}
         onClose={() => setSelectedId(null)}
         isStaff={canManage}
         onUpdated={refreshAll}

@@ -11,7 +11,7 @@ export default function SuperAdminAccountPage() {
     return (
       <AccessGate
         title="Sign in required"
-        description="Use a super admin pilot account to manage your account and security settings."
+        description="Sign in with a super admin account to manage your account and security settings."
       />
     );
   }

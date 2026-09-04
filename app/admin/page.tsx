@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts";
@@ -54,7 +54,7 @@ export default function AdminOverviewPage() {
     return (
       <AccessGate
         title="Sign in required"
-        description="Use an admin pilot account to view the project registry overview, review queue, and inquiries."
+        description="Sign in with an admin account to view the project registry overview, review queue, and inquiries."
       />
     );
   }

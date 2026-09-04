@@ -5,9 +5,10 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/auth-context";
 import { useProjectStore } from "@/context/project-store-context";
 import { roleToWorkflowRole } from "@/lib/auth/role-map";
-import type { InvestmentProject, ProjectFilters, ProjectStatus, SavedSearch } from "@/lib/types";
-import { STATUS_LABELS, isInReviewStatus } from "@/lib/governance/project-workflow";
+import type { DemoPersona, InvestmentProject, ProjectFilters, ProjectStatus, SavedSearch } from "@/lib/types";
+import { STATUS_FILTER_CHIPS, isInReviewStatus, type StatusFilterValue } from "@/lib/governance/project-workflow";
 import { filterProjects } from "@/lib/entitlements/visibility";
+import { projectMatchesMinistry } from "@/lib/entitlements/ministry-scope";
 import { paramsToFilters, normalizeFilters, syncFiltersToUrl } from "@/lib/utils/project-filters-url";
 import { useSavedSearches } from "@/lib/hooks/use-saved-searches";
 import { DealRoomAccessGate } from "@/components/deal-room/deal-room-access-gate";
@@ -23,30 +24,18 @@ import { cn } from "@/lib/utils";
 
 const VIEW_KEY = "zimbabwe.dealRoom.pipelineView";
 
-/** "in_review" is a synthetic value grouping submitted_for_review/under_review/changes_requested
- *  (mirrors the Overview KPI card and isInReviewStatus) — not a real ProjectStatus. */
-type StatusFilterValue = "all" | "in_review" | ProjectStatus;
-
-// 1:1 with DealRoomKanban's BOARD_COLUMNS (draft → submitted_for_review → under_review →
-// changes_requested → approved → published) — every real Kanban column gets its own pill instead
-// of the old "In Review" grouping, which flattened 3 distinct stages into one. The synthetic
-// "in_review" StatusFilterValue itself stays supported below (not as its own pill) purely for the
-// legacy ?status=in_review deep link from the Overview KPI cards.
-const STATUS_FILTER_CHIPS: { value: StatusFilterValue; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "draft", label: STATUS_LABELS.draft },
-  { value: "submitted_for_review", label: STATUS_LABELS.submitted_for_review },
-  { value: "under_review", label: STATUS_LABELS.under_review },
-  { value: "changes_requested", label: STATUS_LABELS.changes_requested },
-  { value: "approved", label: STATUS_LABELS.approved },
-  { value: "published", label: STATUS_LABELS.published },
-];
-
 export default function DealRoomPipelinePage() {
-  const { isQualified, isAuthenticated, isAdmin, isSuperAdmin, role, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isQualified, isAdmin, isSuperAdmin, role, userId, ministryId, isLoading: authLoading } = useAuth();
   const { projects, updateProject } = useProjectStore();
   const [filters, setFilters] = useState<ProjectFilters>({});
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("all");
+  // Government Reviewer ministry-scoping (Platform Feedback Batch v4, Phase 6) — a `government`
+  // reviewer currently sees the full national pipeline with zero ministry filtering by design
+  // (their write authority via roleToWorkflowRole('reviewer') is unaffected either way); these two
+  // toggles are purely additive narrowing for their own convenience, same "off by default, opt-in"
+  // convention as the qualified-investor "Investor Proposals" pill on /admin/projects.
+  const [myMinistryOnly, setMyMinistryOnly] = useState(false);
+  const [myAssignedOnly, setMyAssignedOnly] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerInitialTab, setDrawerInitialTab] = useState<"overview" | "messages">("overview");
   const [view, setView] = useState<PipelineView>("kanban");
@@ -111,15 +100,18 @@ export default function DealRoomPipelinePage() {
 
   // "admin" persona isn't in filterProjects' publish-status-restricted list, so the shared filter
   // dimensions apply without also hiding non-published projects — this is a governance workflow
-  // view where every status must stay visible regardless of the viewer's real role. Kept separate
-  // from the statusFilter narrowing below so the stage pills' live counts (e.g. "Draft (1)") react
-  // to the taxonomy filters without also collapsing to just the currently-selected stage's count.
+  // view where every status must stay visible, but only for viewers already trusted with that
+  // full picture (qualified/government/admin/super_admin). A `registered` investor (Investor
+  // Dashboard Expansion plan opened this page to them) is not qualified yet, so their pipeline
+  // must fall back to the "registered" persona's published-only filter — otherwise they'd see
+  // draft/under-review projects that haven't cleared governance review.
+  const pipelinePersona: DemoPersona = isQualified ? "admin" : "registered";
   const taxonomyFilteredProjects = useMemo(
-    () => filterProjects(projects, filters, "admin"),
-    [projects, filters]
+    () => filterProjects(projects, filters, pipelinePersona),
+    [projects, filters, pipelinePersona]
   );
 
-  const filteredProjects = useMemo(() => {
+  const byStatus = useMemo(() => {
     if (statusFilter === "in_review") {
       return taxonomyFilteredProjects.filter((p) => isInReviewStatus(p.projectStatus));
     }
@@ -128,6 +120,13 @@ export default function DealRoomPipelinePage() {
     }
     return taxonomyFilteredProjects;
   }, [taxonomyFilteredProjects, statusFilter]);
+
+  const filteredProjects = useMemo(() => {
+    const byMinistry = role === "government" && myMinistryOnly && ministryId ? byStatus.filter((p) => projectMatchesMinistry(p, ministryId)) : byStatus;
+    return role === "government" && myAssignedOnly && userId
+      ? byMinistry.filter((p) => p.assignedReviewingOfficerUserId === userId)
+      : byMinistry;
+  }, [byStatus, role, myMinistryOnly, myAssignedOnly, ministryId, userId]);
 
   const countFor = (value: StatusFilterValue) => {
     if (value === "all") return taxonomyFilteredProjects.length;
@@ -154,7 +153,7 @@ export default function DealRoomPipelinePage() {
     }
   };
 
-  if (!authLoading && !isQualified) {
+  if (!authLoading && !isAuthenticated) {
     return <DealRoomAccessGate isAuthenticated={isAuthenticated} />;
   }
 
@@ -165,7 +164,9 @@ export default function DealRoomPipelinePage() {
         <p className="text-sm mt-1" style={{ color: "var(--color-text-secondary)" }}>
           {isAdmin || isSuperAdmin
             ? "Drag cards to move a project through the governance workflow. Click a card to open its detail workspace."
-            : "Explore national investment opportunities across sovereign development stages. Click a card to inspect its data room workspace."}
+            : isQualified
+              ? "Explore national investment opportunities across sovereign development stages. Click a card to inspect its data room workspace."
+              : "Browse published national investment opportunities. Complete your investment profile to unlock full data room access."}
         </p>
       </div>
 
@@ -200,6 +201,36 @@ export default function DealRoomPipelinePage() {
               {chip.label} ({countFor(chip.value)})
             </button>
           ))}
+          {role === "government" && ministryId && (
+            <button
+              type="button"
+              onClick={() => setMyMinistryOnly((v) => !v)}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-medium transition-colors border",
+                myMinistryOnly
+                  ? "bg-[var(--color-gold)]/15 text-[var(--color-gold)] border-[var(--color-gold)]/40"
+                  : "text-[var(--color-text-muted)] border-[var(--color-sovereign-border)] hover:bg-white/5 hover:text-white"
+              )}
+              title="Show only projects where your ministry is a primary or secondary beneficiary"
+            >
+              My Ministry Only ({byStatus.filter((p) => projectMatchesMinistry(p, ministryId)).length})
+            </button>
+          )}
+          {role === "government" && userId && (
+            <button
+              type="button"
+              onClick={() => setMyAssignedOnly((v) => !v)}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-medium transition-colors border",
+                myAssignedOnly
+                  ? "bg-[var(--color-gold)]/15 text-[var(--color-gold)] border-[var(--color-gold)]/40"
+                  : "text-[var(--color-text-muted)] border-[var(--color-sovereign-border)] hover:bg-white/5 hover:text-white"
+              )}
+              title="Show only projects where you're the Assigned Reviewing Officer"
+            >
+              My Assigned Projects ({byStatus.filter((p) => p.assignedReviewingOfficerUserId === userId).length})
+            </button>
+          )}
         </div>
         <PipelineViewSwitcher view={view} onChange={changeView} />
       </div>

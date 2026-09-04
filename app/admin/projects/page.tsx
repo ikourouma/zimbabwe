@@ -11,7 +11,7 @@ export default function AdminProjectsPage() {
     return (
       <AccessGate
         title="Sign in required"
-        description="Use an admin pilot account to create, browse, and review projects in the registry."
+        description="Sign in with an admin account to create, browse, and review projects in the registry."
       />
     );
   }

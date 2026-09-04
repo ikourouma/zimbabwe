@@ -98,7 +98,7 @@ export default function SuperAdminAuditLogPage() {
     return (
       <AccessGate
         title="Sign in required"
-        description="Use a super admin pilot account to view the governance audit trail."
+        description="Sign in with a super admin account to view the governance audit trail."
       />
     );
   }

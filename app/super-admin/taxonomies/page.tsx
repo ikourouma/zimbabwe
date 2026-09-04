@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Archive, ArchiveRestore, FileSignature, History, Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, Check, FileSignature, History, Trash2 } from "lucide-react";
 import { useTaxonomyStore } from "@/context/taxonomy-store-context";
 import { useProjectStore } from "@/context/project-store-context";
 import { useAuth } from "@/context/auth-context";
@@ -20,7 +20,7 @@ import {
   type TaxonomyCategory,
   type TaxonomyFilters as TaxonomyFilterState,
 } from "@/lib/governance/taxonomy-filters";
-import { getSectorStats, getPillarStats, getMinistryStats, getSdgStats } from "@/lib/data/site-stats";
+import { getSectorStats, getSubsectorStats, getPillarStats, getMinistryStats, getSdgStats } from "@/lib/data/site-stats";
 import type { MouTemplateDefaults } from "@/lib/types";
 
 /** Deliberately a count, never a named individual — see the no-named-officials policy on the
@@ -64,17 +64,17 @@ function CountChip({ total, published }: { total: number; published: number }) {
 }
 
 function StatusBadge({ status }: { status?: string }) {
+  const pending = status === "pending_validation";
   const active = status === "active";
+  const color = pending ? "#fbbf24" : active ? "#4ade80" : "var(--color-text-muted)";
+  const bg = pending ? "rgba(251,191,36,0.12)" : active ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.05)";
+  const border = pending ? "rgba(251,191,36,0.3)" : active ? "rgba(74,222,128,0.2)" : "var(--color-sovereign-border)";
   return (
     <span
       className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium capitalize"
-      style={{
-        color: active ? "#4ade80" : "var(--color-text-muted)",
-        backgroundColor: active ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.05)",
-        border: `1px solid ${active ? "rgba(74,222,128,0.2)" : "var(--color-sovereign-border)"}`,
-      }}
+      style={{ color, backgroundColor: bg, border: `1px solid ${border}` }}
     >
-      {(status ?? "—").replace(/_/g, " ")}
+      {pending ? "Pending Review" : (status ?? "—").replace(/_/g, " ")}
     </span>
   );
 }
@@ -84,6 +84,7 @@ function StatusBadge({ status }: { status?: string }) {
  *  message when linked records exist. */
 function RowActions({
   status,
+  onApprove,
   onArchive,
   onRestore,
   onDelete,
@@ -91,6 +92,9 @@ function RowActions({
   entityId,
 }: {
   status?: string;
+  /** Only rendered when set — the "Pending Review" -> "active" promotion is currently unique to
+   *  subsector suggestions submitted via the Propose-Project wizard's "Other (not listed)" path. */
+  onApprove?: () => void;
   onArchive: () => void;
   onRestore: () => void;
   onDelete: () => void;
@@ -104,6 +108,10 @@ function RowActions({
       {status === "active" ? (
         <Button size="sm" variant="ghost" onClick={onArchive} title="Archive (hide from new pickers)">
           <Archive className="h-4 w-4" />
+        </Button>
+      ) : status === "pending_validation" && onApprove ? (
+        <Button size="sm" variant="ghost" onClick={onApprove} title="Approve — makes it selectable platform-wide">
+          <Check className="h-4 w-4" style={{ color: "#4ade80" }} />
         </Button>
       ) : (
         <Button size="sm" variant="ghost" onClick={onRestore} title="Restore to active">
@@ -233,6 +241,10 @@ export default function SuperAdminTaxonomiesPage() {
     updateSector,
     archiveSector,
     removeSector,
+    updateSubsector,
+    approveSubsector,
+    archiveSubsector,
+    removeSubsector,
     updatePillar,
     archivePillar,
     removePillar,
@@ -279,6 +291,23 @@ export default function SuperAdminTaxonomiesPage() {
           linkedCount: getSectorStats(s.id, projects).total,
         },
       })),
+    [sectors, projects]
+  );
+  // Flattened from sectors[].subsectors (fetchTaxonomies nests them per-sector — see
+  // lib/db/queries/taxonomies.ts) with the parent sector's name carried along for display since
+  // this tab lists every subsector across every sector in one table.
+  const subsectorRows = useMemo(
+    () =>
+      sectors.flatMap((sector) =>
+        (sector.subsectors ?? []).map((sub) => ({
+          item: { ...sub, sectorName: sector.name },
+          row: {
+            searchText: `${sub.name} ${sector.name}`,
+            isActive: sub.status === "active",
+            linkedCount: getSubsectorStats(sub.id, projects).total,
+          },
+        }))
+      ),
     [sectors, projects]
   );
   const ministryRows = useMemo(
@@ -335,6 +364,11 @@ export default function SuperAdminTaxonomiesPage() {
   );
 
   const filteredSectors = useMemo(() => sectorRows.filter(({ row }) => matchesTaxonomyRow(row, filters)).map(({ item }) => item), [sectorRows, filters]);
+  const filteredSubsectors = useMemo(
+    () => subsectorRows.filter(({ row }) => matchesTaxonomyRow(row, filters)).map(({ item }) => item),
+    [subsectorRows, filters]
+  );
+  const pendingSubsectorCount = useMemo(() => subsectorRows.filter(({ item }) => item.status === "pending_validation").length, [subsectorRows]);
   const filteredMinistries = useMemo(
     () => ministryRows.filter(({ row }) => matchesTaxonomyRow(row, filters)).map(({ item }) => item),
     [ministryRows, filters]
@@ -352,6 +386,7 @@ export default function SuperAdminTaxonomiesPage() {
 
   const counts: Record<TaxonomyCategory, number> = {
     sectors: filteredSectors.length,
+    subsectors: filteredSubsectors.length,
     ministries: filteredMinistries.length,
     provinces: filteredProvinces.length,
     pillars: filteredPillars.length,
@@ -366,6 +401,10 @@ export default function SuperAdminTaxonomiesPage() {
       case "sectors":
         header = ["Name", "Short Name", "Description", "Linked Projects", "Status"];
         lines = filteredSectors.map((s) => [s.name, s.shortName ?? "", s.description, String(getSectorStats(s.id, projects).total), s.status]);
+        break;
+      case "subsectors":
+        header = ["Subsector Name", "Parent Sector", "Linked Projects", "Status"];
+        lines = filteredSubsectors.map((s) => [s.name, s.sectorName, String(getSubsectorStats(s.id, projects).total), s.status]);
         break;
       case "ministries":
         header = ["Ministry Name", "Short Name", "Linked Projects", "Officials", "Status"];
@@ -408,7 +447,7 @@ export default function SuperAdminTaxonomiesPage() {
     return (
       <AccessGate
         title="Sign in required"
-        description="Use a super admin pilot account to manage sectors, ministries, provinces, SDGs, and contact reasons."
+        description="Sign in with a super admin account to manage sectors, ministries, provinces, SDGs, and contact reasons."
       />
     );
   }
@@ -427,6 +466,7 @@ export default function SuperAdminTaxonomiesPage() {
 
       <TaxonomyFiltersBar
         counts={counts}
+        pendingCounts={{ subsectors: pendingSubsectorCount }}
         activeCategory={activeCategory}
         onSelectCategory={setActiveCategory}
         filters={filters}
@@ -508,6 +548,82 @@ export default function SuperAdminTaxonomiesPage() {
                               onDelete={() => run(() => removeSector(s.id), `"${s.name}" deleted`)}
                             />
                           </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* Subsectors — includes investor-suggested "Other (not listed)" entries awaiting review
+       *  (Deal Room Feedback Batch v2, item 7); those land here as "Pending Review" until a
+       *  super_admin approves them, at which point they become selectable platform-wide. */}
+      {activeCategory === "subsectors" && (
+        <section className="dashboard-panel p-5">
+          <p className="text-xs mb-3 max-w-2xl" style={{ color: "var(--color-text-muted)" }}>
+            Second-level classification nested under a sector. Entries submitted by investors via the Propose-Project
+            wizard&apos;s &quot;Other (not listed)&quot; option arrive here as <strong>Pending Review</strong> and stay
+            invisible to other investors until approved.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="dashboard-table">
+              <thead>
+                <tr>
+                  <th>Subsector Name</th>
+                  <th>Parent Sector</th>
+                  <th>Linked Projects</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading || authLoading ? (
+                  <tr>
+                    <td colSpan={5}>
+                      <div className="dashboard-skeleton h-4 w-full" />
+                    </td>
+                  </tr>
+                ) : filteredSubsectors.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="text-center text-xs py-6" style={{ color: "var(--color-text-muted)" }}>
+                      No subsectors match the current filters.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredSubsectors.map((s) => {
+                    const stats = getSubsectorStats(s.id, projects);
+                    return (
+                      <tr key={s.id} className={s.status === "inactive" ? "opacity-60" : ""}>
+                        <td>
+                          <input
+                            defaultValue={s.name}
+                            onBlur={(e) => e.target.value !== s.name && run(() => updateSubsector(s.id, { name: e.target.value }), "Subsector saved")}
+                            className="dashboard-input h-8 min-w-[220px]"
+                          />
+                        </td>
+                        <td className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+                          {s.sectorName}
+                        </td>
+                        <td>
+                          <Link href={`/super-admin/projects?subsectorId=${s.id}`} className="hover:underline">
+                            <CountChip total={stats.total} published={stats.published} />
+                          </Link>
+                        </td>
+                        <td><StatusBadge status={s.status} /></td>
+                        <td>
+                          <RowActions
+                            status={s.status}
+                            linked={stats.total}
+                            entityId={s.id}
+                            onApprove={() => run(() => approveSubsector(s.id), `"${s.name}" approved — now selectable platform-wide`)}
+                            onArchive={() => run(() => archiveSubsector(s.id), `"${s.name}" archived`)}
+                            onRestore={() => run(() => updateSubsector(s.id, { status: "active" }), `"${s.name}" restored`)}
+                            onDelete={() => run(() => removeSubsector(s.id), `"${s.name}" deleted`)}
+                          />
                         </td>
                       </tr>
                     );

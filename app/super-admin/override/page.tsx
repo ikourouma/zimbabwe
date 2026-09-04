@@ -147,7 +147,7 @@ export default function SuperAdminOverridePage() {
     return (
       <AccessGate
         title="Sign in required"
-        description="Use a super admin pilot account to override project status and visibility."
+        description="Sign in with a super admin account to override project status and visibility."
       />
     );
   }

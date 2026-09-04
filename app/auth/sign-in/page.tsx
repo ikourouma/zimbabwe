@@ -136,7 +136,7 @@ export default function SignInPage() {
       <div className="mt-8 pt-4 border-t text-center" style={{ borderColor: "var(--color-sovereign-border)" }}>
         <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
           {auth.needAccess}{" "}
-          <Link href="/register" className="underline" style={{ color: "var(--color-gold)" }}>
+          <Link href="/auth/sign-up" className="underline" style={{ color: "var(--color-gold)" }}>
             {auth.applyForAccess}
           </Link>
         </p>

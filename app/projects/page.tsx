@@ -13,6 +13,7 @@ import { ProjectFiltersBar } from "@/components/projects/project-filters";
 import { ProjectCard } from "@/components/projects/project-card";
 import { SaveSearchModal } from "@/components/projects/save-search-modal";
 import { RegisteredWelcomePanel } from "@/components/projects/registered-welcome-panel";
+import { ApplicationStatusBanner } from "@/components/projects/application-status-banner";
 import { HomeCtaSection } from "@/components/sections/home-cta-section";
 import { Button } from "@/components/ui/button";
 import { SITE_URL } from "@/lib/config/site";
@@ -103,6 +104,7 @@ export default function ProjectsPage() {
         </div>
 
         <RegisteredWelcomePanel showWelcomeParam={showWelcome} />
+        <ApplicationStatusBanner />
 
         <div className="mb-8">
           <ProjectFiltersBar

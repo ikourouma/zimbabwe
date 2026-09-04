@@ -11,7 +11,7 @@ export default function AdminCommunicationPage() {
     return (
       <AccessGate
         title="Sign in required"
-        description="Use an admin pilot account to read and reply to investor questions."
+        description="Sign in with an admin account to read and reply to investor questions."
       />
     );
   }

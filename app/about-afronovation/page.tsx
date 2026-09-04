@@ -24,7 +24,7 @@ const deliverables = [
   { icon: Shield, title: "Governance Workflow", desc: "Review and approval before publication with full audit trail." },
   { icon: Settings, title: "Platform Admin Control", desc: "Taxonomies, entitlements, publishing rules, and platform configuration." },
   { icon: Lock, title: "Data Sovereignty", desc: "Government/ZIDA data owned by Zimbabwean authorities; Afronovation operates SaaS." },
-  { icon: ArrowRight, title: "Pilot Pathway", desc: "Demo → 60–90 day pilot → production scale deployment." },
+  { icon: ArrowRight, title: "Deployment Pathway", desc: "Governed rollout from validation through production-scale operation." },
 ];
 
 const DEFAULT_INTRO =
@@ -85,7 +85,6 @@ export default function AboutAfronovationPage() {
           <div className="flex flex-wrap gap-3 mt-6">
             <Link href="/platform" className="btn-sovereign-ghost text-xs px-4 py-2">Platform Overview</Link>
             <Link href="/contact" className="btn-sovereign text-xs px-4 py-2">Contact Afronovation</Link>
-            <Link href="/super-admin" className="btn-sovereign-ghost text-xs px-4 py-2">Platform Admin Console</Link>
           </div>
         </ExecutiveCard>
       </FadeUp>

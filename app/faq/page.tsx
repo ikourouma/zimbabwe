@@ -59,7 +59,7 @@ const faqCategories: FaqCategory[] = [
         question: "Is this an official ZIDA or Government of Zimbabwe platform?",
         answer: (
           <>
-            No. This is a proprietary Afronovation SaaS demonstration configured for Zimbabwe. It does not
+            No. This is a proprietary Afronovation SaaS platform configured for Zimbabwe. It does not
             constitute an official ZIDA, Government of Zimbabwe, or Ministry portal. ZIDA and government systems
             remain the authoritative source for investment promotion, licensing, and regulatory processes. See the{" "}
             <Link href="/legal" className="underline" style={{ color: "var(--color-gold)" }}>
