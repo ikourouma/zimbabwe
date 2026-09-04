@@ -48,3 +48,6 @@ dev_smoke.txt
 
 # local API debug artifacts (curl cookie jars and JSON bodies)
 _p8_*
+
+# smoke test response bodies (SMOKE_DUMP=1) — may contain session-rendered markup
+.smoke-dump/

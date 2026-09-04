@@ -1,3 +1,5 @@
+import { mkdirSync, writeFileSync } from "node:fs";
+
 /**
  * Six-role smoke test — run with:
  *   npx tsx --env-file=.env.local scripts/smoke-all-roles.ts
@@ -7,11 +9,17 @@ const targetBase = process.argv[2]?.replace(/\/$/, "") ?? process.env.NEXT_PUBLI
 const authBase = process.env.NEON_AUTH_BASE_URL;
 const password = process.env.PILOT_ACCOUNT_PASSWORD;
 
+/** Rendered by components/dashboard/console-redirect.tsx when a console layout denies access. */
+const BOUNCE_MARKER = "do not have access to this console";
+
+// Body copy unique to each console's overview page. Headings are not usable here: "Ministry Desk"
+// and "Analytics" are also console/nav labels in components/dashboard/dashboard-nav-config.ts, so
+// they appear in shared dashboard chrome and made a correctly-denied page look like a leak.
 const CONSOLE_MARKERS: Record<string, string> = {
-  "/ministry": "Ministry Desk",
-  "/admin": "Admin Overview",
-  "/super-admin": "Analytics",
-  "/deal-room": "Overview",
+  "/ministry": "national investment pipeline scoped to your designated ministry",
+  "/admin": "Institutional command center",
+  "/super-admin": "Afronovation super admin view",
+  "/deal-room": "Your investor dashboard",
 };
 
 const ACCOUNTS = [
@@ -19,42 +27,42 @@ const ACCOUNTS = [
     email: "registered+pilot@zidaproject.com",
     role: "registered",
     home: "/projects",
-    homeMarker: "Project Registry",
+    homeMarker: "Investment Project Registry",
     forbidden: ["/admin", "/super-admin", "/ministry"],
   },
   {
     email: "qualified+pilot@zidaproject.com",
     role: "qualified",
     home: "/deal-room",
-    homeMarker: "Overview",
+    homeMarker: "Your investor dashboard",
     forbidden: ["/admin", "/super-admin", "/ministry"],
   },
   {
     email: "government+pilot@zidaproject.com",
     role: "government",
     home: "/deal-room",
-    homeMarker: "Overview",
+    homeMarker: "Your investor dashboard",
     forbidden: ["/admin", "/super-admin", "/ministry"],
   },
   {
     email: "ministryadmin+pilot@zidaproject.com",
     role: "ministry_admin",
     home: "/ministry",
-    homeMarker: "Ministry Desk",
+    homeMarker: "national investment pipeline scoped to your designated ministry",
     forbidden: ["/admin", "/super-admin"],
   },
   {
     email: "admin+pilot@zidaproject.com",
     role: "admin",
     home: "/admin",
-    homeMarker: "Admin Overview",
+    homeMarker: "Institutional command center",
     forbidden: ["/super-admin"],
   },
   {
     email: "superadmin+pilot@zidaproject.com",
     role: "super_admin",
     home: "/super-admin",
-    homeMarker: "Analytics",
+    homeMarker: "Afronovation super admin view",
     forbidden: [],
   },
 ] as const;
@@ -110,9 +118,39 @@ async function fetchPath(cookies: string, path: string) {
   });
 }
 
-function hasVaryCookie(res: Response): boolean {
-  const vary = res.headers.get("vary") ?? "";
-  return vary.toLowerCase().includes("cookie");
+// Vary is not assertable: LiteSpeed's compression overwrites it with Accept-Encoding, so the
+// Vary: Cookie set in next.config.ts never reaches the client. Cache-Control does survive, and
+// no-store is the directive that actually keeps a shared cache from reusing one user's console.
+function hasNoStore(res: Response): boolean {
+  const cacheControl = res.headers.get("cache-control") ?? "";
+  return cacheControl.toLowerCase().includes("no-store");
+}
+
+/** Set SMOKE_DUMP=1 to write each failing body to .smoke-dump/ for inspection. */
+function dump(label: string, body: string) {
+  if (!process.env.SMOKE_DUMP) return;
+  const dir = ".smoke-dump";
+  mkdirSync(dir, { recursive: true });
+  const safe = label.replace(/[^a-z0-9]+/gi, "-");
+  writeFileSync(`${dir}/${safe}.html`, body, "utf8");
+}
+
+/** Names which known page shapes a body contains, so a failure says what was served. */
+function fingerprint(body: string): string {
+  const probes: Record<string, string> = {
+    bounce: BOUNCE_MARKER,
+    accessGate: "Sign in required",
+    ministryPage: "national investment pipeline scoped to your designated ministry",
+    ministryChrome: "Ministry Desk",
+    adminPage: "Institutional command center",
+    superAdminPage: "Afronovation super admin view",
+    dealRoomPage: "Your investor dashboard",
+    dealRoomQualified: "A private workspace for approved investors",
+  };
+  const present = Object.entries(probes)
+    .filter(([, needle]) => body.includes(needle))
+    .map(([name]) => name);
+  return present.length ? present.join("+") : "none-of-the-known-shapes";
 }
 
 async function checkForbiddenPath(email: string, cookies: string, path: string) {
@@ -120,14 +158,18 @@ async function checkForbiddenPath(email: string, cookies: string, path: string) 
   const status = res.status;
   const marker = CONSOLE_MARKERS[path];
 
-  report(hasVaryCookie(res), `${email} Vary:Cookie ${path}`, res.headers.get("vary") ?? "missing");
+  report(hasNoStore(res), `${email} no-store ${path}`, res.headers.get("cache-control") ?? "missing");
 
+  // A denied console answers 200 with the ConsoleRedirect bounce rather than a 307: the guard
+  // runs in an async layout, and Next downgrades a redirect() thrown after the shell has flushed
+  // into an RSC-stream redirect on a 200. What must hold is that no console markup is served.
   if (status === 200) {
     const body = await res.text();
     if (marker && body.includes(marker)) {
       report(false, `${email} denied ${path}`, `200 and body contains ${marker}`);
     } else {
-      report(false, `${email} denied ${path}`, "200 (expected redirect)");
+      dump(`denied-${email}-${path}`, body);
+      report(body.includes(BOUNCE_MARKER), `${email} denied ${path}`, `200, body=${fingerprint(body)}`);
     }
     return;
   }
@@ -155,7 +197,12 @@ async function checkHomePath(email: string, cookies: string, home: string, homeM
   }
 
   const body = await res.text();
-  report(body.includes(homeMarker), `${email} home ${home}`, body.includes(homeMarker) ? undefined : `200 but missing "${homeMarker}"`);
+  dump(`home-${email}-${home}`, body);
+  if (body.includes(BOUNCE_MARKER)) {
+    report(false, `${email} home ${home}`, "own console served the access-denied bounce");
+    return;
+  }
+  report(body.includes(homeMarker), `${email} home ${home}`, body.includes(homeMarker) ? undefined : `200, body=${fingerprint(body)}`);
 }
 
 async function main() {
