@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
-import { and, asc, eq, inArray, isNull, or } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, ne, or } from "drizzle-orm";
 import { handleRouteError } from "@/lib/api/route-helpers";
 import { requireRole } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
 import { projectMessages, messageAttachments, investorEngagements } from "@/lib/db/schema";
 import { fetchProjectByIdOrSlug } from "@/lib/db/queries/projects";
 import { mapDbMessageToApp } from "@/lib/db/mappers/message";
-import { fetchDealTeamMember } from "@/lib/db/queries/users";
+import { fetchDealTeamMember, fetchInvestorsEngagedOnProject } from "@/lib/db/queries/users";
 import { logAuditEvent } from "@/lib/db/queries/audit";
+import { projectMatchesMinistry } from "@/lib/entitlements/ministry-scope";
 import type { AccountRole } from "@/lib/auth/types";
 import type { MessageVisibility } from "@/lib/types";
 
@@ -36,28 +37,59 @@ interface AttachmentInput {
  */
 export async function GET(request: Request, { params }: RouteParams) {
   try {
-    const actor = await requireRole(["admin", "super_admin", "government", "qualified"]);
+    const actor = await requireRole(["admin", "super_admin", "government", "qualified", "ministry_admin"]);
     const { id } = await params;
     const project = await fetchProjectByIdOrSlug(id);
     if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+    // ministry_admin read-only oversight (Subject Dropdown + Ministry Engagements plan, Part B) —
+    // full-thread visibility (including internal notes) scoped to their own ministry's projects
+    // only; enforced here rather than trusting the UI, since this route is reachable directly.
+    if (actor.role === "ministry_admin") {
+      if (!actor.ministryId || !projectMatchesMinistry(project, actor.ministryId)) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
+
     const engagementIdFilter = new URL(request.url).searchParams.get("engagementId");
-    const isStaff = STAFF_ROLES.includes(actor.role);
+    // ministry_admin sees the full thread like staff does (never posts — see POST below, which
+    // deliberately keeps its own narrower role list and doesn't grant this).
+    const canSeeEverything = STAFF_ROLES.includes(actor.role) || actor.role === "ministry_admin";
+    // The investor who originated this project via Propose a Project sees the *entire*
+    // non-engagement (general) thread on it — including staff replies to their own Action Cards
+    // like an amendment request, which otherwise wouldn't match the authorUserId-only filter
+    // below (there's no engagementId to key off for a project, unlike investor_engagements
+    // correction/delete_request threads). Internal staff-only notes stay excluded either way.
+    // Reconcile plan + Phase 3, item B6: a co-editor teammate (teamAssignedUserIds) gets the same
+    // general-thread visibility as the proposal's own creator — they have equal edit authority on
+    // the project itself (see resolveProjectWorkflowRole), so a 403 here would be an inconsistent
+    // gap, not an intentional restriction.
+    const isProposalOwner =
+      !canSeeEverything &&
+      project.investorSubmitted &&
+      (project.createdBy === actor.userId || (project.teamAssignedUserIds?.includes(actor.userId) ?? false));
 
     const conditions = [eq(projectMessages.projectId, project.id)];
 
-    if (!isStaff) {
+    if (!canSeeEverything) {
+      // Delegate carve-out (B6): an engagement's assigned Delegate has the same authority as its
+      // owner (see the engagement PATCH/MOU routes), so their own thread must be visible too.
       const own = await db
         .select({ id: investorEngagements.id })
         .from(investorEngagements)
-        .where(and(eq(investorEngagements.projectId, project.id), eq(investorEngagements.userId, actor.userId)));
+        .where(
+          and(
+            eq(investorEngagements.projectId, project.id),
+            or(eq(investorEngagements.userId, actor.userId), eq(investorEngagements.assignedUserId, actor.userId))
+          )
+        );
       const ownEngagementIds = own.map((e) => e.id);
 
-      conditions.push(
-        ownEngagementIds.length > 0
-          ? or(inArray(projectMessages.engagementId, ownEngagementIds), eq(projectMessages.authorUserId, actor.userId))!
-          : eq(projectMessages.authorUserId, actor.userId)
-      );
+      const visibilityClauses = [eq(projectMessages.authorUserId, actor.userId)];
+      if (ownEngagementIds.length > 0) visibilityClauses.push(inArray(projectMessages.engagementId, ownEngagementIds));
+      if (isProposalOwner) visibilityClauses.push(and(isNull(projectMessages.engagementId), ne(projectMessages.visibility, "internal"))!);
+
+      conditions.push(or(...visibilityClauses)!);
     }
 
     if (engagementIdFilter === "none") {
@@ -94,13 +126,22 @@ export async function GET(request: Request, { params }: RouteParams) {
 /** POST /api/projects/[id]/messages — post a reply/question into a project's Communication Hub. */
 export async function POST(request: Request, { params }: RouteParams) {
   try {
-    const actor = await requireRole(["admin", "super_admin", "government", "qualified"]);
+    const actor = await requireRole(["admin", "super_admin", "government", "qualified", "ministry_admin"]);
     const { id } = await params;
     const project = await fetchProjectByIdOrSlug(id);
     if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+    // ministry_admin read+reply (Ministry Desk management dashboard plan, Part 3) — same ministry-
+    // match guard the GET handler applies, so they can only post into their own ministry's threads.
+    if (actor.role === "ministry_admin") {
+      if (!actor.ministryId || !projectMatchesMinistry(project, actor.ministryId)) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
+
     const body = (await request.json()) as {
       body?: string;
+      subject?: string;
       engagementId?: string;
       visibility?: MessageVisibility;
       parentMessageId?: string;
@@ -112,7 +153,9 @@ export async function POST(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: "Message body or an attachment is required" }, { status: 400 });
     }
 
-    const isStaff = STAFF_ROLES.includes(actor.role);
+    // ministry_admin gets "internal" visibility + the same ownership-check bypasses STAFF_ROLES
+    // gets below, scoped to their own ministry's project by the guard above.
+    const isStaff = STAFF_ROLES.includes(actor.role) || actor.role === "ministry_admin";
 
     if (body.engagementId) {
       const [engagement] = await db
@@ -123,9 +166,10 @@ export async function POST(request: Request, { params }: RouteParams) {
       if (!engagement || engagement.projectId !== project.id) {
         return NextResponse.json({ error: "Engagement not found for this project" }, { status: 400 });
       }
-      // A qualified investor may only post into their own engagement's thread — never someone
-      // else's, even if they somehow learn the engagementId.
-      if (!isStaff && engagement.userId !== actor.userId) {
+      // A qualified investor may only post into their own engagement's thread (or one they're the
+      // validated Delegate on, B6) — never someone else's, even if they somehow learn the
+      // engagementId.
+      if (!isStaff && engagement.userId !== actor.userId && engagement.assignedUserId !== actor.userId) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
     }
@@ -147,32 +191,63 @@ export async function POST(request: Request, { params }: RouteParams) {
       }
       if (!isStaff) {
         const authoredByActor = parent.authorUserId === actor.userId;
+        // B6: recognizes the engagement's validated Delegate (assignedUserId) as equally
+        // authorized to reply here, not just its owner (userId).
         const ownsEngagement =
           parent.engagementId != null &&
           (
             await db
               .select({ id: investorEngagements.id })
               .from(investorEngagements)
-              .where(and(eq(investorEngagements.id, parent.engagementId), eq(investorEngagements.userId, actor.userId)))
+              .where(
+                and(
+                  eq(investorEngagements.id, parent.engagementId),
+                  or(eq(investorEngagements.userId, actor.userId), eq(investorEngagements.assignedUserId, actor.userId))
+                )
+              )
               .limit(1)
           ).length > 0;
-        if (!authoredByActor && !ownsEngagement) {
+        // Mirrors the GET handler's isProposalOwner visibility exactly — a co-editor only gets
+        // this on the general (no-engagement), non-internal thread, never on someone else's
+        // engagement thread just by virtue of being a teammate on the project.
+        const isCoEditorOnGeneralThread =
+          parent.engagementId == null &&
+          parent.visibility !== "internal" &&
+          project.investorSubmitted &&
+          (project.teamAssignedUserIds?.includes(actor.userId) ?? false);
+        if (!authoredByActor && !ownsEngagement && !isCoEditorOnGeneralThread) {
           return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
       }
     }
 
-    // Optional case-manager routing: resolve + validate the recipient is active ZIDA staff, and
-    // denormalize their display name for the chip.
+    // Optional recipient routing, and denormalize their display name for the chip. A ZIDA case
+    // manager (or, for a ministry_admin, one of their own ministry's government officials — both
+    // resolve via fetchDealTeamMember since it matches on role, not ministryId) is the default
+    // path. Ministry Message Recipient Targeting plan: a ministry_admin can additionally target a
+    // specific investor engaged on this project — validated against a fresh query, never trusted
+    // from the client — rounding out the three recipient groups (government/staff/investor).
     let recipientUserId: string | null = null;
     let recipientName: string | null = null;
     if (body.recipientUserId) {
       const member = await fetchDealTeamMember(body.recipientUserId);
-      if (!member) {
+      if (member) {
+        recipientUserId = member.userId;
+        recipientName = member.name;
+      } else if (actor.role === "ministry_admin") {
+        const engagedInvestors = await fetchInvestorsEngagedOnProject(project.id);
+        const investor = engagedInvestors.find((i) => i.userId === body.recipientUserId);
+        if (!investor) {
+          return NextResponse.json(
+            { error: "Recipient must be an active team member or an investor engaged on this project" },
+            { status: 400 }
+          );
+        }
+        recipientUserId = investor.userId;
+        recipientName = investor.name;
+      } else {
         return NextResponse.json({ error: "Recipient is not an active team member" }, { status: 400 });
       }
-      recipientUserId = member.userId;
-      recipientName = member.name;
     }
 
     // Investors can never mark a message "internal" — that visibility is ZIDA/Admin/Government-only
@@ -195,6 +270,7 @@ export async function POST(request: Request, { params }: RouteParams) {
         visibility,
         recipientUserId,
         recipientName,
+        subject: body.subject?.trim() || null,
         body: (body.body ?? "").trim(),
       })
       .returning();

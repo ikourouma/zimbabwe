@@ -3,6 +3,8 @@ import { handleRouteError } from "@/lib/api/route-helpers";
 import { requireRole } from "@/lib/auth/session";
 import { assignableRoles } from "@/lib/auth/user-governance";
 import { logAuditEvent } from "@/lib/db/queries/audit";
+import { emailShell, sendEmail } from "@/lib/email/send";
+import { SITE_URL } from "@/lib/config/site";
 import type { AccountRole } from "@/lib/auth/types";
 
 interface InviteBody {
@@ -23,11 +25,9 @@ interface InviteBody {
 }
 
 /**
- * Records a user invitation intent in the audit trail. Email delivery + credential provisioning are
- * deferred (no admin auth plugin in the managed Better Auth setup), so this does NOT send a message
- * or create the account — it files a tracked, attributable record (incl. any role-specific intent
- * metadata) so staff can see who invited whom and follow up manually. Admins may invite only below
- * their tier (server-side ceiling); super_admin may invite any role.
+ * Records a user invitation and sends a sign-up email via Resend. Account creation still happens
+ * when the invitee registers; this is not a magic-link provisioner. Admins may invite only below
+ * their tier; super_admin may invite any role.
  */
 export async function POST(request: Request) {
   try {
@@ -61,11 +61,21 @@ export async function POST(request: Request) {
         ...(body.mandate ? { mandate: body.mandate } : {}),
         enforceMfa: Boolean(body.enforceMfa),
         sendTempPassword: Boolean(body.sendTempPassword),
-        emailDelivery: "deferred",
       },
     });
 
-    return NextResponse.json({ ok: true, emailDelivery: "deferred" });
+    const signUpUrl = `${SITE_URL.replace(/\/$/, "")}/auth/sign-up`;
+    const sent = await sendEmail({
+      to: email,
+      subject: "You have been invited to the ZIDA Investment Platform",
+      html: emailShell(
+        `<p>${actor.name} invited you to join the ZIDA Investment Platform as <strong>${role}</strong>.</p>
+         ${body.note?.trim() ? `<p>${body.note.trim()}</p>` : ""}
+         <p><a href="${signUpUrl}">Create your account</a> with this email address to continue.</p>`
+      ),
+    });
+
+    return NextResponse.json({ ok: true, emailDelivery: sent ? "sent" : "queued_or_unconfigured" });
   } catch (error) {
     return handleRouteError(error);
   }

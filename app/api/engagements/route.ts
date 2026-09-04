@@ -1,18 +1,23 @@
 import { NextResponse } from "next/server";
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, or } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { handleRouteError } from "@/lib/api/route-helpers";
 import { requireRole } from "@/lib/auth/session";
 import { mapDbEngagementToApp } from "@/lib/db/mappers/engagement";
 import { db } from "@/lib/db/client";
-import { investorEngagements } from "@/lib/db/schema";
-import { resolveProjectDbId } from "@/lib/db/queries/projects";
+import { engagementMous, investorEngagements } from "@/lib/db/schema";
+import { fetchAllProjects, resolveProjectDbId } from "@/lib/db/queries/projects";
 import { logAuditEvent } from "@/lib/db/queries/audit";
+import { projectMatchesMinistry } from "@/lib/entitlements/ministry-scope";
 import type { InvestorEngagement } from "@/lib/types";
 
 export async function GET(request: Request) {
   try {
-    const actor = await requireRole(["admin", "super_admin", "government", "qualified"]);
+    // ministry_admin (Platform Feedback Batch v3, Phase 8) gets a dedicated MOU registry scoped to
+    // their own ministry's projects — see the in-JS filter below (a ministry_admin has no direct
+    // `userId`/`assignedUserId` link on the engagement row itself, unlike `qualified`, so this can't
+    // be expressed as a SQL WHERE the way the qualified-investor scoping below is).
+    const actor = await requireRole(["admin", "super_admin", "government", "qualified", "ministry_admin"]);
     const url = new URL(request.url);
     const includeArchived = url.searchParams.get("includeArchived") === "true";
     // Deleted rows are the credibility audit trail — only super_admin can pull them back (e.g. for
@@ -26,7 +31,13 @@ export async function GET(request: Request) {
     const conditions: SQL[] = [];
     if (!includeDeleted) conditions.push(isNull(investorEngagements.deletedAt));
     if (!includeArchived) conditions.push(isNull(investorEngagements.archivedAt));
-    if (actor.role === "qualified") conditions.push(eq(investorEngagements.userId, actor.userId));
+    // A validated org teammate assigned as this engagement's Delegate (Team Ministry Traceability
+    // Batch, Phase 5) sees it in their own list too — same "assignment grants full visibility"
+    // pattern as project_team_assignments' co-editor grant, never exclusive of the owner's own.
+    if (actor.role === "qualified")
+      conditions.push(
+        or(eq(investorEngagements.userId, actor.userId), eq(investorEngagements.assignedUserId, actor.userId))!
+      );
 
     const rows = await db
       .select()
@@ -34,7 +45,30 @@ export async function GET(request: Request) {
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(asc(investorEngagements.createdAt));
 
-    return NextResponse.json(rows.map(mapDbEngagementToApp));
+    let engagements = rows.map(mapDbEngagementToApp);
+
+    // Denormalize MOU lifecycle stage onto each row (Phase 8) — one extra indexed query rather
+    // than N+1 per-engagement MOU fetches, powering the new MOU registry's status pills/filter.
+    if (engagements.length > 0) {
+      const mouRows = await db
+        .select({ engagementId: engagementMous.engagementId, status: engagementMous.status })
+        .from(engagementMous)
+        .where(inArray(engagementMous.engagementId, engagements.map((e) => e.id)));
+      const mouStatusById = new Map(mouRows.map((m) => [m.engagementId, m.status]));
+      engagements = engagements.map((e) => ({ ...e, mouStatus: mouStatusById.get(e.id) ?? null }));
+    }
+
+    if (actor.role === "ministry_admin") {
+      if (!actor.ministryId) return NextResponse.json([]);
+      const projects = await fetchAllProjects();
+      const projectById = new Map(projects.map((p) => [p.id, p]));
+      engagements = engagements.filter((e) => {
+        const project = projectById.get(e.projectId);
+        return project ? projectMatchesMinistry(project, actor.ministryId!) : false;
+      });
+    }
+
+    return NextResponse.json(engagements);
   } catch (error) {
     return handleRouteError(error);
   }

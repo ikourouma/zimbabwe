@@ -34,7 +34,9 @@ export async function POST(request: Request, { params }: RouteParams) {
       .limit(1);
     if (!engagement) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    if (actor.role === "qualified" && engagement.userId !== actor.userId) {
+    // Delegate carve-out (Reconcile plan + Phase 3, item B7) — matches the drawer's own
+    // isOwner || isDelegate gate for the "Propose a Call" button.
+    if (actor.role === "qualified" && engagement.userId !== actor.userId && engagement.assignedUserId !== actor.userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

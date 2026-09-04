@@ -8,7 +8,7 @@ import { fetchMessagesForActor } from "@/lib/db/queries/messages";
  *  app/deal-room/communication/page.tsx. */
 export async function GET() {
   try {
-    const actor = await requireRole(["admin", "super_admin", "government", "qualified"]);
+    const actor = await requireRole(["admin", "super_admin", "government", "qualified", "ministry_admin"]);
     const messages = await fetchMessagesForActor(actor);
     return NextResponse.json(messages);
   } catch (error) {

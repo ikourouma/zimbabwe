@@ -48,8 +48,10 @@ export async function POST(request: Request, { params }: RouteParams) {
       .limit(1);
     if (!engagement) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    // Owner-gate for investors; staff may file on an investor's behalf.
-    if (actor.role === "qualified" && engagement.userId !== actor.userId) {
+    // Owner-gate for investors (Delegate carve-out, Reconcile plan + Phase 3, item B7: a validated
+    // Delegate has equal authority to file this too — matches the drawer's own isOwner || isDelegate
+    // gate); staff may file on an investor's behalf.
+    if (actor.role === "qualified" && engagement.userId !== actor.userId && engagement.assignedUserId !== actor.userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     // Corrections only make sense once the record is locked (still-draft records are edited inline).

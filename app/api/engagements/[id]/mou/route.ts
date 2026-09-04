@@ -9,28 +9,42 @@ import { mapDbMouToApp } from "@/lib/db/mappers/mou";
 import { logAuditEvent } from "@/lib/db/queries/audit";
 import { canEditMouContent } from "@/lib/governance/mou-workflow";
 import { NDA_REQUIRED_MESSAGE, requiresNdaAcceptance } from "@/lib/governance/nda";
+import { fetchProjectByIdOrSlug } from "@/lib/db/queries/projects";
+import { projectMatchesMinistry } from "@/lib/entitlements/ministry-scope";
 import type { MouContent, MouFormatting } from "@/lib/types";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
 /** Confidentiality mirror of GET /api/engagements — a qualified investor may only ever open the
- *  MOU for their own engagement. Throws the same shape `handleRouteError` already understands. */
-async function loadEngagementForActor(engagementId: string, actor: { role: string; userId: string }) {
+ *  MOU for their own engagement; a ministry_admin (read-only oversight — see the mou/comments and
+ *  mou/export siblings for the same pattern) only ever opens one tied to their own ministry's
+ *  project. Throws the same shape `handleRouteError` already understands. */
+async function loadEngagementForActor(engagementId: string, actor: { role: string; userId: string; ministryId?: string | null }) {
   const [engagement] = await db
     .select()
     .from(investorEngagements)
     .where(eq(investorEngagements.id, engagementId))
     .limit(1);
   if (!engagement) return { engagement: null, forbidden: false };
-  if (actor.role === "qualified" && engagement.userId !== actor.userId) {
+  // Reconcile plan + Phase 3, item B5: a validated Delegate (assignedUserId) has equal authority
+  // to the owner on their assigned engagement — same rule as the engagement PATCH route — so they
+  // must not 403 opening its MOU tab either.
+  if (actor.role === "qualified" && engagement.userId !== actor.userId && engagement.assignedUserId !== actor.userId) {
     return { engagement: null, forbidden: true };
+  }
+  if (actor.role === "ministry_admin") {
+    if (!actor.ministryId) return { engagement: null, forbidden: true };
+    const project = await fetchProjectByIdOrSlug(engagement.projectId);
+    if (!project || !projectMatchesMinistry(project, actor.ministryId)) {
+      return { engagement: null, forbidden: true };
+    }
   }
   return { engagement, forbidden: false };
 }
 
 export async function GET(_request: Request, { params }: RouteParams) {
   try {
-    const actor = await requireRole(["admin", "super_admin", "government", "qualified"]);
+    const actor = await requireRole(["admin", "super_admin", "government", "qualified", "ministry_admin"]);
     const { id } = await params;
     const { engagement, forbidden } = await loadEngagementForActor(id, actor);
     if (forbidden) return NextResponse.json({ error: "Forbidden" }, { status: 403 });

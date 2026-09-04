@@ -5,6 +5,8 @@ import { requireRole } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
 import { siteSettings } from "@/lib/db/schema";
 import { logAuditEvent } from "@/lib/db/queries/audit";
+import { mergePublicNavVisibility } from "@/lib/governance/public-nav";
+import { mergeFieldVisibility } from "@/lib/entitlements/matrix";
 
 export async function GET() {
   try {
@@ -16,6 +18,8 @@ export async function GET() {
       flashBannerCtaLabel: row?.flashBannerCtaLabel ?? null,
       flashBannerCtaHref: row?.flashBannerCtaHref ?? null,
       bannerDisplayMode: row?.bannerDisplayMode ?? "stack",
+      publicNavVisibility: mergePublicNavVisibility(row?.publicNavVisibility),
+      fieldVisibility: mergeFieldVisibility(row?.fieldVisibility),
     });
   } catch (error) {
     return handleRouteError(error);
@@ -44,6 +48,12 @@ export async function PATCH(request: Request) {
     if (body.bannerDisplayMode === "stack" || body.bannerDisplayMode === "rotate") {
       patch.bannerDisplayMode = body.bannerDisplayMode;
     }
+    if ("publicNavVisibility" in body) {
+      patch.publicNavVisibility = mergePublicNavVisibility(body.publicNavVisibility);
+    }
+    if ("fieldVisibility" in body) {
+      patch.fieldVisibility = mergeFieldVisibility(body.fieldVisibility);
+    }
 
     const [updated] = await db
       .update(siteSettings)
@@ -67,6 +77,8 @@ export async function PATCH(request: Request) {
       flashBannerCtaLabel: updated.flashBannerCtaLabel,
       flashBannerCtaHref: updated.flashBannerCtaHref,
       bannerDisplayMode: updated.bannerDisplayMode,
+      publicNavVisibility: mergePublicNavVisibility(updated.publicNavVisibility),
+      fieldVisibility: mergeFieldVisibility(updated.fieldVisibility),
     });
   } catch (error) {
     return handleRouteError(error);

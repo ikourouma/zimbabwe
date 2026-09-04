@@ -18,6 +18,14 @@ interface UpdateUserBody {
   organization?: string | null;
   jobTitle?: string | null;
   phone?: string | null;
+  /** Institutional KYC + Executive Representative fields (Platform Feedback Batch v4, Phase 4) —
+   *  same admin-editable set already captured at KYC-at-NDA time, now correctable here too instead
+   *  of only ever being self-edited by the account holder. `null` clears the field. */
+  hqAddress?: string | null;
+  businessRegistrationId?: string | null;
+  websiteUrl?: string | null;
+  executiveRepresentativeName?: string | null;
+  executiveRepresentativeTitle?: string | null;
   /** Ministry rebind (Institutional Compliance Dossier round) — previously only set at account
    *  creation; this lets Admin/Platform Admin correct a government account's ministry binding
    *  afterward. `null` unassigns it. */
@@ -105,6 +113,17 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         ...(patch.jobTitle !== undefined ? { jobTitle: patch.jobTitle } : {}),
         ...(patch.phone !== undefined ? { phone: patch.phone } : {}),
         ...(patch.ministryId !== undefined ? { ministryId: patch.ministryId } : {}),
+        ...(patch.hqAddress !== undefined ? { hqAddress: patch.hqAddress } : {}),
+        ...(patch.businessRegistrationId !== undefined
+          ? { businessRegistrationId: patch.businessRegistrationId }
+          : {}),
+        ...(patch.websiteUrl !== undefined ? { websiteUrl: patch.websiteUrl } : {}),
+        ...(patch.executiveRepresentativeName !== undefined
+          ? { executiveRepresentativeName: patch.executiveRepresentativeName }
+          : {}),
+        ...(patch.executiveRepresentativeTitle !== undefined
+          ? { executiveRepresentativeTitle: patch.executiveRepresentativeTitle }
+          : {}),
         targetEmail: updated.email,
         reason: reason?.trim() || null,
       },

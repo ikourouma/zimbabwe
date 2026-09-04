@@ -5,7 +5,7 @@ import { db } from "@/lib/db/client";
 import { strategicInquiries } from "@/lib/db/schema";
 import { logAuditEvent } from "@/lib/db/queries/audit";
 
-const ALL_ROLES = ["registered", "qualified", "government", "admin", "super_admin"] as const;
+const ALL_ROLES = ["registered", "qualified", "government", "ministry_admin", "admin", "super_admin"] as const;
 
 /**
  * POST /api/account/request-elevation — a signed-in user asks ZIDA to review their access level

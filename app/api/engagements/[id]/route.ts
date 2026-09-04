@@ -116,9 +116,30 @@ async function handleInvestorPatch(
   existing: EngagementRow,
   body: Partial<InvestorEngagement> & { certified?: boolean; archived?: boolean; action?: string }
 ) {
-  // Ownership gate — an investor can only touch their own engagement.
-  if (!existing.userId || existing.userId !== actor.userId) {
+  // Ownership gate — an investor can only touch their own engagement, OR one they've been made
+  // the Delegate on (Team Ministry Traceability Batch, Phase 5) — the delegate model grants equal
+  // authority, never exclusive of the owner's own (existing.userId keeps working unchanged above).
+  const isOwner = Boolean(existing.userId) && existing.userId === actor.userId;
+  const isDelegate = Boolean(existing.assignedUserId) && existing.assignedUserId === actor.userId;
+  if (!isOwner && !isDelegate) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // Primary-contact switch (Phase 8, item 2) — advisory only, never an access gate (unlike every
+  // other branch below, deliberately allowed at ANY status, mirroring the archived toggle). Either
+  // party (owner or Delegate) may switch it to the other; can't be pointed at a third party.
+  if (body.primaryContactUserId !== undefined) {
+    const candidate = body.primaryContactUserId;
+    const validTarget = candidate === existing.userId || (existing.assignedUserId && candidate === existing.assignedUserId);
+    if (candidate !== null && !validTarget) {
+      return NextResponse.json({ error: "Primary contact must be the owner or the assigned Delegate." }, { status: 400 });
+    }
+    const [updated] = await db
+      .update(investorEngagements)
+      .set({ primaryContactUserId: candidate, updatedAt: new Date() })
+      .where(eq(investorEngagements.id, existing.id))
+      .returning();
+    return NextResponse.json(mapDbEngagementToApp(updated));
   }
 
   // Archive/unarchive — purely cosmetic, reversible, and allowed at ANY status (never touches the

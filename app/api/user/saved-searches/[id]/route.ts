@@ -5,7 +5,7 @@ import { requireRole } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
 import { savedSearches } from "@/lib/db/schema";
 
-const ALL_ROLES = ["registered", "qualified", "government", "admin", "super_admin"] as const;
+const ALL_ROLES = ["registered", "qualified", "government", "ministry_admin", "admin", "super_admin"] as const;
 
 /** DELETE /api/user/saved-searches/[id] — remove one of the caller's own saved searches. Scoped by
  *  userId so a user can never delete another user's saved search even with a guessed id. */

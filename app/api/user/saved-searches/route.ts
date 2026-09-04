@@ -8,7 +8,7 @@ import { mapAppInquiryToDb } from "@/lib/db/mappers/inquiry";
 import { summarizeFiltersForLead } from "@/lib/utils/saved-search";
 import type { ProjectFilters, SavedSearch } from "@/lib/types";
 
-const ALL_ROLES = ["registered", "qualified", "government", "admin", "super_admin"] as const;
+const ALL_ROLES = ["registered", "qualified", "government", "ministry_admin", "admin", "super_admin"] as const;
 
 type SavedSearchRow = typeof savedSearches.$inferSelect;
 

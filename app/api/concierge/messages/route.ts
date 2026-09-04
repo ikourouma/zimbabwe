@@ -5,14 +5,19 @@ import { requireRole } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
 import { projectMessages, messageAttachments } from "@/lib/db/schema";
 import { mapDbMessageToApp } from "@/lib/db/mappers/message";
-import { fetchDealTeamMember } from "@/lib/db/queries/users";
+import { fetchDealTeamMember, fetchGovernmentOfficialsForMinistry, fetchMinistryAdminsForMinistry } from "@/lib/db/queries/users";
 import { logAuditEvent } from "@/lib/db/queries/audit";
 import type { AccountRole } from "@/lib/auth/types";
 import type { MessageVisibility } from "@/lib/types";
 
 // Concierge is the project-less "General" channel. Any authenticated user (incl. plain registered)
 // may open one with the ZIDA team — this is the cold-start path before any project/engagement.
-const COMM_ROLES: AccountRole[] = ["admin", "super_admin", "government", "qualified", "registered"];
+// Full Persona Communication Parity plan: `ministry_admin` gets a *narrow* carve-out here — their
+// own escalation thread to ZIDA admin/super_admin, plus read+reply into their own ministry's
+// government officials' threads. They deliberately stay out of STAFF_ROLES below: that flag drives
+// the "see every concierge thread" broad-visibility path, which stays admin/super_admin/government
+// only (a ministry_admin is not a platform-wide concierge triager).
+const COMM_ROLES: AccountRole[] = ["admin", "super_admin", "government", "qualified", "registered", "ministry_admin"];
 const STAFF_ROLES: AccountRole[] = ["admin", "super_admin", "government"];
 
 interface AttachmentInput {
@@ -34,7 +39,20 @@ export async function GET(request: Request) {
     const ownerParam = new URL(request.url).searchParams.get("ownerUserId");
 
     const conditions = [eq(projectMessages.scope, "concierge")];
-    if (isStaff) {
+    if (actor.role === "ministry_admin") {
+      let targetOwner = actor.userId;
+      if (ownerParam && ownerParam !== actor.userId) {
+        if (!actor.ministryId) {
+          return NextResponse.json({ error: "No ministry assigned" }, { status: 403 });
+        }
+        const officials = await fetchGovernmentOfficialsForMinistry(actor.ministryId);
+        if (!officials.some((o) => o.userId === ownerParam)) {
+          return NextResponse.json({ error: "Not authorized to view this thread" }, { status: 403 });
+        }
+        targetOwner = ownerParam;
+      }
+      conditions.push(eq(projectMessages.threadOwnerUserId, targetOwner));
+    } else if (isStaff) {
       if (ownerParam) conditions.push(eq(projectMessages.threadOwnerUserId, ownerParam));
     } else {
       conditions.push(eq(projectMessages.threadOwnerUserId, actor.userId));
@@ -71,6 +89,7 @@ export async function POST(request: Request) {
 
     const body = (await request.json()) as {
       body?: string;
+      subject?: string;
       ownerUserId?: string;
       visibility?: MessageVisibility;
       parentMessageId?: string;
@@ -84,7 +103,26 @@ export async function POST(request: Request) {
     }
 
     // Resolve the thread owner: staff must target an investor's thread; everyone else owns theirs.
-    const threadOwnerUserId = isStaff ? body.ownerUserId : actor.userId;
+    // ministry_admin is a special case — same narrow carve-out as GET above: they may reply into
+    // one of their own ministry's government officials' threads (body.ownerUserId), otherwise the
+    // message goes into their own escalation thread to ZIDA.
+    let threadOwnerUserId: string | undefined;
+    if (actor.role === "ministry_admin") {
+      if (body.ownerUserId && body.ownerUserId !== actor.userId) {
+        if (!actor.ministryId) {
+          return NextResponse.json({ error: "No ministry assigned" }, { status: 403 });
+        }
+        const officials = await fetchGovernmentOfficialsForMinistry(actor.ministryId);
+        if (!officials.some((o) => o.userId === body.ownerUserId)) {
+          return NextResponse.json({ error: "Not authorized to post in this thread" }, { status: 403 });
+        }
+        threadOwnerUserId = body.ownerUserId;
+      } else {
+        threadOwnerUserId = actor.userId;
+      }
+    } else {
+      threadOwnerUserId = isStaff ? body.ownerUserId : actor.userId;
+    }
     if (!threadOwnerUserId) {
       return NextResponse.json({ error: "A thread owner is required" }, { status: 400 });
     }
@@ -101,11 +139,17 @@ export async function POST(request: Request) {
       }
     }
 
-    // Optional case-manager routing (investor → named ZIDA staff).
+    // Optional case-manager routing (investor → named ZIDA staff). Also widened so a `government`
+    // caller can target their own ministry's `ministry_admin` desk directly (Full Persona
+    // Communication Parity plan, Bug 2).
     let recipientUserId: string | null = null;
     let recipientName: string | null = null;
     if (body.recipientUserId) {
-      const member = await fetchDealTeamMember(body.recipientUserId);
+      let member = await fetchDealTeamMember(body.recipientUserId);
+      if (!member && actor.role === "government" && actor.ministryId) {
+        const ministryAdmins = await fetchMinistryAdminsForMinistry(actor.ministryId);
+        member = ministryAdmins.find((m) => m.userId === body.recipientUserId) ?? null;
+      }
       if (!member) {
         return NextResponse.json({ error: "Recipient is not an active team member" }, { status: 400 });
       }
@@ -131,6 +175,7 @@ export async function POST(request: Request) {
         visibility,
         recipientUserId,
         recipientName,
+        subject: body.subject?.trim() || null,
         body: (body.body ?? "").trim(),
       })
       .returning();

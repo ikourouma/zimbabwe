@@ -16,6 +16,7 @@ import {
   sectors,
   strategicInquiries,
   strategicPillars,
+  subsectors,
 } from "@/lib/db/schema";
 
 async function countRows(query: Promise<{ n: number }[]>): Promise<number> {
@@ -37,6 +38,11 @@ type TaxonomyPatchBody =
   | { action: "addSector"; name: string; shortName?: string; description?: string }
   | { action: "archiveSector"; id: string }
   | { action: "removeSector"; id: string }
+  | { action: "addSubsector"; sectorId: string; name: string }
+  | { action: "updateSubsector"; id: string; updates: Record<string, unknown> }
+  | { action: "approveSubsector"; id: string }
+  | { action: "archiveSubsector"; id: string }
+  | { action: "removeSubsector"; id: string }
   | { action: "updatePillar"; id: string; updates: Record<string, unknown> }
   | { action: "addPillar"; name: string; description?: string; strategicMandate?: string; policyAlignmentPrimary?: string }
   | { action: "archivePillar"; id: string }
@@ -61,6 +67,9 @@ async function linkedProjectCount(action: TaxonomyPatchBody["action"], id: strin
   }
   if (action === "removePillar") {
     return countRows(db.select({ n: sql<number>`count(*)` }).from(projectPillars).where(eq(projectPillars.pillarId, id)));
+  }
+  if (action === "removeSubsector") {
+    return countRows(db.select({ n: sql<number>`count(*)` }).from(projects).where(eq(projects.subsectorId, id)));
   }
   if (action === "removeContactReason") {
     return countRows(db.select({ n: sql<number>`count(*)` }).from(strategicInquiries).where(eq(strategicInquiries.contactReasonId, id)));
@@ -120,6 +129,51 @@ export async function PATCH(request: Request) {
           );
         }
         await db.delete(sectors).where(eq(sectors.id, body.id));
+        break;
+      }
+      case "addSubsector": {
+        // Mirrors resolveOrCreatePendingSubsector's id scheme (lib/db/queries/taxonomies.ts) so a
+        // manually-added subsector and an investor's "Other (not listed)" suggestion for the same
+        // name+sector always resolve to the same row instead of creating a duplicate.
+        const name = body.name.trim();
+        if (!name) return NextResponse.json({ error: "Subsector name is required" }, { status: 400 });
+        const slug = slugify(name);
+        await db
+          .insert(subsectors)
+          .values({
+            id: `sub-${body.sectorId}-${slug}`,
+            sectorId: body.sectorId,
+            name,
+            slug,
+            status: "active",
+          } as typeof subsectors.$inferInsert)
+          .onConflictDoNothing();
+        break;
+      }
+      case "updateSubsector":
+        await db
+          .update(subsectors)
+          .set({ ...body.updates, updatedAt: new Date() } as typeof subsectors.$inferInsert)
+          .where(eq(subsectors.id, body.id));
+        break;
+      case "approveSubsector":
+        // Promotes an investor-suggested "Other (not listed)" subsector (Deal Room Feedback Batch
+        // v2, item 7) from pending_validation to active — the moment it becomes selectable in the
+        // Propose-Project wizard's dropdown platform-wide.
+        await db.update(subsectors).set({ status: "active", updatedAt: new Date() }).where(eq(subsectors.id, body.id));
+        break;
+      case "archiveSubsector":
+        await db.update(subsectors).set({ status: "inactive", updatedAt: new Date() }).where(eq(subsectors.id, body.id));
+        break;
+      case "removeSubsector": {
+        const linked = await linkedProjectCount("removeSubsector", body.id);
+        if (linked > 0) {
+          return NextResponse.json(
+            { error: `Cannot delete: ${linked} project(s) still use this subsector. Archive it instead or reassign those projects first.` },
+            { status: 409 }
+          );
+        }
+        await db.delete(subsectors).where(eq(subsectors.id, body.id));
         break;
       }
       case "updatePillar":

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { handleRouteError } from "@/lib/api/route-helpers";
 import { requireRole } from "@/lib/auth/session";
+import { projectMatchesMinistry } from "@/lib/entitlements/ministry-scope";
 import { fetchProjectByIdOrSlug } from "@/lib/db/queries/projects";
 import { isR2Configured, putObject } from "@/lib/storage/r2";
 import { logAuditEvent } from "@/lib/db/queries/audit";
@@ -34,17 +35,39 @@ const ALLOWED_TYPES = new Set([
 const VALID_VISIBILITY: VisibilityLevel[] = ["public", "registered", "qualified_investor"];
 
 /**
- * POST /api/projects/[id]/documents (multipart, admin/super_admin) — uploads a real project
- * artifact to R2 and inserts a `project_documents` row. Replaces the old placeholder-title-only
- * flow (see lib/db/queries/projects.ts syncProjectRelations, kept for back-compat but no longer
- * driven by the project form). Downloads are gated separately (see [docId]/download/route.ts).
+ * POST /api/projects/[id]/documents (multipart) — uploads a real project artifact to R2 and
+ * inserts a `project_documents` row. Allowed for admin/super_admin, ministry_admin (own ministry
+ * only), and the qualified investor who owns an editable proposal draft. Downloads are gated
+ * separately (see [docId]/download/route.ts).
  */
 export async function POST(request: Request, { params }: RouteParams) {
   try {
-    const actor = await requireRole(["admin", "super_admin"]);
+    const actor = await requireRole(["admin", "super_admin", "qualified", "ministry_admin"]);
     const { id } = await params;
     const project = await fetchProjectByIdOrSlug(id);
     if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    if (actor.role === "ministry_admin") {
+      if (!actor.ministryId || !projectMatchesMinistry(project, actor.ministryId)) {
+        return NextResponse.json({ error: "You do not have permission to upload to this project." }, { status: 403 });
+      }
+    }
+
+    // A qualified investor may only attach supporting documents to their own Propose-a-Project
+    // draft while it's still editable — mirrors the ownership+stage gate in PATCH
+    // /api/projects/[id] (Investor Dashboard Expansion plan, Phase 4).
+    const isInvestorOwner = actor.role === "qualified";
+    if (isInvestorOwner) {
+      if (!project.investorSubmitted || project.createdBy !== actor.userId) {
+        return NextResponse.json({ error: "You do not have permission to upload to this project." }, { status: 403 });
+      }
+      if (project.projectStatus !== "draft" && project.projectStatus !== "changes_requested") {
+        return NextResponse.json(
+          { error: "This proposal is locked — file an Amendment Request to add further documents." },
+          { status: 403 }
+        );
+      }
+    }
 
     if (!isR2Configured()) {
       return NextResponse.json({ error: "File storage is not configured" }, { status: 503 });

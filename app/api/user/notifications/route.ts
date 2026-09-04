@@ -5,7 +5,7 @@ import { db } from "@/lib/db/client";
 import { profiles } from "@/lib/db/schema";
 import { DEFAULT_NOTIFICATION_PREFERENCES, type NotificationPreferences } from "@/lib/types";
 
-const ALL_ROLES = ["registered", "qualified", "government", "admin", "super_admin"] as const;
+const ALL_ROLES = ["registered", "qualified", "government", "ministry_admin", "admin", "super_admin"] as const;
 
 /**
  * PATCH /api/user/notifications — persist the signed-in user's notification preferences to
@@ -24,6 +24,7 @@ export async function PATCH(request: Request) {
         typeof body.engagementUpdates === "boolean" ? body.engagementUpdates : current.engagementUpdates,
       newMessages: typeof body.newMessages === "boolean" ? body.newMessages : current.newMessages,
       mouActivity: typeof body.mouActivity === "boolean" ? body.mouActivity : current.mouActivity,
+      teamActivity: typeof body.teamActivity === "boolean" ? body.teamActivity : current.teamActivity,
     };
 
     await db
