@@ -113,7 +113,7 @@ export default function SuperAdminOverviewPage() {
               value={inquiries.length}
               icon={Inbox}
               accent="muted"
-              href="/admin/inquiries?status=pending"
+              href="/super-admin/inquiries?status=pending"
             />
           </>
         )}

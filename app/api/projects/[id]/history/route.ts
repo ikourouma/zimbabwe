@@ -16,7 +16,7 @@ type RouteParams = { params: Promise<{ id: string }> };
  */
 export async function GET(_request: Request, { params }: RouteParams) {
   try {
-    await requireRole(["admin", "super_admin", "government", "qualified"]);
+    await requireRole(["admin", "super_admin", "government", "qualified", "ministry_admin"]);
     const { id } = await params;
     const project = await fetchProjectByIdOrSlug(id);
     if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });

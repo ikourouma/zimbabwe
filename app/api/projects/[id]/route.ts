@@ -26,6 +26,12 @@ import type { WorkflowRole } from "@/lib/governance/project-workflow";
 // — once it moves to submitted_for_review or beyond, further changes must go through the Phase 5
 // Amendment Request flow instead of a direct PATCH.
 const CREATOR_EDITABLE_STAGES: ProjectStatus[] = ["draft", "changes_requested"];
+const REVIEWER_CONTENT_EDITABLE_STAGES: ProjectStatus[] = [
+  "draft",
+  "submitted_for_review",
+  "under_review",
+  "changes_requested",
+];
 
 // Server-controlled bookkeeping/governance fields a creator can never set directly via PATCH body
 // — status transitions (handled below) are the only way any of these should change for their own
@@ -239,6 +245,17 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       const prevVal = (existing as unknown as Record<string, unknown>)[key];
       return JSON.stringify(nextVal) !== JSON.stringify(prevVal);
     });
+
+    if (
+      workflowRole === "reviewer" &&
+      !REVIEWER_CONTENT_EDITABLE_STAGES.includes(existing.projectStatus) &&
+      changedFields.length > 0
+    ) {
+      return NextResponse.json(
+        { error: "This project is locked — file an Amendment Request to change it further." },
+        { status: 403 }
+      );
+    }
 
     if (statusChanged) {
       if (!workflowRole || !canTransition(existing.projectStatus, body.projectStatus as ProjectStatus, workflowRole)) {

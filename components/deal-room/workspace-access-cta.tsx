@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { useDemoPersona } from "@/context/demo-persona-context";
+import { useAuth } from "@/context/auth-context";
 import { useTranslations } from "@/context/locale-context";
 
 /**
@@ -13,14 +13,20 @@ import { useTranslations } from "@/context/locale-context";
  * or non-admin visitor can never click straight into it; they only ever see "Request qualified access".
  */
 export function WorkspaceAccessCta({ className = "flex flex-wrap gap-3" }: { className?: string }) {
-  const { isAdmin } = useDemoPersona();
+  const { isAuthenticated, isQualified, isGovernment, isMinistryAdmin, isAdmin } = useAuth();
   const t = useTranslations();
   const pd = t.projectDetail;
+  const canAccessDealRoom =
+    isAuthenticated && (isQualified || isGovernment || isMinistryAdmin || isAdmin);
 
   return (
     <div className={className}>
-      {isAdmin && (
+      {canAccessDealRoom ? (
         <Link href="/deal-room" className="btn-sovereign text-xs px-4 py-2 whitespace-nowrap">
+          {pd.signInToWorkspace} <ArrowRight className="h-3 w-3" />
+        </Link>
+      ) : (
+        <Link href="/auth/sign-in" className="btn-sovereign text-xs px-4 py-2 whitespace-nowrap">
           {pd.signInToWorkspace} <ArrowRight className="h-3 w-3" />
         </Link>
       )}

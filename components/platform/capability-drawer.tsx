@@ -78,12 +78,17 @@ function PersonaGatedConsoleLink({
   consoleHref,
   consoleLabel,
 }: {
-  requiredPersona: "admin" | "super_admin";
+  requiredPersona: "admin" | "super_admin" | "deal_room";
   consoleHref: string;
   consoleLabel: string;
 }) {
-  const { isAdmin, isSuperAdmin } = useAuth();
-  const unlocked = requiredPersona === "admin" ? isAdmin : isSuperAdmin;
+  const { isAdmin, isSuperAdmin, isQualified, isGovernment, isMinistryAdmin } = useAuth();
+  const unlocked =
+    requiredPersona === "admin"
+      ? isAdmin
+      : requiredPersona === "super_admin"
+        ? isSuperAdmin
+        : isQualified || isGovernment || isMinistryAdmin || isAdmin;
 
   if (unlocked) {
     return (
@@ -102,7 +107,13 @@ function PersonaGatedConsoleLink({
       <Link href="/auth/sign-in" className="underline" style={{ color: "var(--color-gold)" }}>
         Sign in
       </Link>{" "}
-      with an {requiredPersona === "admin" ? "admin" : "super admin"} account to open this console.
+      with an{" "}
+      {requiredPersona === "admin"
+        ? "admin"
+        : requiredPersona === "super_admin"
+          ? "super admin"
+          : "qualified investor, government reviewer, or admin"}{" "}
+      account to open this {requiredPersona === "deal_room" ? "workspace" : "console"}.
     </p>
   );
 }
@@ -269,9 +280,9 @@ export function DealRoomDrawer({ trigger }: { trigger: ReactNode }) {
       description="A governed, invite-only workspace where approved investors and government stakeholders track a live deal through the same review pipeline that gates the public registry — visible only to the parties actually working it."
       footer={
         <PersonaGatedConsoleLink
-          requiredPersona="admin"
+          requiredPersona="deal_room"
           consoleHref="/deal-room"
-          consoleLabel="Open Internal Preview"
+          consoleLabel="Open Deal Room"
         />
       }
     >

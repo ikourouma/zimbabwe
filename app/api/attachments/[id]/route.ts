@@ -18,7 +18,7 @@ const STAFF_ROLES: AccountRole[] = ["admin", "super_admin", "government"];
  */
 export async function GET(_request: Request, { params }: RouteParams) {
   try {
-    const actor = await requireRole(["admin", "super_admin", "government", "qualified", "registered"]);
+    const actor = await requireRole(["admin", "super_admin", "government", "qualified", "registered", "ministry_admin"]);
     const { id } = await params;
 
     const [row] = await db

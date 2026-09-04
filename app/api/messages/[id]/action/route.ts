@@ -277,6 +277,7 @@ export async function POST(request: Request, { params }: RouteParams) {
         .update(projects)
         .set({ ...row, updatedAt: now })
         .where(eq(projects.id, project.id));
+      await syncProjectRelations(project.id, payload.proposedChanges);
 
       appliedNote = ` Applied changes to: ${Object.keys(payload.proposedChanges).join(", ")}.`;
 

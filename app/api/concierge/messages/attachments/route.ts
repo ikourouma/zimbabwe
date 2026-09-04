@@ -5,7 +5,7 @@ import { requireRole } from "@/lib/auth/session";
 import { isR2Configured, putObject } from "@/lib/storage/r2";
 import type { AccountRole } from "@/lib/auth/types";
 
-const COMM_ROLES: AccountRole[] = ["admin", "super_admin", "government", "qualified", "registered"];
+const COMM_ROLES: AccountRole[] = ["admin", "super_admin", "government", "qualified", "registered", "ministry_admin"];
 
 const MAX_BYTES = 25 * 1024 * 1024; // 25 MB
 const ALLOWED_TYPES = new Set([

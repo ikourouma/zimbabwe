@@ -36,7 +36,7 @@ const ALLOWED_TYPES = new Set([
  */
 export async function POST(request: Request, { params }: RouteParams) {
   try {
-    const actor = await requireRole(["admin", "super_admin", "government", "qualified"]);
+    const actor = await requireRole(["admin", "super_admin", "government", "qualified", "ministry_admin"]);
     const { id } = await params;
     const project = await fetchProjectByIdOrSlug(id);
     if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });

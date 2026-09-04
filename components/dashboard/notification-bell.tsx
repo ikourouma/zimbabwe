@@ -90,16 +90,7 @@ export function NotificationBell() {
   // a real, ministry-scoped feed (Ministry Desk management dashboard plan, Part 4 — GET
   // /api/audit-logs branches to fetchAuditLogsForMinistry for this role), so it's a live bell below.
   if (role === "qualified") {
-    return (
-      <button
-        type="button"
-        disabled
-        className="relative p-2 rounded-full opacity-40 cursor-default"
-        aria-label="Notifications"
-      >
-        <Bell className="h-4.5 w-4.5" style={{ color: "var(--color-text-muted)" }} />
-      </button>
-    );
+    return null;
   }
 
   return (

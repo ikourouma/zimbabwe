@@ -16,7 +16,7 @@ import { fetchDealTeam, fetchMinistryAdminsForMinistry } from "@/lib/db/queries/
  */
 export async function GET() {
   try {
-    const actor = await requireRole(["admin", "super_admin", "government", "qualified"]);
+    const actor = await requireRole(["admin", "super_admin", "government", "qualified", "ministry_admin"]);
     const team = await fetchDealTeam();
     if (actor.role === "government" && actor.ministryId) {
       const ministryAdmins = await fetchMinistryAdminsForMinistry(actor.ministryId);
