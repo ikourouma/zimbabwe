@@ -1,4 +1,4 @@
-import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 /**
@@ -46,6 +46,19 @@ export async function putObject(key: string, body: Buffer | Uint8Array, contentT
   await getClient().send(
     new PutObjectCommand({ Bucket: getBucket(), Key: key, Body: body, ContentType: contentType })
   );
+}
+
+/** Returns true when the object exists in the configured bucket. */
+export async function objectExists(key: string): Promise<boolean> {
+  try {
+    await getClient().send(new HeadObjectCommand({ Bucket: getBucket(), Key: key }));
+    return true;
+  } catch (error) {
+    const name = (error as { name?: string }).name;
+    const status = (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode;
+    if (name === "NotFound" || name === "NoSuchKey" || status === 404) return false;
+    throw error;
+  }
 }
 
 /** A short-lived (default 5 min) signed GET URL — long enough to stream one download, short enough

@@ -187,6 +187,7 @@ export function EngagementWizard() {
   const [draftLoaded, setDraftLoaded] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const prefillApplied = useRef(false);
 
   useEffect(() => {
@@ -287,11 +288,12 @@ export function EngagementWizard() {
     const desk = getRoutingDesk(form.engagementType || undefined, isProjectLinked);
     setRoutedDesk(desk);
     setSubmitError(null);
+    setIsSubmitting(true);
 
     const name = `${form.firstName} ${form.lastName}`.trim();
 
-    if (draftEligible) {
-      try {
+    try {
+      if (draftEligible) {
         const res = await fetch("/api/inquiries/draft", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -303,56 +305,58 @@ export function EngagementWizard() {
           return;
         }
         setSubmitted(true);
-      } catch {
-        setSubmitError("Failed to submit your application. Please try again.");
-      }
-      return;
-    }
-
-    if (isProjectLinked && project && ask) {
-      addInquiry({
-        type: ask,
-        name,
-        email: form.email,
-        phone: form.phone || undefined,
-        organization: form.organization,
-        projectId: project.id,
-        engagementType: form.engagementType || undefined,
-        message: `${ASK_META[ask].label} — ${project.title}. ${form.objective}`,
-      });
-    } else {
-      const inquiry: Omit<LeadInquiry, "id" | "createdAt"> = {
-        type: "strategic_partnership",
-        name,
-        email: form.email,
-        phone: form.phone || undefined,
-        organization: form.organization,
-        engagementType: form.engagementType || undefined,
-        message: form.objective,
-      };
-
-      if (form.engagementType === "investor") {
-        Object.assign(inquiry, {
-          investorType: form.investorType,
-          sectorIds: form.sectorIds,
-          ticketSizeRange: form.ticketSizeRange,
-        });
-      } else if (form.engagementType === "government_dfi") {
-        Object.assign(inquiry, {
-          ministryRepresented: form.ministryRepresented,
-          natureOfEngagement: form.natureOfEngagement,
-        });
-      } else if (form.engagementType === "strategic_partner") {
-        Object.assign(inquiry, {
-          partnershipType: form.partnershipType,
-          sectorIds: form.sectorIds,
-        });
+        return;
       }
 
-      addInquiry(inquiry);
-    }
+      if (isProjectLinked && project && ask) {
+        await addInquiry({
+          type: ask,
+          name,
+          email: form.email,
+          phone: form.phone || undefined,
+          organization: form.organization,
+          projectId: project.id,
+          engagementType: form.engagementType || undefined,
+          message: `${ASK_META[ask].label} — ${project.title}. ${form.objective}`,
+        });
+      } else {
+        const inquiry: Omit<LeadInquiry, "id" | "createdAt"> = {
+          type: "strategic_partnership",
+          name,
+          email: form.email,
+          phone: form.phone || undefined,
+          organization: form.organization,
+          engagementType: form.engagementType || undefined,
+          message: form.objective,
+        };
 
-    setSubmitted(true);
+        if (form.engagementType === "investor") {
+          Object.assign(inquiry, {
+            investorType: form.investorType,
+            sectorIds: form.sectorIds,
+            ticketSizeRange: form.ticketSizeRange,
+          });
+        } else if (form.engagementType === "government_dfi") {
+          Object.assign(inquiry, {
+            ministryRepresented: form.ministryRepresented,
+            natureOfEngagement: form.natureOfEngagement,
+          });
+        } else if (form.engagementType === "strategic_partner") {
+          Object.assign(inquiry, {
+            partnershipType: form.partnershipType,
+            sectorIds: form.sectorIds,
+          });
+        }
+
+        await addInquiry(inquiry);
+      }
+
+      setSubmitted(true);
+    } catch {
+      setSubmitError("Failed to submit your application. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -809,11 +813,14 @@ export function EngagementWizard() {
             ) : (
               <button
                 type="button"
-                disabled={!canAdvance}
+                disabled={!canAdvance || isSubmitting}
                 onClick={handleSubmit}
                 className="btn-sovereign disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                Submit {form.engagementType === "investor" ? "Application" : "Inquiry"} <ArrowRight className="h-4 w-4" />
+                {isSubmitting
+                  ? "Submitting..."
+                  : `Submit ${form.engagementType === "investor" ? "Application" : "Inquiry"}`}{" "}
+                <ArrowRight className="h-4 w-4" />
               </button>
             )}
           </div>

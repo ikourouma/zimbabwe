@@ -10,6 +10,8 @@ import {
   MOU_STATUS_LABELS,
   MOU_STATUS_ORDER,
   canEditMouContent,
+  canEditMouDraft,
+  isEngagementInvestorParty,
   isZidaApproverRole,
 } from "@/lib/governance/mou-workflow";
 import type { MouAction, MouContent, MouFieldComment, MouFormatting, MouSignatureMetadata } from "@/lib/types";
@@ -53,14 +55,16 @@ function fmtDate(iso?: string | null) {
 interface MouPanelProps {
   engagementId: string;
   investorName: string;
+  engagementOwnerId?: string | null;
+  engagementAssignedUserId?: string | null;
 }
 
 /** Production-shaped MOU lifecycle surface — drafting -> in_review -> both_approved -> finalized
  *  -> ready_for_signature -> executed. Real e-signature capture is explicitly deferred: "executed"
  *  only records signer metadata via an attestation form (see the actions route). Used by both the
  *  Engagement Detail drawer and the Project Detail drawer's MOU tab. */
-export function MouPanel({ engagementId, investorName }: MouPanelProps) {
-  const { role } = useAuth();
+export function MouPanel({ engagementId, investorName, engagementOwnerId, engagementAssignedUserId }: MouPanelProps) {
+  const { role, userId } = useAuth();
   const { mou, engagementStatus, isLoading, updateDraft, runAction, error } = useEngagementMou(engagementId);
   const { comments, addComment, resolveComment } = useMouFieldComments(engagementId);
 
@@ -75,9 +79,22 @@ export function MouPanel({ engagementId, investorName }: MouPanelProps) {
   const [commentField, setCommentField] = useState<string | null>(null);
   const [newComment, setNewComment] = useState("");
 
-  const canEdit = role ? canEditMouContent(role) : false;
+  const canEdit =
+    role && userId && mou
+      ? canEditMouDraft(
+          { role, userId },
+          { userId: engagementOwnerId ?? null, assignedUserId: engagementAssignedUserId },
+          mou.status
+        )
+      : false;
   const isZida = role ? isZidaApproverRole(role) : false;
-  const isInvestor = role === "qualified";
+  const isInvestor =
+    role && userId
+      ? isEngagementInvestorParty(
+          { role, userId },
+          { userId: engagementOwnerId ?? null, assignedUserId: engagementAssignedUserId }
+        )
+      : false;
   const canActAtAll = canEdit || isZida || isInvestor;
 
   const unresolvedCounts = comments.reduce<Record<string, number>>((acc, c) => {

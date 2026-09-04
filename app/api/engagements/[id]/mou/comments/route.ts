@@ -39,8 +39,7 @@ async function loadEngagementForActor(engagementId: string, actor: { role: strin
  * discussion thread distinct from the engagement's general Communication Hub thread, so "the
  * indicative capital figure looks stale" stays pinned to that one field. Same confidentiality gate
  * as every other MOU endpoint: a qualified investor only ever sees their own engagement's thread.
- * ministry_admin (read-only oversight) may view but not add comments — see POST below, which
- * deliberately keeps its own narrower role list.
+ * ministry_admin (read-only oversight) may view and add field comments — see POST below.
  */
 export async function GET(_request: Request, { params }: RouteParams) {
   try {
@@ -70,7 +69,7 @@ interface CommentBody {
 
 export async function POST(request: Request, { params }: RouteParams) {
   try {
-    const actor = await requireRole(["admin", "super_admin", "government", "qualified"]);
+    const actor = await requireRole(["admin", "super_admin", "government", "qualified", "ministry_admin"]);
     const { id } = await params;
     const { engagement, forbidden } = await loadEngagementForActor(id, actor);
     if (forbidden) return NextResponse.json({ error: "Forbidden" }, { status: 403 });

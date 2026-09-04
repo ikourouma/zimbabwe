@@ -17,6 +17,7 @@ import { useProjectStore } from "@/context/project-store-context";
 import { useTaxonomyStore } from "@/context/taxonomy-store-context";
 import { useAuth } from "@/context/auth-context";
 import { roleToWorkflowRole } from "@/lib/auth/role-map";
+import { resolveProjectWorkflowRole, type WorkflowRoleActor } from "@/lib/auth/project-workflow-role";
 import { projectMatchesMinistry } from "@/lib/entitlements/ministry-scope";
 import type { InvestmentProject, ProjectMessageWithProject, ProjectStatus } from "@/lib/types";
 import { STATUS_LABELS } from "@/lib/governance/project-workflow";
@@ -61,11 +62,13 @@ function SubmissionCard({
   project,
   ministryName,
   workflowRole,
+  readOnlyNotice,
   onAction,
 }: {
   project: InvestmentProject;
   ministryName?: string;
   workflowRole: ReturnType<typeof roleToWorkflowRole>;
+  readOnlyNotice?: string;
   onAction: (project: InvestmentProject, status: ProjectStatus, notes?: string) => void | Promise<void>;
 }) {
   const [showDetail, setShowDetail] = useState(false);
@@ -149,6 +152,12 @@ function SubmissionCard({
         <div className="rounded-lg p-4 mb-3" style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid var(--color-sovereign-border)" }}>
           <ActivityFeed entries={history} isLoading={historyLoading} emptyMessage="No recorded history yet." />
         </div>
+      )}
+
+      {readOnlyNotice && (
+        <p className="text-xs mb-3 rounded-md px-3 py-2" style={{ backgroundColor: "rgba(255,255,255,0.04)", color: "var(--color-text-muted)" }}>
+          {readOnlyNotice}
+        </p>
       )}
 
       <ReviewActions project={project} role={workflowRole} onAction={(status, notes) => onAction(project, status, notes)} />
@@ -367,17 +376,14 @@ function AssociationCard({
 export function ReviewQueueView() {
   const { projects, updateProject, isLoading } = useProjectStore();
   const { ministries } = useTaxonomyStore();
-  const { isAdmin, isMinistryAdmin, role, ministryId, isLoading: authLoading } = useAuth();
+  const { isAdmin, isMinistryAdmin, role, ministryId, userId, isLoading: authLoading } = useAuth();
   const [tab, setTab] = useState<QueueTab>("submissions");
   const [cards, setCards] = useState<ProjectMessageWithProject[]>([]);
   const [cardsLoading, setCardsLoading] = useState(true);
 
   const canLoadQueue = isAdmin || isMinistryAdmin;
-  // ministry_admin is "reviewer" on their own ministry's projects (Phase 7 rulebook) — the
-  // shared roleToWorkflowRole() still returns null for them so the platform-wide registry
-  // doesn't grant stage-transition buttons everywhere. This queue is already ministry-scoped.
-  const workflowRole =
-    role === "ministry_admin" ? (ministryId ? "reviewer" : null) : role ? roleToWorkflowRole(role) : null;
+  const actor: WorkflowRoleActor | null = role && userId ? { role, userId, ministryId } : null;
+  const adminWorkflowRole = role && role !== "ministry_admin" ? roleToWorkflowRole(role) : null;
   const reviewQueue = useMemo(() => {
     const inStatus = projects.filter((p) => REVIEW_QUEUE_STATUSES.includes(p.projectStatus));
     if (role === "ministry_admin" && ministryId) {
@@ -475,15 +481,30 @@ export function ReviewQueueView() {
             </div>
           ) : (
             <div className="space-y-4">
-              {reviewQueue.map((project) => (
+              {reviewQueue.map((project) => {
+                const projectWorkflowRole =
+                  actor && role === "ministry_admin"
+                    ? resolveProjectWorkflowRole(actor, project)
+                    : adminWorkflowRole;
+                const readOnlyNotice =
+                  role === "ministry_admin" &&
+                  ministryId &&
+                  projectMatchesMinistry(project, ministryId) &&
+                  project.primaryBeneficiaryMinistryId !== ministryId
+                    ? "Read-only — your ministry is a secondary beneficiary on this project. Only the primary beneficiary ministry may advance review actions."
+                    : undefined;
+
+                return (
                 <SubmissionCard
                   key={project.id}
                   project={project}
                   ministryName={ministryName(project.primaryBeneficiaryMinistryId)}
-                  workflowRole={workflowRole}
+                  workflowRole={projectWorkflowRole}
+                  readOnlyNotice={readOnlyNotice}
                   onAction={handleAction}
                 />
-              ))}
+                );
+              })}
             </div>
           )}
         </TabsContent>

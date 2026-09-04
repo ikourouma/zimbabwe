@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { accessLevelForRole, canAccessVisibilityLevel } from "@/lib/entitlements/visibility";
 import { NDA_REQUIRED_MESSAGE, requiresNdaAcceptance } from "@/lib/governance/nda";
 import { fetchProjectByIdOrSlug } from "@/lib/db/queries/projects";
-import { getSignedDownloadUrl, isR2Configured } from "@/lib/storage/r2";
+import { getSignedDownloadUrl, isR2Configured, objectExists } from "@/lib/storage/r2";
 import { db } from "@/lib/db/client";
 import { projectDocuments } from "@/lib/db/schema";
 import { logAuditEvent } from "@/lib/db/queries/audit";
@@ -53,6 +53,14 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     if (!isR2Configured()) {
       return NextResponse.json({ error: "File storage is not configured" }, { status: 503 });
+    }
+
+    const exists = await objectExists(doc.storageKey);
+    if (!exists) {
+      return NextResponse.json(
+        { error: "This file is not available in this environment." },
+        { status: 404 }
+      );
     }
 
     const url = await getSignedDownloadUrl(

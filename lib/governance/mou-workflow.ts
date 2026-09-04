@@ -1,6 +1,15 @@
 import type { MouStatus } from "@/lib/types";
 import type { AccountRole } from "@/lib/auth/types";
 
+export interface MouEngagementParty {
+  userId: string | null;
+  assignedUserId?: string | null;
+}
+
+export interface MouDraftEditActor {
+  role: AccountRole;
+  userId: string;
+}
 /**
  * Production-shaped MOU lifecycle (see the Deal Room Engagement and MOU Upgrade plan):
  * drafting -> in_review -> both_approved -> finalized -> ready_for_signature -> executed, with
@@ -50,8 +59,35 @@ export function isZidaApproverRole(role: AccountRole): boolean {
 }
 
 /** Only Admin/Super Admin draft content and drive the doc through finalize/ready-for-signature/
- *  execution — Government is approve-only oversight, investors correct via the Communication Hub
- *  thread rather than editing the form directly (per the plan). */
+ *  execution — Government is approve-only oversight. Investors co-draft content while status is
+ *  drafting (see canEditMouDraft). */
 export function canEditMouContent(role: AccountRole): boolean {
   return role === "admin" || role === "super_admin";
+}
+
+/** Qualified owner or assigned delegate on the engagement. */
+export function isEngagementInvestorParty(
+  actor: MouDraftEditActor,
+  engagement: MouEngagementParty
+): boolean {
+  if (actor.role !== "qualified") return false;
+  return actor.userId === engagement.userId || actor.userId === engagement.assignedUserId;
+}
+
+/** Investor-side co-drafting is limited to the drafting stage only. */
+export function canInvestorCoDraftMou(
+  actor: MouDraftEditActor,
+  engagement: MouEngagementParty,
+  mouStatus: MouStatus
+): boolean {
+  return mouStatus === "drafting" && isEngagementInvestorParty(actor, engagement);
+}
+
+/** Staff always; investors only while drafting on their own engagement. */
+export function canEditMouDraft(
+  actor: MouDraftEditActor,
+  engagement: MouEngagementParty,
+  mouStatus: MouStatus
+): boolean {
+  return canEditMouContent(actor.role) || canInvestorCoDraftMou(actor, engagement, mouStatus);
 }

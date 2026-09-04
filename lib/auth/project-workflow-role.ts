@@ -22,9 +22,11 @@ export interface WorkflowRoleActor {
  * 2. `ministry_admin` is a "reviewer" (full stewardship through Approved, but never Publish — see
  *    the `reviewer` tier in lib/governance/project-workflow.ts, Platform Feedback Batch v4, Phase 7)
  *    only on projects whose `primaryBeneficiaryMinistryId` matches their own `ministryId` — `null`
- *    (no authority) on every other ministry's projects. Two ministry_admin accounts on the *same*
- *    ministry both resolve to "reviewer" here — the multi-admin/backup case is intentional (see
- *    Phase 1). Publish is admin/super_admin-only: ZIDA is the final validation gate, by design.
+ *    (no authority) on every other ministry's projects, including those where their ministry is only
+ *    a secondary beneficiary (those rows are visible for context but read-only in the review queue).
+ *    Two ministry_admin accounts on the *same* ministry both resolve to "reviewer" here — the
+ *    multi-admin/backup case is intentional (see Phase 1). Publish is admin/super_admin-only: ZIDA
+ *    is the final validation gate, by design.
  *
  * Every other role falls through to the existing shared `roleToWorkflowRole`. Used by both the
  * server-side PATCH /api/projects/[id] gate and the client-side ProjectDetailDrawer Actions tab /

@@ -52,25 +52,33 @@ export function ContactPageContent() {
     message: "",
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.email || !form.contactReasonId) {
       toast.error("Please fill in required fields");
       return;
     }
-    addInquiry({
-      type: "contact",
-      name: form.name,
-      email: form.email,
-      phone: form.phone || undefined,
-      organization: form.organization,
-      contactReasonId: form.contactReasonId,
-      message: form.message,
-    });
-    setIsSubmitted(true);
-    toast.success("Message sent successfully. Our team will follow up.");
-    setForm({ name: "", email: "", phone: "", organization: "", contactReasonId: "", message: "" });
+    setIsSubmitting(true);
+    try {
+      await addInquiry({
+        type: "contact",
+        name: form.name,
+        email: form.email,
+        phone: form.phone || undefined,
+        organization: form.organization,
+        contactReasonId: form.contactReasonId,
+        message: form.message,
+      });
+      setIsSubmitted(true);
+      toast.success("Message sent successfully. Our team will follow up.");
+      setForm({ name: "", email: "", phone: "", organization: "", contactReasonId: "", message: "" });
+    } catch {
+      toast.error("Failed to send your message. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -206,8 +214,8 @@ export function ContactPageContent() {
                 />
               </div>
 
-              <button type="submit" className="btn-sovereign w-full justify-center">
-                Send message <ArrowRight className="h-4 w-4" />
+              <button type="submit" disabled={isSubmitting} className="btn-sovereign w-full justify-center disabled:opacity-40 disabled:cursor-not-allowed">
+                {isSubmitting ? "Sending..." : "Send message"} <ArrowRight className="h-4 w-4" />
               </button>
               <p className="text-xs text-zim-muted text-center">
                 We typically respond within one business day.

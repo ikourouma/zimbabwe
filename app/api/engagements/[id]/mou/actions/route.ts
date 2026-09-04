@@ -7,7 +7,7 @@ import { engagementMous, investorEngagements, projectMessages } from "@/lib/db/s
 import { getOrCreateMouForEngagement } from "@/lib/db/queries/mous";
 import { mapDbMouToApp } from "@/lib/db/mappers/mou";
 import { logAuditEvent } from "@/lib/db/queries/audit";
-import { canEditMouContent, canTransitionMou, isZidaApproverRole } from "@/lib/governance/mou-workflow";
+import { canEditMouContent, canTransitionMou, isEngagementInvestorParty, isZidaApproverRole } from "@/lib/governance/mou-workflow";
 import { NDA_REQUIRED_MESSAGE, requiresNdaAcceptance } from "@/lib/governance/nda";
 import type { EngagementMou, MouAction, MouSignatureMetadata, MouStatus } from "@/lib/types";
 
@@ -36,7 +36,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       .where(eq(investorEngagements.id, id))
       .limit(1);
     if (!engagement) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    if (actor.role === "qualified" && engagement.userId !== actor.userId) {
+    if (isEngagementInvestorParty(actor, engagement) === false && actor.role === "qualified") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     if (requiresNdaAcceptance(actor.role) && !actor.ndaAcceptedAt) {
@@ -51,7 +51,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       investorName: engagement.investorName,
       ticketSize: engagement.ticketSize,
     });
-    const isInvestor = actor.role === "qualified";
+    const isInvestor = isEngagementInvestorParty(actor, engagement);
     const isZida = isZidaApproverRole(actor.role);
 
     let nextStatus: MouStatus = mou.status;

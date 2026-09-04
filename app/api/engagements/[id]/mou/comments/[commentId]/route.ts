@@ -6,6 +6,7 @@ import { db } from "@/lib/db/client";
 import { investorEngagements } from "@/lib/db/schema";
 import { resolveMouFieldComment } from "@/lib/db/queries/mou-comments";
 import { logAuditEvent } from "@/lib/db/queries/audit";
+import { isEngagementInvestorParty } from "@/lib/governance/mou-workflow";
 
 type RouteParams = { params: Promise<{ id: string; commentId: string }> };
 
@@ -23,7 +24,7 @@ export async function PATCH(_request: Request, { params }: RouteParams) {
       .where(eq(investorEngagements.id, id))
       .limit(1);
     if (!engagement) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    if (actor.role === "qualified" && engagement.userId !== actor.userId) {
+    if (actor.role === "qualified" && !isEngagementInvestorParty(actor, engagement)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

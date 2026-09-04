@@ -7,7 +7,7 @@ import { engagementMous, investorEngagements } from "@/lib/db/schema";
 import { getOrCreateMouForEngagement } from "@/lib/db/queries/mous";
 import { mapDbMouToApp } from "@/lib/db/mappers/mou";
 import { logAuditEvent } from "@/lib/db/queries/audit";
-import { canEditMouContent } from "@/lib/governance/mou-workflow";
+import { canEditMouDraft } from "@/lib/governance/mou-workflow";
 import { NDA_REQUIRED_MESSAGE, requiresNdaAcceptance } from "@/lib/governance/nda";
 import { fetchProjectByIdOrSlug } from "@/lib/db/queries/projects";
 import { projectMatchesMinistry } from "@/lib/entitlements/ministry-scope";
@@ -82,16 +82,16 @@ interface MouPatchBody {
  *  field edit. */
 export async function PATCH(request: Request, { params }: RouteParams) {
   try {
-    const actor = await requireRole(["admin", "super_admin"]);
+    const actor = await requireRole(["admin", "super_admin", "qualified"]);
     const { id } = await params;
     const { engagement, forbidden } = await loadEngagementForActor(id, actor);
     if (forbidden) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     if (!engagement) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (requiresNdaAcceptance(actor.role) && !actor.ndaAcceptedAt) {
+      return NextResponse.json({ error: NDA_REQUIRED_MESSAGE }, { status: 403 });
+    }
     if (engagement.status !== "approved") {
       return NextResponse.json({ error: "Engagement is not approved yet" }, { status: 400 });
-    }
-    if (!canEditMouContent(actor.role)) {
-      return NextResponse.json({ error: "Only ZIDA Admin/Platform Admin may edit MOU drafts" }, { status: 403 });
     }
 
     const body = (await request.json()) as MouPatchBody;
@@ -100,6 +100,10 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       investorName: engagement.investorName,
       ticketSize: engagement.ticketSize,
     });
+
+    if (!canEditMouDraft(actor, engagement, mou.status)) {
+      return NextResponse.json({ error: "You may not edit this MOU draft in its current state" }, { status: 403 });
+    }
 
     if (body.content) {
       if (mou.status !== "drafting") {

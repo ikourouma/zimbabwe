@@ -307,7 +307,12 @@ export function EngagementDetailDrawer({
               </TabsContent>
 
               <TabsContent value="mou" className="mt-4">
-                <MouPanel engagementId={engagement.id} investorName={engagement.investorName} />
+                <MouPanel
+                  engagementId={engagement.id}
+                  investorName={engagement.investorName}
+                  engagementOwnerId={engagement.userId}
+                  engagementAssignedUserId={engagement.assignedUserId}
+                />
               </TabsContent>
 
               <TabsContent value="messages" className="mt-4 space-y-3">

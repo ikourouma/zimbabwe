@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
 import { investorEngagements, projectMessages, projects } from "@/lib/db/schema";
 import { logAuditEvent } from "@/lib/db/queries/audit";
+import { isEngagementInvestorParty } from "@/lib/governance/mou-workflow";
 import { fetchGovernmentOfficialsForMinistry } from "@/lib/db/queries/users";
 import { mapDbEngagementToApp } from "@/lib/db/mappers/engagement";
 import type { MessageActionPayload } from "@/lib/types";
@@ -41,7 +42,7 @@ export async function POST(request: Request, { params }: RouteParams) {
 
     const [engagement] = await db.select().from(investorEngagements).where(eq(investorEngagements.id, id)).limit(1);
     if (!engagement || engagement.deletedAt) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    if (actor.role === "qualified" && engagement.userId !== actor.userId) {
+    if (actor.role === "qualified" && !isEngagementInvestorParty(actor, engagement)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     if (engagement.status !== "approved") {

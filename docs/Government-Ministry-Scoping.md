@@ -18,6 +18,10 @@ Ministry Desk pipeline, review, engagements, MOU, and inquiries default to "my m
 
 A Ministry Admin whose account has no `ministryId` cannot create projects or see a scoped queue.
 
+## Primary-only review authority
+
+Ministry admins **see** projects where their ministry is primary or secondary beneficiary, but **review actions** (approve, request changes, reject, and similar stage transitions) are granted only when their ministry is the **primary** beneficiary. Secondary-beneficiary rows are read-only in the review queue and project drawer — the primary beneficiary ministry owns stewardship through Approved. Publish remains ZIDA admin / super admin only. This rule is enforced server-side by `resolveProjectWorkflowRole` and mirrored in the client UI so action buttons never appear when the server would return 403.
+
 ## My Assigned Projects
 
 A `government` reviewer can filter the Deal Room pipeline to projects where they are `assignedReviewingOfficerUserId`. Assignment is set by that project's Ministry Admin or by ZIDA Admin / Super Admin. One officer, many projects.
