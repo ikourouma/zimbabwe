@@ -1,11 +1,8 @@
-import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth/session";
-import { destinationForWrongConsole, isConsoleAllowedForRole } from "@/lib/auth/console-guard";
+import { guardConsoleLayout } from "@/lib/auth/guard-console-layout";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const user = await getCurrentUser();
-  if (user && !isConsoleAllowedForRole("admin", user.role)) {
-    redirect(destinationForWrongConsole(user));
-  }
+  await guardConsoleLayout("admin");
   return children;
 }

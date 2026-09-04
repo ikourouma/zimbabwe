@@ -59,12 +59,20 @@ function report(ok: boolean, label: string, detail?: string) {
   }
 }
 
-async function signIn(email: string): Promise<string> {
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function signIn(email: string, attempt = 1): Promise<string> {
   const response = await fetch(`${authBase}/sign-in/email`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Origin: targetBase },
     body: JSON.stringify({ email, password, callbackURL: `${targetBase}/` }),
   });
+  if (response.status === 429 && attempt < 4) {
+    await sleep(1500 * attempt);
+    return signIn(email, attempt + 1);
+  }
   if (!response.ok) throw new Error(`sign-in ${response.status}`);
   const setCookie = response.headers.getSetCookie?.() ?? [];
   return setCookie.map((c) => c.split(";")[0]).join("; ");
@@ -97,6 +105,8 @@ async function main() {
       report(false, `${account.email} sign-in`, String(error));
       continue;
     }
+
+    await sleep(500);
 
     const me = await fetchMe(cookies);
     report(Boolean(me?.authenticated), `${account.email} /api/me authenticated`);
