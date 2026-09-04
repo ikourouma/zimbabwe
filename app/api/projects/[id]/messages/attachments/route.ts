@@ -62,7 +62,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     }
 
     const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(0, 120) || "file";
-    const storageKey = `messages/${project.id}/${randomUUID()}-${safeName}`;
+    const storageKey = `messages/${project.id}/${actor.userId}/${randomUUID()}-${safeName}`;
     const buffer = Buffer.from(await file.arrayBuffer());
     try {
       await putObject(storageKey, buffer, contentType);

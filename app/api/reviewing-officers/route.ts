@@ -11,8 +11,12 @@ import { fetchGovernmentOfficialsForMinistry } from "@/lib/db/queries/users";
  */
 export async function GET(request: Request) {
   try {
-    await requireRole(["admin", "super_admin", "ministry_admin"]);
-    const ministryId = new URL(request.url).searchParams.get("ministryId");
+    const actor = await requireRole(["admin", "super_admin", "ministry_admin"]);
+    let ministryId = new URL(request.url).searchParams.get("ministryId");
+    if (actor.role === "ministry_admin") {
+      if (!actor.ministryId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      ministryId = actor.ministryId;
+    }
     if (!ministryId) return NextResponse.json({ error: "ministryId is required" }, { status: 400 });
     const candidates = await fetchGovernmentOfficialsForMinistry(ministryId);
     return NextResponse.json(candidates);

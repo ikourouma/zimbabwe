@@ -120,7 +120,12 @@ export async function GET(_request: Request, { params }: RouteParams) {
     const rows = await db.select().from(projectMessages).where(eq(projectMessages.projectId, project.id));
     const cards = rows
       .filter((r) => r.kind === "action" && (r.payload as MessageActionPayload | null)?.type === "ministry_association_request")
-      .map((r) => mapDbMessageToApp(r));
+      .map((r) => mapDbMessageToApp(r))
+      .filter((card) => {
+        if (actor.role === "admin" || actor.role === "super_admin") return true;
+        const payload = card.payload as MessageActionPayload | null;
+        return payload?.requestingMinistryId === actor.ministryId;
+      });
     return NextResponse.json(cards);
   } catch (error) {
     return handleRouteError(error);

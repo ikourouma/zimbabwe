@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { and, asc, eq, inArray, isNull, ne, or } from "drizzle-orm";
 import { handleRouteError } from "@/lib/api/route-helpers";
+import { filterOwnedAttachments } from "@/lib/api/security-helpers";
 import { requireRole } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
 import { projectMessages, messageAttachments, investorEngagements } from "@/lib/db/schema";
@@ -278,8 +279,12 @@ export async function POST(request: Request, { params }: RouteParams) {
     // Persist any pre-uploaded attachments (client uploads to R2 first, then references them here).
     let attachmentRows: (typeof messageAttachments.$inferSelect)[] = [];
     if (hasAttachments) {
-      const valid = body.attachments!.filter(
-        (a) => a.storageKey && a.fileName && a.contentType && typeof a.size === "number"
+      const valid = filterOwnedAttachments(
+        body.attachments!.filter(
+          (a) => a.storageKey && a.fileName && a.contentType && typeof a.size === "number"
+        ),
+        actor.userId,
+        { kind: "project", projectId: project.id }
       );
       if (valid.length > 0) {
         attachmentRows = await db

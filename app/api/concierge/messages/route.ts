@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { handleRouteError } from "@/lib/api/route-helpers";
+import { filterOwnedAttachments } from "@/lib/api/security-helpers";
 import { requireRole } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
 import { projectMessages, messageAttachments } from "@/lib/db/schema";
@@ -182,8 +183,12 @@ export async function POST(request: Request) {
 
     let attachmentRows: (typeof messageAttachments.$inferSelect)[] = [];
     if (hasAttachments) {
-      const valid = body.attachments!.filter(
-        (a) => a.storageKey && a.fileName && a.contentType && typeof a.size === "number"
+      const valid = filterOwnedAttachments(
+        body.attachments!.filter(
+          (a) => a.storageKey && a.fileName && a.contentType && typeof a.size === "number"
+        ),
+        actor.userId,
+        { kind: "concierge" }
       );
       if (valid.length > 0) {
         attachmentRows = await db

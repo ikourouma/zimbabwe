@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { eq, sql } from "drizzle-orm";
 import { handleRouteError } from "@/lib/api/route-helpers";
+import { pickAllowedUpdates } from "@/lib/api/security-helpers";
 import { requireRole } from "@/lib/auth/session";
 import { fetchTaxonomies } from "@/lib/db/queries/taxonomies";
 import { logAuditEvent } from "@/lib/db/queries/audit";
@@ -97,7 +98,17 @@ export async function PATCH(request: Request) {
       case "updateSector":
         await db
           .update(sectors)
-          .set({ ...body.updates, updatedAt: new Date() } as typeof sectors.$inferInsert)
+          .set({
+            ...pickAllowedUpdates<typeof sectors.$inferInsert>(body.updates, [
+              "name",
+              "shortName",
+              "slug",
+              "description",
+              "defaultMouTerms",
+              "status",
+            ]),
+            updatedAt: new Date(),
+          })
           .where(eq(sectors.id, body.id));
         break;
       case "addSector": {
@@ -153,7 +164,10 @@ export async function PATCH(request: Request) {
       case "updateSubsector":
         await db
           .update(subsectors)
-          .set({ ...body.updates, updatedAt: new Date() } as typeof subsectors.$inferInsert)
+          .set({
+            ...pickAllowedUpdates<typeof subsectors.$inferInsert>(body.updates, ["name", "slug", "status", "sectorId"]),
+            updatedAt: new Date(),
+          })
           .where(eq(subsectors.id, body.id));
         break;
       case "approveSubsector":
@@ -179,7 +193,18 @@ export async function PATCH(request: Request) {
       case "updatePillar":
         await db
           .update(strategicPillars)
-          .set({ ...body.updates, updatedAt: new Date() } as typeof strategicPillars.$inferInsert)
+          .set({
+            ...pickAllowedUpdates<typeof strategicPillars.$inferInsert>(body.updates, [
+              "name",
+              "slug",
+              "description",
+              "strategicMandate",
+              "targetOutcomes",
+              "policyAlignmentPrimary",
+              "status",
+            ]),
+            updatedAt: new Date(),
+          })
           .where(eq(strategicPillars.id, body.id));
         break;
       case "addPillar": {
@@ -218,12 +243,30 @@ export async function PATCH(request: Request) {
       case "updateMinistry":
         await db
           .update(ministries)
-          .set({ ...body.updates, updatedAt: new Date() } as typeof ministries.$inferInsert)
+          .set({
+            ...pickAllowedUpdates<typeof ministries.$inferInsert>(body.updates, [
+              "name",
+              "shortName",
+              "type",
+              "representativeTitle",
+              "defaultMouTerms",
+              "status",
+            ]),
+            updatedAt: new Date(),
+          })
           .where(eq(ministries.id, body.id));
         break;
       case "addMinistry": {
         const id = `min-${Date.now()}`;
-        await db.insert(ministries).values({ id, ...body.ministry } as typeof ministries.$inferInsert);
+        const ministry = pickAllowedUpdates<typeof ministries.$inferInsert>(body.ministry, [
+          "name",
+          "shortName",
+          "type",
+          "representativeTitle",
+          "defaultMouTerms",
+          "status",
+        ]);
+        await db.insert(ministries).values({ id, ...ministry } as typeof ministries.$inferInsert);
         break;
       }
       case "archiveMinistry":
@@ -243,7 +286,7 @@ export async function PATCH(request: Request) {
       case "updateContactReason":
         await db
           .update(contactReasons)
-          .set(body.updates as typeof contactReasons.$inferInsert)
+          .set(pickAllowedUpdates<typeof contactReasons.$inferInsert>(body.updates, ["label", "routingCategory", "status"]))
           .where(eq(contactReasons.id, body.id));
         break;
       case "addContactReason": {
