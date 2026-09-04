@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { handleRouteError } from "@/lib/api/route-helpers";
 import { requireRole } from "@/lib/auth/session";
-import { fetchAuditLogsByActor, logAuditEvent } from "@/lib/db/queries/audit";
+import { fetchAuditLogsByActor, logAuditEvent, logRoleChangeEvent } from "@/lib/db/queries/audit";
 import { fetchEngagementsByUserId } from "@/lib/db/queries/engagements";
 import { fetchUserDetail, fetchUserRole, updateUserProfile } from "@/lib/db/queries/users";
 import { assignableRoles, canManageTarget } from "@/lib/auth/user-governance";
@@ -97,8 +97,49 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: "You are not permitted to assign this role." }, { status: 403 });
     }
 
+    // Same KYC-complete rule the inquiry-approval path enforces (Investor Qualification Vetting
+    // plan) — without this, a direct Users-console edit was the one way to reach `qualified` with
+    // no KYC on file and no application record at all (entitlement governance follow-up). Checked
+    // against the *effective* fields — this patch's own values where present, the existing profile
+    // otherwise — so an admin can legitimately fill in KYC and promote in the same request.
+    if (patch.role === "qualified" && targetRole !== "qualified") {
+      const existing = await fetchUserDetail(id);
+      const effective = {
+        organization: patch.organization !== undefined ? patch.organization : existing?.organization,
+        phone: patch.phone !== undefined ? patch.phone : existing?.phone,
+        hqAddress: patch.hqAddress !== undefined ? patch.hqAddress : existing?.hqAddress,
+        businessRegistrationId:
+          patch.businessRegistrationId !== undefined ? patch.businessRegistrationId : existing?.businessRegistrationId,
+        websiteUrl: patch.websiteUrl !== undefined ? patch.websiteUrl : existing?.websiteUrl,
+      };
+      const kycComplete = Object.values(effective).every((v) => typeof v === "string" && v.trim().length > 0);
+      if (!kycComplete) {
+        return NextResponse.json(
+          {
+            error:
+              "This account's KYC information is incomplete, so its role cannot become Qualified Investor here. Add organization, phone, HQ address, business registration ID, and corporate website via \"Edit details\" first, or approve their Strategic Partnerships application instead.",
+            code: "KYC_INCOMPLETE",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     const updated = await updateUserProfile(id, patch);
     if (!updated) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+    if (patch.role && patch.role !== targetRole) {
+      await logRoleChangeEvent({
+        actorUserId: actor.userId,
+        actorName: actor.name,
+        targetUserId: id,
+        targetEmail: updated.email,
+        fromRole: targetRole,
+        toRole: patch.role,
+        reason: reason?.trim() || null,
+        source: "manual",
+      });
+    }
 
     await logAuditEvent({
       actorUserId: actor.userId,

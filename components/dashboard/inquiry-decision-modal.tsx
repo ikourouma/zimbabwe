@@ -68,6 +68,10 @@ export function InquiryDecisionModal({ inquiry, action, kycComplete, onConfirm, 
   const copy = ACTION_COPY[action];
   const Icon = copy.icon;
   const isInvestorApproval = action === "approved" && inquiry.engagementType === "investor";
+  // The same "Approve" control grants nothing on a contact inquiry but grants Deal Room access on
+  // an investor application — the title has to say so, matching the drawer's button label
+  // (entitlement governance follow-up, Qualified Investor banner + pilot closeout plan).
+  const title = isInvestorApproval ? "Approve as Qualified Investor" : copy.title;
   // A heads-up only, not a hard client-side block — the server checks both the inquiry AND the
   // matched profile's own KYC fields (a returning applicant may already have KYC on file from a
   // prior cycle), so it remains the sole source of truth and will reject with KYC_INCOMPLETE if
@@ -90,7 +94,7 @@ export function InquiryDecisionModal({ inquiry, action, kycComplete, onConfirm, 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Icon className="h-4 w-4" style={{ color: action === "declined" ? "#f87171" : "var(--color-gold)" }} />
-            {copy.title}
+            {title}
           </DialogTitle>
           <DialogDescription>
             {inquiry.name} ({inquiry.email})

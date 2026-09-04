@@ -178,9 +178,16 @@ Domain is added in Resend with status **Pending** until DNS records are publishe
 
    | Resend type | Hostinger field | Typical mapping |
    | --- | --- | --- |
-   | TXT (SPF) | Type: TXT, Name/Host: `@` or `zidaproject.com` | Paste Resend **Value** exactly |
-   | CNAME (DKIM) | Type: CNAME, Name: e.g. `resend._domainkey` | Target: Resend **Value** |
-   | TXT (DKIM) | Type: TXT, Name: as shown by Resend | Paste Value exactly |
+   | MX + TXT (SPF) | Type: MX/TXT, Name/Host: `send` (a subdomain, **not** the apex `@`) | Paste Resend **Value** exactly |
+   | TXT (DKIM) | Type: TXT, Name: `resend._domainkey` | Paste Resend **Value** exactly |
+   | TXT (DMARC) | Type: TXT, Name: `_dmarc` | Paste Resend **Value** exactly |
+
+   **Do not put the SPF record at the apex `@`.** Current Resend places SPF on a `send.` subdomain
+   specifically so it never touches the domain's own mail routing — this domain now also has real
+   Hostinger mailboxes (`admin@zidaproject.com`, `notifications@zidaproject.com`), and an apex SPF
+   record that omits Hostinger's mail servers would break outbound mail from those inboxes. Use the
+   exact record names/types shown in the Resend dashboard for your domain, not the table above —
+   Resend's layout has changed since this runbook was written and values are unique per account.
 
    **Hostinger tips:** Name/Host may need only the subdomain part (e.g. `resend._domainkey`), not
    the full FQDN. TTL: default is fine. Do not duplicate SPF TXT records — merge per Resend docs if
@@ -191,11 +198,17 @@ Domain is added in Resend with status **Pending** until DNS records are publishe
 
 5. **Verify in Resend** — Domains → `zidaproject.com` → **Verify**. Status should become **Verified**.
 
-6. **Update app config (Phase 5 email wiring)** — add to `.env.local` and later Vercel:
+6. **Update app config (Phase 5 email wiring)** — add to `.env.local`, `.env.example`, and the
+   Hostinger environment panel:
    ```env
-   RESEND_FROM_EMAIL="ZIDA Investment Platform <noreply@zidaproject.com>"
+   RESEND_FROM_EMAIL="ZIDA Investment Platform <notifications@zidaproject.com>"
+   RESEND_REPLY_TO="admin@zidaproject.com"
+   INQUIRY_ALERT_EMAIL="admin@zidaproject.com"
    ```
-   Optional inquiry sender: `investments@zidaproject.com`. Template in [.env.example](.env.example).
+   `RESEND_FROM_EMAIL` must match the verified domain exactly (subdomain included) or Resend
+   returns a domain-mismatch 403. `admin@zidaproject.com` and `notifications@zidaproject.com` are
+   real Hostinger mailboxes — Resend authorizes the *domain*, not the sending mailbox, so their
+   existence doesn't affect verification, but it does mean replies land somewhere real.
 
 7. **Send a test email** — after Phase 5 code lands, confirm From shows `@zidaproject.com` and
    delivery is not spam-foldered.

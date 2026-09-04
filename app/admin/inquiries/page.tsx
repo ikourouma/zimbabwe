@@ -20,8 +20,15 @@ import {
   type InquiryStatusFilter,
 } from "@/lib/governance/inquiry-filters";
 import { formatInquiryType, isInquiryKycComplete } from "@/lib/utils/inquiry-display";
+import { cn } from "@/lib/utils";
 
 const VIEW_STORAGE_KEY = "zimbabwe.inquiries.admin.view";
+
+/** Distinct queue rather than a new console page (entitlement governance follow-up) — a
+ *  qualified-investor application is an access-entitlement request, not an ordinary contact-form
+ *  message, so it deserves a countable, one-click view even though it shares this same page and
+ *  table. Defaults to "all" so today's view is unchanged. */
+type InquiryCategoryFilter = "all" | "investor";
 
 export default function AdminInquiriesPage() {
   const { inquiries, updateInquiryStatus, isLoading } = useLeadCapture();
@@ -29,6 +36,7 @@ export default function AdminInquiriesPage() {
   const { isAdmin, isLoading: authLoading } = useAuth();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<InquiryStatusFilter>("all");
+  const [categoryFilter, setCategoryFilter] = useState<InquiryCategoryFilter>("all");
   const [filters, setFilters] = useState<InquiryFilters>(DEFAULT_INQUIRY_FILTERS);
   const [view, setView] = useState<PipelineView>("kanban");
   const [pendingDecision, setPendingDecision] = useState<{ inquiry: LeadInquiry; action: InquiryDecisionAction } | null>(
@@ -38,10 +46,12 @@ export default function AdminInquiriesPage() {
   // Deep-link from the analytics "Lead / Pending Inquiries" KPI card (?status=pending). The card's
   // "unassigned" concept maps to our pending state; any unknown value falls back to "all".
   useEffect(() => {
-    const status = new URLSearchParams(window.location.search).get("status");
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("status");
     if (status === "pending" || status === "approved" || status === "declined" || status === "changes_requested") {
       setStatusFilter(status);
     }
+    if (params.get("category") === "investor") setCategoryFilter("investor");
     const savedView = localStorage.getItem(VIEW_STORAGE_KEY) as PipelineView | null;
     if (savedView === "kanban" || savedView === "list" || savedView === "table" || savedView === "matrix") {
       setView(savedView);
@@ -53,9 +63,16 @@ export default function AdminInquiriesPage() {
     localStorage.setItem(VIEW_STORAGE_KEY, next);
   };
 
+  const investorInquiries = useMemo(
+    () => inquiries.filter((i) => i.type === "strategic_partnership" && i.engagementType === "investor"),
+    [inquiries]
+  );
+
+  const categoryScopedInquiries = categoryFilter === "investor" ? investorInquiries : inquiries;
+
   const filtered = useMemo(
-    () => inquiries.filter((i) => matchesInquiryRow(i, statusFilter, filters)),
-    [inquiries, statusFilter, filters]
+    () => categoryScopedInquiries.filter((i) => matchesInquiryRow(i, statusFilter, filters)),
+    [categoryScopedInquiries, statusFilter, filters]
   );
 
   const exportCsv = () => {
@@ -78,7 +95,9 @@ export default function AdminInquiriesPage() {
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = `zida-inquiries-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `zida-${categoryFilter === "investor" ? "investor-applications" : "inquiries"}-${new Date()
+      .toISOString()
+      .slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success(`Exported ${filtered.length} inquiries`);
@@ -127,14 +146,52 @@ export default function AdminInquiriesPage() {
         <div>
           <h1 className="text-2xl font-semibold text-white">Inquiries</h1>
           <p className="text-sm mt-1" style={{ color: "var(--color-text-secondary)" }}>
-            {inquiries.length} inquiries submitted via Contact Form, Investor Registration, and Strategic Partnership channels.
+            {categoryFilter === "investor"
+              ? `${investorInquiries.length} Qualified Investor applications — approving one grants Deal Room access.`
+              : `${inquiries.length} inquiries submitted via Contact Form, Investor Registration, and Strategic Partnership channels.`}
           </p>
         </div>
         <PipelineViewSwitcher view={view} onChange={applyView} />
       </div>
 
+      <div
+        className="mb-4 inline-flex items-center gap-0.5 rounded-md p-0.5"
+        style={{ border: "1px solid var(--color-sovereign-border)", backgroundColor: "rgba(255,255,255,0.03)" }}
+        role="tablist"
+        aria-label="Inquiry category"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={categoryFilter === "all"}
+          onClick={() => setCategoryFilter("all")}
+          className={cn(
+            "rounded px-3 py-1.5 text-xs font-medium transition-colors",
+            categoryFilter === "all"
+              ? "bg-[var(--color-gold)]/15 text-[var(--color-gold)]"
+              : "text-[var(--color-text-muted)] hover:text-white"
+          )}
+        >
+          All Inquiries
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={categoryFilter === "investor"}
+          onClick={() => setCategoryFilter("investor")}
+          className={cn(
+            "rounded px-3 py-1.5 text-xs font-medium transition-colors",
+            categoryFilter === "investor"
+              ? "bg-[var(--color-gold)]/15 text-[var(--color-gold)]"
+              : "text-[var(--color-text-muted)] hover:text-white"
+          )}
+        >
+          Qualified Investor Applications ({investorInquiries.length})
+        </button>
+      </div>
+
       <InquiryFiltersBar
-        inquiries={inquiries}
+        inquiries={categoryScopedInquiries}
         sectors={sectors}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
@@ -153,9 +210,9 @@ export default function AdminInquiriesPage() {
             </div>
           ))}
         </div>
-      ) : inquiries.length === 0 ? (
+      ) : categoryScopedInquiries.length === 0 ? (
         <div className="dashboard-panel p-10 text-center" style={{ color: "var(--color-text-muted)" }}>
-          No inquiries yet.
+          {categoryFilter === "investor" ? "No Qualified Investor applications yet." : "No inquiries yet."}
         </div>
       ) : (
         <>

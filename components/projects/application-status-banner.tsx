@@ -6,6 +6,12 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import type { LeadInquiry } from "@/lib/types";
 
+interface DraftStateResponse {
+  draft: LeadInquiry | null;
+  latestStatus: LeadInquiry["status"] | null;
+  reviewNotes: string | null;
+}
+
 /**
  * Companion to RegisteredWelcomePanel (Investor Qualification Vetting plan) — surfaces the
  * signed-in applicant's own "changes requested" Strategic Partnerships application, if any, with
@@ -15,15 +21,15 @@ import type { LeadInquiry } from "@/lib/types";
  */
 export function ApplicationStatusBanner() {
   const { isAuthenticated, isLoading } = useAuth();
-  const [inquiry, setInquiry] = useState<LeadInquiry | null>(null);
+  const [state, setState] = useState<DraftStateResponse | null>(null);
 
   useEffect(() => {
     if (isLoading || !isAuthenticated) return;
     let cancelled = false;
     fetch("/api/inquiries/draft")
       .then((res) => (res.ok ? res.json() : null))
-      .then((data: LeadInquiry | null) => {
-        if (!cancelled) setInquiry(data);
+      .then((data: DraftStateResponse | null) => {
+        if (!cancelled) setState(data);
       })
       .catch(() => {});
     return () => {
@@ -31,7 +37,7 @@ export function ApplicationStatusBanner() {
     };
   }, [isLoading, isAuthenticated]);
 
-  if (inquiry?.status !== "changes_requested") return null;
+  if (state?.latestStatus !== "changes_requested") return null;
 
   return (
     <div
@@ -53,8 +59,8 @@ export function ApplicationStatusBanner() {
           <p className="text-sm font-semibold text-zim-green-900 mb-1">
             More information needed on your application
           </p>
-          {inquiry.reviewNotes && (
-            <p className="text-sm text-zim-muted mb-3">&ldquo;{inquiry.reviewNotes}&rdquo;</p>
+          {state.reviewNotes && (
+            <p className="text-sm text-zim-muted mb-3">&ldquo;{state.reviewNotes}&rdquo;</p>
           )}
           <Link href="/strategic-partnerships" className="btn-sovereign text-xs px-4 py-2 whitespace-nowrap inline-flex">
             Resume Application

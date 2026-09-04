@@ -17,6 +17,47 @@ export async function findActiveDraftInquiry(userId: string) {
   return row ?? null;
 }
 
+/** Read-only status of the user's most recent Strategic Partnerships application, covering every
+ *  status — not just the "draft"/"changes_requested" editable slot `findActiveDraftInquiry` sees.
+ *  Deliberately never used to pick an upsert target: once a row is `pending`/`approved`/`declined`
+ *  it is locked into the review queue, and folding it into the editable-slot lookup would let
+ *  autosave silently overwrite an application staff are already reviewing. Scoped to
+ *  `type: "strategic_partnership"` — the one type this draft pipeline ever inserts with a userId
+ *  attached — so an unrelated signed-in contact-form or valuation-teaser submission never gets
+ *  mistaken for an investor qualification application (application-state blind spot fix). */
+export async function findLatestApplicationStatus(
+  userId: string
+): Promise<{ status: (typeof strategicInquiries.$inferSelect)["status"]; reviewNotes: string | null } | null> {
+  const [row] = await db
+    .select({ status: strategicInquiries.status, reviewNotes: strategicInquiries.reviewNotes })
+    .from(strategicInquiries)
+    .where(and(eq(strategicInquiries.userId, userId), eq(strategicInquiries.type, "strategic_partnership")))
+    .orderBy(desc(strategicInquiries.createdAt))
+    .limit(1);
+  return row ?? null;
+}
+
+/** True when the user already has a Strategic Partnerships application sitting in `pending`
+ *  review — a state `findActiveDraftInquiry`'s own lookup can't see, since a submitted row is
+ *  neither "draft" nor "changes_requested". Called by both POST (autosave) and PATCH (submit) in
+ *  app/api/inquiries/draft/route.ts before ever inserting, so no UI path — a direct URL, a stale
+ *  tab, or the /deal-room overview banner — can create a second application while one is already
+ *  under review. */
+export async function hasPendingApplication(userId: string): Promise<boolean> {
+  const [row] = await db
+    .select({ id: strategicInquiries.id })
+    .from(strategicInquiries)
+    .where(
+      and(
+        eq(strategicInquiries.userId, userId),
+        eq(strategicInquiries.type, "strategic_partnership"),
+        eq(strategicInquiries.status, "pending")
+      )
+    )
+    .limit(1);
+  return Boolean(row);
+}
+
 function payloadToDbFields(payload: InquiryWizardPayload) {
   return {
     engagementType: payload.engagementType || null,

@@ -46,7 +46,10 @@ export function useAdminUsers() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(patch),
       });
-      if (!res.ok) throw new Error("Failed to update user");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? "Failed to update user");
+      }
       const updated = (await res.json()) as AdminUserRecord;
       setUsers((prev) => prev.map((u) => (u.userId === userId ? updated : u)));
       return updated;

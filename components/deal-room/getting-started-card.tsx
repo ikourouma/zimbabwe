@@ -1,47 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { CheckCircle2, Circle, Clock, MessageSquareWarning } from "lucide-react";
+import { CheckCircle2, Circle, Clock, MessageSquareWarning, XCircle } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
-import type { LeadInquiry } from "@/lib/types";
-
-type ApplicationState = "loading" | "not_started" | "draft" | "pending" | "changes_requested" | "qualified";
+import type { ApplicationState } from "@/lib/hooks/use-application-state";
 
 /**
  * Investor Dashboard Overview's onboarding checklist — supersedes the one-time dismissible
  * RegisteredWelcomePanel/ApplicationStatusBanner (still shown on /projects too) with a persistent
  * status readout now that /deal-room is the investor's actual home (Investor Dashboard Expansion
  * plan). Hidden entirely once both steps are complete.
+ *
+ * Application state is now fetched once by the caller via useApplicationState() and passed in —
+ * DealRoomOverview needs the same state to decide whether to show the QualificationBanner, so
+ * this card no longer owns its own fetch (Qualified Investor banner + pilot closeout plan).
  */
-export function GettingStartedCard() {
-  const { isQualified, organization, phone } = useAuth();
-  const [appState, setAppState] = useState<ApplicationState>("loading");
-  const [reviewNotes, setReviewNotes] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isQualified) {
-      setAppState("qualified");
-      return;
-    }
-    let cancelled = false;
-    fetch("/api/inquiries/draft")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: LeadInquiry | null) => {
-        if (cancelled) return;
-        if (!data) setAppState("not_started");
-        else if (data.status === "changes_requested") {
-          setAppState("changes_requested");
-          setReviewNotes(data.reviewNotes ?? null);
-        } else if (data.status === "pending") setAppState("pending");
-        else setAppState("draft");
-      })
-      .catch(() => setAppState("not_started"));
-    return () => {
-      cancelled = true;
-    };
-  }, [isQualified]);
-
+export function GettingStartedCard({
+  appState,
+  reviewNotes,
+}: {
+  appState: ApplicationState;
+  reviewNotes: string | null;
+}) {
+  const { organization, phone } = useAuth();
   const profileComplete = Boolean(organization && phone);
 
   if (profileComplete && appState === "qualified") return null;
@@ -70,10 +51,12 @@ export function GettingStartedCard() {
           </div>
         </li>
         <li className="flex items-start gap-3">
-          {appState === "qualified" ? (
+          {appState === "qualified" || appState === "approved" ? (
             <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" style={{ color: "#4ade80" }} />
           ) : appState === "changes_requested" ? (
             <MessageSquareWarning className="h-4 w-4 mt-0.5 shrink-0" style={{ color: "#fde047" }} />
+          ) : appState === "declined" ? (
+            <XCircle className="h-4 w-4 mt-0.5 shrink-0" style={{ color: "#f87171" }} />
           ) : appState === "pending" ? (
             <Clock className="h-4 w-4 mt-0.5 shrink-0" style={{ color: "var(--color-gold)" }} />
           ) : (
@@ -82,20 +65,28 @@ export function GettingStartedCard() {
           <div className="min-w-0">
             <p className="text-sm text-white">Complete your investment profile</p>
             <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-              {appState === "qualified" && "You're a Qualified Investor — full Deal Room access unlocked."}
+              {(appState === "qualified" || appState === "approved") &&
+                "You're a Qualified Investor — full Deal Room access unlocked."}
               {appState === "pending" && "Submitted — under review by ZIDA."}
               {appState === "changes_requested" &&
                 (reviewNotes ? `Changes requested: "${reviewNotes}"` : "ZIDA has requested changes to your application.")}
+              {appState === "declined" &&
+                (reviewNotes ? `Application declined: "${reviewNotes}"` : "ZIDA has declined this application.")}
               {appState === "draft" && "In progress — resume where you left off."}
-              {appState === "not_started" && "Apply to become a Qualified Investor to unlock Engagements, Communication Hub, and proposing your own projects."}
+              {appState === "not_started" &&
+                "Apply to become a Qualified Investor to unlock Engagements, Communication Hub, and proposing your own projects."}
             </p>
-            {appState !== "qualified" && appState !== "pending" && (
+            {appState !== "qualified" && appState !== "approved" && appState !== "pending" && (
               <Link
-                href={appState === "not_started" ? "/deal-room/profile" : "/strategic-partnerships"}
+                href={appState === "not_started" || appState === "declined" ? "/deal-room/profile" : "/strategic-partnerships"}
                 className="text-xs underline"
                 style={{ color: "var(--color-gold)" }}
               >
-                {appState === "draft" || appState === "changes_requested" ? "Resume application" : "Start application"}
+                {appState === "draft" || appState === "changes_requested"
+                  ? "Resume application"
+                  : appState === "declined"
+                    ? "Submit a new application"
+                    : "Start application"}
               </Link>
             )}
           </div>

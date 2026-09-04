@@ -137,8 +137,8 @@ export function UsersWorkspace({ tier }: { tier: UsersWorkspaceTier }) {
       await updateUser(user.userId, { role: nextRole, reason });
       toast.success(`${user.name}'s role updated to ${ROLE_LABELS[nextRole]}`);
       setPendingRoleChange(null);
-    } catch {
-      toast.error("Failed to update role");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update role");
     }
   };
 

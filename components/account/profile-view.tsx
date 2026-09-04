@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import {
   Building2,
@@ -11,7 +11,6 @@ import {
   CircleAlert,
   FileText,
   FilePlus2,
-  Handshake,
   Loader2,
   ShieldCheck,
   Trash2,
@@ -23,6 +22,7 @@ import { useDealRoomStore } from "@/context/deal-room-store-context";
 import { useTaxonomyStore } from "@/context/taxonomy-store-context";
 import { executiveFieldClassName, executiveFieldStyle, executiveLabelClassName } from "@/components/auth/executive-field-styles";
 import { MyTeamPanel } from "@/components/account/my-team-panel";
+import { isKycComplete, KYC_FIELD_KEYS, QualificationBanner } from "@/components/account/qualification-banner";
 import type { AccountRole } from "@/lib/auth/types";
 
 const ROLE_LABELS: Record<AccountRole, string> = {
@@ -44,14 +44,6 @@ interface CompanyForm {
   businessRegistrationId: string;
   websiteUrl: string;
 }
-
-const KYC_FIELD_KEYS: (keyof CompanyForm)[] = [
-  "organization",
-  "phone",
-  "hqAddress",
-  "businessRegistrationId",
-  "websiteUrl",
-];
 
 /**
  * "My Profile" — one shared 360-degree view rendered at /deal-room/profile, /admin/profile, and
@@ -103,9 +95,9 @@ export function ProfileView() {
   const [form, setForm] = useState<CompanyForm>(initialForm);
   const [saving, setSaving] = useState(false);
 
-  const dirty = KYC_FIELD_KEYS.concat(["jobTitle", "executiveRepresentativeName", "executiveRepresentativeTitle"]).some(
-    (key) => form[key].trim() !== (initialForm[key] ?? "").trim()
-  );
+  const dirty = (
+    [...KYC_FIELD_KEYS, "jobTitle", "executiveRepresentativeName", "executiveRepresentativeTitle"] as (keyof CompanyForm)[]
+  ).some((key) => form[key].trim() !== (initialForm[key] ?? "").trim());
 
   const setField = (key: keyof CompanyForm) => (v: string) => setForm((f) => ({ ...f, [key]: v }));
 
@@ -127,7 +119,7 @@ export function ProfileView() {
     }
   };
 
-  const kycComplete = KYC_FIELD_KEYS.every((key) => form[key].trim().length > 0);
+  const kycComplete = isKycComplete(form);
 
   return (
     <div className="max-w-4xl">
@@ -166,7 +158,7 @@ export function ProfileView() {
           </>
         )}
 
-        {role === "registered" && <QualificationCard kycComplete={kycComplete} onSaveFirst={saveCompany} form={form} />}
+        {role === "registered" && <QualificationBanner variant="profile" values={form} onSaveFirst={saveCompany} />}
 
         {role === "qualified" && <PortfolioSummaryCard userId={userId} />}
 
@@ -543,78 +535,6 @@ function ComplianceCard({
             </button>
           </div>
         )}
-      </div>
-    </section>
-  );
-}
-
-/* ----------------------------------------------------------- Qualification ---- */
-
-function QualificationCard({
-  kycComplete,
-  onSaveFirst,
-  form,
-}: {
-  kycComplete: boolean;
-  onSaveFirst: () => Promise<void> | void;
-  form: CompanyForm;
-}) {
-  const { name, email } = useAuth();
-  const router = useRouter();
-  const [submitting, setSubmitting] = useState(false);
-
-  const requestReview = async () => {
-    setSubmitting(true);
-    try {
-      await onSaveFirst();
-      const res = await fetch("/api/inquiries/draft", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          engagementType: "investor",
-          name: name ?? "",
-          email: email ?? "",
-          organization: form.organization,
-          phone: form.phone,
-          hqAddress: form.hqAddress,
-          businessRegistrationId: form.businessRegistrationId,
-          websiteUrl: form.websiteUrl,
-        }),
-      });
-      if (!res.ok) throw new Error("Could not start your application");
-      toast.success("Company profile saved to your application — continue to finish and submit.");
-      router.push("/strategic-partnerships");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not start your application");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <section
-      className="rounded-lg p-5"
-      style={{ backgroundColor: "rgba(0,100,0,0.12)", border: "1px solid var(--color-sovereign-border)" }}
-    >
-      <div className="flex items-start gap-3">
-        <Handshake className="h-5 w-5 mt-0.5 shrink-0" style={{ color: "var(--color-gold)" }} />
-        <div className="flex-1">
-          <h2 className="text-sm font-semibold text-white mb-1">Become a Qualified Investor</h2>
-          <p className="text-sm mb-3" style={{ color: "var(--color-text-secondary)" }}>
-            {kycComplete
-              ? "Your company profile is complete. Continue to declare your investment interest and submit for ZIDA review — you won't need to re-enter your KYC details."
-              : "Fill in every field in Company & Representative above, then request review — your KYC details carry straight into the application, so you only add your investment interest before submitting."}
-          </p>
-          <button
-            type="button"
-            onClick={requestReview}
-            disabled={!kycComplete || submitting}
-            className="px-4 py-2.5 rounded text-sm font-semibold bg-[#FFD300] text-black hover:brightness-95 disabled:opacity-40 disabled:cursor-not-allowed transition inline-flex items-center gap-2"
-          >
-            {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-            Request Qualified Investor Review
-          </button>
-        </div>
       </div>
     </section>
   );

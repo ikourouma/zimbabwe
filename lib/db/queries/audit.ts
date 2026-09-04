@@ -30,6 +30,44 @@ export async function logAuditEvent(input: LogAuditEventInput): Promise<void> {
   }
 }
 
+interface LogRoleChangeEventInput {
+  actorUserId: string;
+  actorName?: string | null;
+  targetUserId: string;
+  targetEmail: string;
+  fromRole: string | null;
+  toRole: string;
+  reason: string | null;
+  /** `inquiry:<id>` when granted via inquiry approval, `manual` when set directly on the Users
+   *  console — the one field that answers "who was granted Deal Room access, by whom, on what
+   *  basis" without joining two differently-shaped audit actions (Qualified Investor banner +
+   *  pilot closeout plan, entitlement governance). */
+  source: string;
+}
+
+/** Canonical role-change event, emitted from both places an account's role can actually change —
+ *  PATCH /api/inquiries/[id] (approving an investor application) and PATCH /api/users/[id] (a
+ *  direct Users-console edit). Additive: neither call site's existing `inquiry.status_changed` /
+ *  `user.updated` event is removed, so nothing that already reads those (activity feed,
+ *  notification bell, /super-admin/audit) has to change — this is the one query that can answer
+ *  "every role change, from any path" on its own. */
+export async function logRoleChangeEvent(input: LogRoleChangeEventInput): Promise<void> {
+  await logAuditEvent({
+    actorUserId: input.actorUserId,
+    actorName: input.actorName,
+    action: "user.role_changed",
+    entityType: "user",
+    entityId: input.targetUserId,
+    metadata: {
+      targetEmail: input.targetEmail,
+      fromRole: input.fromRole,
+      toRole: input.toRole,
+      reason: input.reason,
+      source: input.source,
+    },
+  });
+}
+
 /** Joins `audit_logs` to `neon_auth."user"` for a display-ready actor name and to `profiles` for
  *  the actor's role, since the actor is stored as a bare Neon Auth user id (see
  *  lib/db/schema/audit.ts) — the role backs the Sovereign Telemetry & Audit Filter Bar's Actor

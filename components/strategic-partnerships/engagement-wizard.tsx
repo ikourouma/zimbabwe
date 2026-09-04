@@ -206,7 +206,8 @@ export function EngagementWizard() {
     (async () => {
       try {
         const res = await fetch("/api/inquiries/draft");
-        const draft = res.ok ? ((await res.json()) as LeadInquiry | null) : null;
+        const payload = res.ok ? ((await res.json()) as { draft: LeadInquiry | null }) : null;
+        const draft = payload?.draft ?? null;
         if (draft) {
           const { firstName, lastName } = splitName(draft.name);
           setForm((f) => ({

@@ -16,6 +16,7 @@ const ACTION_ICON: Record<string, LucideIcon> = {
   "project.created": FileEdit,
   "project.status_changed": FileEdit,
   "inquiry.status_changed": CheckCircle2,
+  "inquiry.submitted": FileEdit,
   "engagement.status_changed": Handshake,
   "engagement.created": Handshake,
   "engagement.published": Handshake,
@@ -24,6 +25,7 @@ const ACTION_ICON: Record<string, LucideIcon> = {
   "mou.approved": FileSignature,
   "mou.draft_updated": FileSignature,
   "user.updated": UserCog,
+  "user.role_changed": UserCog,
   "site_settings.updated": Settings,
   "nda.accepted": ShieldCheck,
 };
@@ -44,6 +46,10 @@ function describe(entry: AuditLogEntry): string {
       return `marked inquiry from ${String(meta.applicantEmail ?? "an applicant")} as ${String(meta.status)}${
         meta.roleUpgradedToQualified ? " (role upgraded to qualified)" : ""
       }`;
+    case "inquiry.submitted":
+      return meta.engagementType === "investor"
+        ? `submitted a Qualified Investor application (${String(meta.email ?? "unknown")})`
+        : `submitted a new ${String(meta.type ?? "inquiry").replace(/_/g, " ")} (${String(meta.email ?? "unknown")})`;
     case "engagement.status_changed":
       return `moved engagement with ${String(meta.investorName ?? "an investor")} to ${String(meta.to)}`;
     case "engagement.created":
@@ -66,6 +72,10 @@ function describe(entry: AuditLogEntry): string {
       return `updated the MOU ${String(meta.field ?? "draft")} with ${String(meta.investorName ?? "an investor")}`;
     case "user.updated":
       return `updated ${String(meta.targetEmail ?? "a user")}'s account`;
+    case "user.role_changed":
+      return `changed ${String(meta.targetEmail ?? "a user")}'s role from ${String(meta.fromRole)} to ${String(
+        meta.toRole
+      )}${meta.source && meta.source !== "manual" ? ` (via ${String(meta.source)})` : ""}`;
     case "site_settings.updated":
       return "updated site settings";
     default:

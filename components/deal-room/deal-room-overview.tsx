@@ -7,12 +7,14 @@ import { useAuth } from "@/context/auth-context";
 import { useProjectStore } from "@/context/project-store-context";
 import { useDealRoomStore } from "@/context/deal-room-store-context";
 import { useMyActivity } from "@/lib/hooks/use-my-activity";
+import { useApplicationState } from "@/lib/hooks/use-application-state";
 import { StatCard, StatCardSkeleton } from "@/components/dashboard/stat-card";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { DealRoomAccessGate } from "@/components/deal-room/deal-room-access-gate";
 import { GettingStartedCard } from "@/components/deal-room/getting-started-card";
 import { PlatformStatsPanel } from "@/components/deal-room/platform-stats-panel";
 import { MyAnalyticsCard } from "@/components/deal-room/my-analytics-card";
+import { QualificationBanner } from "@/components/account/qualification-banner";
 import { getInReviewCount } from "@/lib/governance/project-workflow";
 import { ENGAGEMENT_STATUS_LABELS } from "@/lib/governance/engagement-workflow";
 import type { InvestorEngagementStatus } from "@/lib/types";
@@ -20,10 +22,22 @@ import type { InvestorEngagementStatus } from "@/lib/types";
 const FUNNEL_ORDER: InvestorEngagementStatus[] = ["submitted", "under_review", "approved", "rejected"];
 
 export function DealRoomOverview() {
-  const { name, isAuthenticated, isQualified, isLoading: authLoading } = useAuth();
+  const {
+    name,
+    isAuthenticated,
+    isQualified,
+    isLoading: authLoading,
+    role,
+    organization,
+    phone,
+    hqAddress,
+    businessRegistrationId,
+    websiteUrl,
+  } = useAuth();
   const { projects, isLoading: projectsLoading } = useProjectStore();
   const { engagements, isLoading: engagementsLoading } = useDealRoomStore();
   const { entries: activityEntries, isLoading: activityLoading } = useMyActivity();
+  const { appState, reviewNotes } = useApplicationState();
 
   const funnel = useMemo(() => {
     const counts = engagements.reduce<Record<string, number>>((acc, e) => {
@@ -53,7 +67,27 @@ export function DealRoomOverview() {
         </p>
       </div>
 
-      <GettingStartedCard />
+      <GettingStartedCard appState={appState} reviewNotes={reviewNotes} />
+
+      {/* The on-ramp itself — shown only at the true starting point (registered, no application
+       *  in any state yet). Once an application exists in any form, the checklist above is the
+       *  right affordance ("Resume application" / status text), not a second call to action that
+       *  would otherwise let a submitted applicant re-open a duplicate (Qualified Investor
+       *  banner + pilot closeout plan). */}
+      {role === "registered" && appState === "not_started" && (
+        <div className="mb-6">
+          <QualificationBanner
+            variant="overview"
+            values={{
+              organization: organization ?? "",
+              phone: phone ?? "",
+              hqAddress: hqAddress ?? "",
+              businessRegistrationId: businessRegistrationId ?? "",
+              websiteUrl: websiteUrl ?? "",
+            }}
+          />
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
         {isLoading || authLoading ? (

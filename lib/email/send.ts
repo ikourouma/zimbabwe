@@ -17,15 +17,25 @@ function getClient(): Resend | null {
 }
 
 const FROM_ADDRESS = process.env.RESEND_FROM_EMAIL ?? "ZIDA Investment Platform <notifications@zidaproject.com>";
+// Where replies actually land, and where applicant-facing decline/changes-requested copy points
+// follow-up questions — the sending mailbox (`notifications@`) is intentionally not a real inbox
+// staff monitor. Qualified Investor banner + pilot closeout plan.
+const REPLY_TO_ADDRESS = process.env.RESEND_REPLY_TO ?? "admin@zidaproject.com";
 
-export async function sendEmail(input: { to: string; subject: string; html: string }): Promise<boolean> {
+export async function sendEmail(input: { to: string; subject: string; html: string; replyTo?: string }): Promise<boolean> {
   const resend = getClient();
   if (!resend) {
     console.warn(`[email] RESEND_API_KEY not configured — skipped "${input.subject}" to ${input.to}`);
     return false;
   }
   try {
-    const { error } = await resend.emails.send({ from: FROM_ADDRESS, to: input.to, subject: input.subject, html: input.html });
+    const { error } = await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: input.to,
+      subject: input.subject,
+      html: input.html,
+      replyTo: input.replyTo ?? REPLY_TO_ADDRESS,
+    });
     if (error) {
       console.error(`[email] Resend rejected "${input.subject}" to ${input.to}:`, error);
       return false;
@@ -38,13 +48,24 @@ export async function sendEmail(input: { to: string; subject: string; html: stri
 }
 
 /** Shared, minimal HTML shell so every notification email has one consistent look without a
- *  full templating system — sufficient for the plain, factual copy these hooks send. */
-export function emailShell(bodyHtml: string): string {
+ *  full templating system — sufficient for the plain, factual copy these hooks send.
+ *
+ *  `transactional: true` swaps the footer for decision emails (application approved/declined/
+ *  changes-requested, staff submission alerts) — these are sent directly via `sendEmail`, not
+ *  `notifyUser`, precisely because they must not be suppressible by a notification-preference
+ *  toggle (Qualified Investor banner + pilot closeout plan), so the default preference-management
+ *  footer would misrepresent why the recipient got this email. */
+export function emailShell(bodyHtml: string, options?: { transactional?: boolean }): string {
+  const footer = options?.transactional
+    ? `<p style="font-size: 12px; color: #9ca3af; margin-top: 32px; border-top: 1px solid #e5e7eb; padding-top: 12px;">
+        This is a transactional notice about an application or account action and is sent regardless of notification preferences.
+      </p>`
+    : `<p style="font-size: 12px; color: #9ca3af; margin-top: 32px; border-top: 1px solid #e5e7eb; padding-top: 12px;">
+        You're receiving this because of your notification preferences. Manage them anytime from My Profile → Account &amp; Security.
+      </p>`;
   return `<div style="font-family: -apple-system, Segoe UI, sans-serif; max-width: 560px; margin: 0 auto; color: #1a1a1a;">
     <p style="font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: #6b7280; margin-bottom: 16px;">ZIDA Investment Platform</p>
     ${bodyHtml}
-    <p style="font-size: 12px; color: #9ca3af; margin-top: 32px; border-top: 1px solid #e5e7eb; padding-top: 12px;">
-      You're receiving this because of your notification preferences. Manage them anytime from My Profile → Account &amp; Security.
-    </p>
+    ${footer}
   </div>`;
 }

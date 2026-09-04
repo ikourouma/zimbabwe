@@ -23,6 +23,10 @@ function describeShort(action: string, metadata: Record<string, unknown> | undef
       return `Project "${String(meta.title ?? "Untitled").slice(0, 40)}" → ${String(meta.to)}`;
     case "inquiry.status_changed":
       return `Inquiry from ${String(meta.applicantEmail ?? "an applicant")} → ${String(meta.status)}`;
+    case "inquiry.submitted":
+      return meta.engagementType === "investor"
+        ? `New Qualified Investor application from ${String(meta.email ?? "an applicant")}`
+        : `New inquiry submitted by ${String(meta.email ?? "an applicant")}`;
     case "engagement.status_changed":
       return `Engagement with ${String(meta.investorName ?? "an investor")} → ${String(meta.to)}`;
     case "engagement.created":
@@ -37,6 +41,8 @@ function describeShort(action: string, metadata: Record<string, unknown> | undef
       return `A briefing was requested before deciding on ${String(meta.investorName ?? "an investor")}'s deletion request`;
     case "user.updated":
       return `${String(meta.targetEmail ?? "A user")}'s account was updated`;
+    case "user.role_changed":
+      return `${String(meta.targetEmail ?? "A user")}'s role changed from ${String(meta.fromRole)} to ${String(meta.toRole)}`;
     case "site_settings.updated":
       return "Site settings updated";
     default:

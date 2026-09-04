@@ -5,8 +5,13 @@ import { requireRole } from "@/lib/auth/session";
 import { mapDbInquiryToApp } from "@/lib/db/mappers/inquiry";
 import { db } from "@/lib/db/client";
 import { strategicInquiries } from "@/lib/db/schema";
-import { logAuditEvent } from "@/lib/db/queries/audit";
+import { logAuditEvent, logRoleChangeEvent } from "@/lib/db/queries/audit";
 import { findUserIdByEmail, updateUserProfile, fetchUserDetail } from "@/lib/db/queries/users";
+import {
+  sendApplicantApprovedEmail,
+  sendApplicantChangesRequestedEmail,
+  sendApplicantDeclinedEmail,
+} from "@/lib/email/inquiry-notifications";
 import type { LeadInquiry } from "@/lib/types";
 
 type RouteParams = { params: Promise<{ id: string }> };
@@ -75,6 +80,18 @@ export async function PATCH(request: Request, { params }: RouteParams) {
           websiteUrl: current.websiteUrl || undefined,
         });
         roleUpgraded = true;
+        if (profile?.role !== "qualified") {
+          await logRoleChangeEvent({
+            actorUserId: actor.userId,
+            actorName: actor.name,
+            targetUserId: matchedUserId,
+            targetEmail: current.email,
+            fromRole: profile?.role ?? "registered",
+            toRole: "qualified",
+            reason: `Approved Qualified Investor application (${current.organization ?? current.email})`,
+            source: `inquiry:${id}`,
+          });
+        }
       }
     }
 
@@ -116,6 +133,19 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         roleUpgradedToQualified: roleUpgraded,
       },
     });
+
+    // Applicant-facing decision emails — fire-and-forget (sendEmail never throws; see
+    // lib/email/send.ts), sent transactionally to the inquiry's own email column rather than
+    // notifyUser's preference-gated path, and never let a delivery failure block the decision
+    // itself. "Approved" only fires for the investor role-upgrade flow — every other status
+    // change on a non-investor inquiry type has no defined template yet.
+    if (nextStatus === "approved" && current.engagementType === "investor" && !kycBlocked) {
+      void sendApplicantApprovedEmail({ to: updated.email, name: updated.name });
+    } else if (nextStatus === "changes_requested" && current.type === "strategic_partnership") {
+      void sendApplicantChangesRequestedEmail({ to: updated.email, name: updated.name, reviewNotes: reason ?? null });
+    } else if (nextStatus === "declined" && current.type === "strategic_partnership") {
+      void sendApplicantDeclinedEmail({ to: updated.email, name: updated.name, reviewNotes: reason ?? null });
+    }
 
     return NextResponse.json(mapDbInquiryToApp(updated));
   } catch (error) {
