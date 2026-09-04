@@ -23,7 +23,9 @@ import {
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/types";
 
-export type DashboardConsole = "admin" | "super-admin" | "deal-room" | "ministry";
+export type { DashboardConsole } from "@/lib/auth/console-access";
+export { consolesForRole, isConsoleAllowedForRole, consoleFromPathname } from "@/lib/auth/console-access";
+import type { DashboardConsole } from "@/lib/auth/console-access";
 
 export interface DashboardNavItem {
   href: string;
@@ -148,25 +150,4 @@ export function getConsoleMeta(console: DashboardConsole, role: AccountRole | nu
     return { ...base, label: "Government Reviewer Console", badge: "Government Reviewer" };
   }
   return base;
-}
-
-/** Console switcher — super_admin can jump between all three without leaving the app shell.
- *  `registered` now gets the Investor Dashboard too (Investor Dashboard Expansion plan); nav
- *  items within it are further filtered by `minRole` in DashboardSidebar. */
-export function consolesForRole(role: AccountRole | null): DashboardConsole[] {
-  if (role === "super_admin") return ["super-admin", "admin", "deal-room"];
-  if (role === "admin") return ["admin", "deal-room"];
-  if (role === "government") return ["deal-room"];
-  if (role === "ministry_admin") return ["ministry"];
-  if (role === "qualified") return ["deal-room"];
-  if (role === "registered") return ["deal-room"];
-  return [];
-}
-
-export function consoleFromPathname(pathname: string): DashboardConsole | null {
-  if (pathname.startsWith("/super-admin")) return "super-admin";
-  if (pathname.startsWith("/admin")) return "admin";
-  if (pathname.startsWith("/deal-room")) return "deal-room";
-  if (pathname.startsWith("/ministry")) return "ministry";
-  return null;
 }

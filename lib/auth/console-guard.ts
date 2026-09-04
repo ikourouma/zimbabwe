@@ -1,10 +1,7 @@
-import { consolesForRole, type DashboardConsole } from "@/components/dashboard/dashboard-nav-config";
+import { isConsoleAllowedForRole, type DashboardConsole } from "@/lib/auth/console-access";
 import { getPostLoginDestination } from "@/lib/auth/post-login-destination";
-import type { AccountRole } from "@/lib/auth/types";
 
-export function isConsoleAllowedForRole(console: DashboardConsole, role: AccountRole | null): boolean {
-  return consolesForRole(role).includes(console);
-}
+export { isConsoleAllowedForRole };
 
 export function destinationForWrongConsole(user: {
   isSuperAdmin?: boolean;
@@ -14,3 +11,5 @@ export function destinationForWrongConsole(user: {
 }): string {
   return getPostLoginDestination(user);
 }
+
+export type { DashboardConsole };

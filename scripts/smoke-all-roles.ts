@@ -7,41 +7,54 @@ const targetBase = process.argv[2]?.replace(/\/$/, "") ?? process.env.NEXT_PUBLI
 const authBase = process.env.NEON_AUTH_BASE_URL;
 const password = process.env.PILOT_ACCOUNT_PASSWORD;
 
+const CONSOLE_MARKERS: Record<string, string> = {
+  "/ministry": "Ministry Desk",
+  "/admin": "Admin Overview",
+  "/super-admin": "Analytics",
+  "/deal-room": "Overview",
+};
+
 const ACCOUNTS = [
   {
     email: "registered+pilot@zidaproject.com",
     role: "registered",
     home: "/projects",
+    homeMarker: "Project Registry",
     forbidden: ["/admin", "/super-admin", "/ministry"],
   },
   {
     email: "qualified+pilot@zidaproject.com",
     role: "qualified",
     home: "/deal-room",
+    homeMarker: "Overview",
     forbidden: ["/admin", "/super-admin", "/ministry"],
   },
   {
     email: "government+pilot@zidaproject.com",
     role: "government",
     home: "/deal-room",
+    homeMarker: "Overview",
     forbidden: ["/admin", "/super-admin", "/ministry"],
   },
   {
     email: "ministryadmin+pilot@zidaproject.com",
     role: "ministry_admin",
     home: "/ministry",
+    homeMarker: "Ministry Desk",
     forbidden: ["/admin", "/super-admin"],
   },
   {
     email: "admin+pilot@zidaproject.com",
     role: "admin",
     home: "/admin",
+    homeMarker: "Admin Overview",
     forbidden: ["/super-admin"],
   },
   {
     email: "superadmin+pilot@zidaproject.com",
     role: "super_admin",
     home: "/super-admin",
+    homeMarker: "Analytics",
     forbidden: [],
   },
 ] as const;
@@ -85,7 +98,64 @@ async function fetchMe(cookies: string) {
 }
 
 async function fetchPath(cookies: string, path: string) {
-  return fetch(`${targetBase}${path}`, { headers: { cookie: cookies }, redirect: "manual" });
+  const separator = path.includes("?") ? "&" : "?";
+  const url = `${targetBase}${path}${separator}_cb=${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return fetch(url, {
+    headers: {
+      cookie: cookies,
+      "Cache-Control": "no-cache",
+      Pragma: "no-cache",
+    },
+    redirect: "manual",
+  });
+}
+
+function hasVaryCookie(res: Response): boolean {
+  const vary = res.headers.get("vary") ?? "";
+  return vary.toLowerCase().includes("cookie");
+}
+
+async function checkForbiddenPath(email: string, cookies: string, path: string) {
+  const res = await fetchPath(cookies, path);
+  const status = res.status;
+  const marker = CONSOLE_MARKERS[path];
+
+  report(hasVaryCookie(res), `${email} Vary:Cookie ${path}`, res.headers.get("vary") ?? "missing");
+
+  if (status === 200) {
+    const body = await res.text();
+    if (marker && body.includes(marker)) {
+      report(false, `${email} denied ${path}`, `200 and body contains ${marker}`);
+    } else {
+      report(false, `${email} denied ${path}`, "200 (expected redirect)");
+    }
+    return;
+  }
+
+  report(
+    status === 403 || status === 307 || status === 308 || status === 404,
+    `${email} denied ${path}`,
+    String(status)
+  );
+}
+
+async function checkHomePath(email: string, cookies: string, home: string, homeMarker: string) {
+  const res = await fetchPath(cookies, home);
+  const status = res.status;
+
+  if (status === 307 || status === 308) {
+    const location = res.headers.get("location") ?? "";
+    report(false, `${email} home ${home}`, `redirected to ${location} (expected to stay)`);
+    return;
+  }
+
+  if (status !== 200) {
+    report(false, `${email} home ${home}`, String(status));
+    return;
+  }
+
+  const body = await res.text();
+  report(body.includes(homeMarker), `${email} home ${home}`, body.includes(homeMarker) ? undefined : `200 but missing "${homeMarker}"`);
 }
 
 async function main() {
@@ -95,6 +165,16 @@ async function main() {
   }
 
   console.log(`Smoke test against ${targetBase}\n`);
+
+  const versionRes = await fetch(`${targetBase}/api/version`, { cache: "no-store" });
+  if (versionRes.ok) {
+    const version = (await versionRes.json()) as { commit?: string; builtAt?: string };
+    console.log(`Build: ${version.commit ?? "unknown"} built ${version.builtAt ?? "unknown"}\n`);
+    report(true, "build version endpoint");
+  } else {
+    console.log("Build: unknown (endpoint unavailable)\n");
+    report(false, "build version endpoint", "/api/version missing — deploy is stale");
+  }
 
   for (const account of ACCOUNTS) {
     let cookies = "";
@@ -135,12 +215,10 @@ async function main() {
       }
     }
 
-    const homeRes = await fetchPath(cookies, account.home);
-    report(homeRes.status === 200 || homeRes.status === 307 || homeRes.status === 308, `${account.email} home ${account.home}`);
+    await checkHomePath(account.email, cookies, account.home, account.homeMarker);
 
     for (const path of account.forbidden) {
-      const res = await fetchPath(cookies, path);
-      report(res.status === 403 || res.status === 307 || res.status === 308 || res.status === 404, `${account.email} denied ${path}`, String(res.status));
+      await checkForbiddenPath(account.email, cookies, path);
     }
 
     await fetch(`${authBase}/sign-out`, {
