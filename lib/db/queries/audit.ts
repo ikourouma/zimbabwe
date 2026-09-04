@@ -2,6 +2,8 @@ import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { auditLogs } from "@/lib/db/schema";
 import type { AuditLogEntry } from "@/lib/types";
+import { fetchAllProjects } from "@/lib/db/queries/projects";
+import { projectMatchesMinistry } from "@/lib/entitlements/ministry-scope";
 
 interface LogAuditEventInput {
   actorUserId: string | null;
@@ -66,6 +68,57 @@ export async function fetchAuditLogs(limit = 200): Promise<AuditLogEntry[]> {
     actorUserId: row.actor_user_id,
     actorName: row.actor_name,
     actorRole: (row.actor_role as AuditLogEntry["actorRole"]) ?? null,
+    action: row.action,
+    entityType: row.entity_type,
+    entityId: row.entity_id,
+    metadata: (row.metadata as Record<string, unknown>) ?? null,
+    createdAt: new Date(row.created_at).toISOString(),
+  }));
+}
+
+/**
+ * Ministry-scoped activity feed (Ministry Desk management dashboard plan, Part 4) — every audit
+ * row about the ministry's own projects: the project's own rows, plus every engagement and
+ * message event stamped with one of those projectIds. Modeled directly on `fetchProjectHistory`
+ * but fanned out across the whole ministry's project set instead of one project. Powers the
+ * Ministry Overview's "Recent Activity" panel and the notification bell for this role.
+ */
+export async function fetchAuditLogsForMinistry(ministryId: string, limit = 50): Promise<AuditLogEntry[]> {
+  const allProjects = await fetchAllProjects();
+  const ministryProjectIds = allProjects.filter((p) => projectMatchesMinistry(p, ministryId)).map((p) => p.id);
+  if (ministryProjectIds.length === 0) return [];
+
+  const rows = await db.execute<{
+    id: string;
+    actor_user_id: string | null;
+    action: string;
+    entity_type: string;
+    entity_id: string;
+    metadata: unknown;
+    created_at: string;
+    actor_name: string | null;
+  }>(sql`
+    SELECT
+      al.id,
+      al.actor_user_id,
+      al.action,
+      al.entity_type,
+      al.entity_id,
+      al.metadata,
+      al.created_at,
+      u.name AS actor_name
+    FROM audit_logs al
+    LEFT JOIN neon_auth."user" u ON u.id::text = al.actor_user_id
+    WHERE (al.entity_type = 'project' AND al.entity_id = ANY(${ministryProjectIds}))
+       OR (al.entity_type IN ('engagement', 'project_message') AND al.metadata ->> 'projectId' = ANY(${ministryProjectIds}))
+    ORDER BY al.created_at DESC
+    LIMIT ${limit}
+  `);
+
+  return rows.rows.map((row) => ({
+    id: row.id,
+    actorUserId: row.actor_user_id,
+    actorName: row.actor_name,
     action: row.action,
     entityType: row.entity_type,
     entityId: row.entity_id,

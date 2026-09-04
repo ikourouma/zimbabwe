@@ -22,8 +22,16 @@ export function mapDbInquiryToApp(row: InquiryRow, projectId?: string): LeadInqu
     partnershipType: row.partnershipType ?? undefined,
     ministryRepresented: row.ministryRepresented ?? undefined,
     natureOfEngagement: row.natureOfEngagement ?? undefined,
+    userId: row.userId ?? undefined,
+    hqAddress: row.hqAddress ?? undefined,
+    businessRegistrationId: row.businessRegistrationId ?? undefined,
+    websiteUrl: row.websiteUrl ?? undefined,
+    reviewNotes: row.reviewNotes ?? undefined,
+    reviewedBy: row.reviewedBy ?? undefined,
+    reviewedAt: row.reviewedAt?.toISOString(),
     status: row.status,
     createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt?.toISOString(),
   };
 }
 
@@ -44,6 +52,11 @@ export function mapAppInquiryToDb(inquiry: Omit<LeadInquiry, "id" | "createdAt">
     partnershipType: inquiry.partnershipType ?? null,
     ministryRepresented: inquiry.ministryRepresented ?? null,
     natureOfEngagement: inquiry.natureOfEngagement ?? null,
+    userId: inquiry.userId ?? null,
+    hqAddress: inquiry.hqAddress ?? null,
+    businessRegistrationId: inquiry.businessRegistrationId ?? null,
+    websiteUrl: inquiry.websiteUrl ?? null,
+    reviewNotes: inquiry.reviewNotes ?? null,
     status: inquiry.status ?? "pending",
   };
 }

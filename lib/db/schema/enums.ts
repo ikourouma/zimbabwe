@@ -38,10 +38,17 @@ export const userRoleScopeEnum = pgEnum("user_role_scope", ["platform", "tenant"
 
 // Real authenticated roles. Deliberately excludes "public" (unauthenticated visitors have no
 // profile row) — see the target role model in PRODUCTION_MIGRATION_PLAN.md.
+// "ministry_admin" (Deal Room Feedback Batch v2, Phase 6) is a beneficiary-ministry official
+// scoped to their own `profiles.ministryId` — console-admin-like authority over that one
+// ministry's pipeline, never platform-wide. Created by an admin/super_admin (see
+// lib/auth/user-governance.ts's assignableRoles) and can in turn invite/validate their own
+// ministry staff via the same org-team invite pipeline qualified investors use (lib/db/queries/
+// org-team.ts), just with `ministryId` inherited instead of `organization`.
 export const accountRoleEnum = pgEnum("account_role", [
   "registered",
   "qualified",
   "government",
+  "ministry_admin",
   "admin",
   "super_admin",
 ]);
@@ -68,7 +75,18 @@ export const engagementTypeEnum = pgEnum("engagement_type", [
   "strategic_partner",
 ]);
 
-export const inquiryStatusEnum = pgEnum("inquiry_status", ["pending", "approved", "declined"]);
+// "draft" mirrors investorEngagementStatusEnum's investor-owned pre-submission state — editable,
+// private to the owner + staff, added by the Investor Qualification Vetting plan so the
+// Strategic Partnerships wizard can autosave progress before the applicant is ready to submit.
+// "changes_requested" is the staff-initiated round-trip (reviewNotes explains what's missing) that
+// sends a submitted application back to the applicant without declining it outright.
+export const inquiryStatusEnum = pgEnum("inquiry_status", [
+  "draft",
+  "pending",
+  "changes_requested",
+  "approved",
+  "declined",
+]);
 
 // "draft" is the investor-owned pre-submission state (editable, private to owner + staff) added
 // by the Engagement Draft-Lock plan — publishing transitions draft -> submitted, which is the

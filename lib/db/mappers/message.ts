@@ -32,6 +32,7 @@ export function mapDbMessageToApp(row: MessageRow, attachments?: AttachmentRow[]
     recipientName: row.recipientName ?? undefined,
     kind: row.kind,
     payload: row.payload ?? undefined,
+    subject: row.subject ?? undefined,
     body: row.body,
     attachments: attachments?.map(mapDbAttachmentToApp),
     createdAt: row.createdAt.toISOString(),

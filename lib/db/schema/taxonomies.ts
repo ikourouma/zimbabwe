@@ -73,6 +73,15 @@ export const ministries = pgTable("ministries", {
   // ahead of sector-level defaults when both are present (ministry terms take precedence as the
   // more specific source).
   defaultMouTerms: jsonb("default_mou_terms"),
+  // Team Ministry Traceability Batch, Phase 2 (item 6) — the default ZIDA Case Manager
+  // (admin/super_admin) responsible for this ministry's projects. Soft link to neon_auth.user.id
+  // (same non-hard-FK convention as profiles.userId elsewhere) — never null-constrained since not
+  // every ministry has a desk officer assigned yet. Individual projects can override this via
+  // projects.assignedStaffUserId; see resolveProjectCaseManager in lib/entitlements/ministry-scope.ts.
+  // Deliberately editable by `admin` too (not gated behind the super_admin-only Taxonomies CRUD
+  // this table otherwise lives under) — see the dedicated PATCH /api/ministries/[id]/case-manager
+  // route, which is the one entitlement-parity carve-out from that boundary.
+  assignedStaffUserId: text("assigned_staff_user_id"),
   status: entityStatusEnum("status").notNull().default("pending_validation"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

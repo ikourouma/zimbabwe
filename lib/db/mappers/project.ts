@@ -11,6 +11,7 @@ export interface ProjectRelations {
   secondaryBeneficiaryMinistryIds: string[];
   regulatorIds: string[];
   documents: DocumentRow[];
+  teamAssignedUserIds: string[];
 }
 
 function toIso(value: Date | null | undefined): string | undefined {
@@ -33,6 +34,8 @@ export function mapDbProjectToApp(row: ProjectRow, relations: ProjectRelations):
       : undefined,
     implementingAgencyId: row.implementingAgencyId ?? undefined,
     regulatorIds: relations.regulatorIds.length ? relations.regulatorIds : undefined,
+    assignedStaffUserId: row.assignedStaffUserId ?? undefined,
+    assignedReviewingOfficerUserId: row.assignedReviewingOfficerUserId ?? undefined,
     projectOwner: row.projectOwner,
     location: row.location,
     province: row.province ?? undefined,
@@ -47,6 +50,14 @@ export function mapDbProjectToApp(row: ProjectRow, relations: ProjectRelations):
     roi: row.roi ?? undefined,
     paybackPeriod: row.paybackPeriod ?? undefined,
     projectedRevenue: row.projectedRevenue ?? undefined,
+    investmentSource: row.investmentSource ?? undefined,
+    capitalStructure: row.capitalStructure ?? undefined,
+    shareholderContribution: row.shareholderContribution ?? undefined,
+    sectorExperienceYears: row.sectorExperienceYears ?? undefined,
+    priorProjectsCompleted: row.priorProjectsCompleted ?? undefined,
+    annualTurnover: row.annualTurnover ?? undefined,
+    financingConfirmation: row.financingConfirmation ?? undefined,
+    financingPartners: row.financingPartners ?? undefined,
     opportunitySummary: row.opportunitySummary,
     description: row.description,
     scope: row.scope,
@@ -65,6 +76,8 @@ export function mapDbProjectToApp(row: ProjectRow, relations: ProjectRelations):
     dataVerificationStatus: row.dataVerificationStatus,
     reviewerNotes: row.reviewerNotes ?? undefined,
     createdBy: row.createdBy,
+    investorSubmitted: row.investorSubmitted,
+    teamAssignedUserIds: relations.teamAssignedUserIds.length ? relations.teamAssignedUserIds : undefined,
     submittedBy: row.submittedBy ?? undefined,
     reviewedBy: row.reviewedBy ?? undefined,
     approvedBy: row.approvedBy ?? undefined,
@@ -92,6 +105,8 @@ export function mapAppProjectToDbRow(project: Partial<InvestmentProject>) {
     pipelineType: project.pipelineType ?? "zida_catalogue",
     primaryBeneficiaryMinistryId: project.primaryBeneficiaryMinistryId,
     implementingAgencyId: project.implementingAgencyId ?? null,
+    assignedStaffUserId: project.assignedStaffUserId ?? null,
+    assignedReviewingOfficerUserId: project.assignedReviewingOfficerUserId ?? null,
     projectOwner: project.projectOwner,
     location: project.location,
     province: project.province ?? null,
@@ -106,6 +121,14 @@ export function mapAppProjectToDbRow(project: Partial<InvestmentProject>) {
     roi: project.roi ?? null,
     paybackPeriod: project.paybackPeriod ?? null,
     projectedRevenue: project.projectedRevenue ?? null,
+    investmentSource: project.investmentSource ?? null,
+    capitalStructure: project.capitalStructure ?? null,
+    shareholderContribution: project.shareholderContribution ?? null,
+    sectorExperienceYears: project.sectorExperienceYears ?? null,
+    priorProjectsCompleted: project.priorProjectsCompleted ?? null,
+    annualTurnover: project.annualTurnover ?? null,
+    financingConfirmation: project.financingConfirmation ?? null,
+    financingPartners: project.financingPartners ?? null,
     opportunitySummary: project.opportunitySummary,
     description: project.description,
     scope: project.scope,
@@ -116,6 +139,7 @@ export function mapAppProjectToDbRow(project: Partial<InvestmentProject>) {
     dataVerificationStatus: project.dataVerificationStatus,
     reviewerNotes: project.reviewerNotes ?? null,
     createdBy: project.createdBy,
+    investorSubmitted: project.investorSubmitted ?? false,
     submittedBy: project.submittedBy ?? null,
     reviewedBy: project.reviewedBy ?? null,
     approvedBy: project.approvedBy ?? null,

@@ -41,6 +41,11 @@ export const projectMessages = pgTable("project_messages", {
   // proposal with Approve/Counter/Decline state) rendered as a card instead of plain text.
   kind: text("kind").$type<MessageKind>().notNull().default("message"),
   payload: jsonb("payload").$type<MessageActionPayload>(),
+  // Nullable subject line (Platform Feedback Batch v4, Phase 2) — a free-text line from
+  // MessageThread's composer, or a curated dropdown value from the Communication Hub's
+  // new-thread composer (see NewMessageModal). Purely a display/organizational aid; every
+  // access/visibility rule stays keyed off `visibility`/`scope` as before.
+  subject: text("subject"),
   body: text("body").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

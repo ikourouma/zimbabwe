@@ -35,6 +35,7 @@ export async function seedTaxonomies() {
           slug: s.slug,
           description: s.description,
           status: s.status,
+          defaultMouTerms: s.defaultMouTerms ?? null,
         }))
       )
       .onConflictDoUpdate({
@@ -45,6 +46,11 @@ export async function seedTaxonomies() {
           slug: sql`excluded.slug`,
           description: sql`excluded.description`,
           status: sql`excluded.status`,
+          // Deliberately NOT unconditionally overwritten — a Super Admin may have already
+          // hand-edited a sector's default MOU terms live via /super-admin/taxonomies, and a
+          // reseed (e.g. after adding a new sector) shouldn't clobber that. Only backfills when
+          // the column is still empty.
+          defaultMouTerms: sql`COALESCE(${sectors.defaultMouTerms}, excluded.default_mou_terms)`,
           updatedAt: sql`now()`,
         },
       });

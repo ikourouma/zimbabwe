@@ -6,13 +6,14 @@ import {
   projectRegulators,
   projectSdgs,
   projectSecondaryMinistries,
+  projectTeamAssignments,
   projects,
 } from "@/lib/db/schema";
 import { mapDbProjectToApp, type ProjectRelations } from "@/lib/db/mappers/project";
 import type { InvestmentProject } from "@/lib/types";
 
 async function loadRelations(projectId: string): Promise<ProjectRelations> {
-  const [pillars, sdgs, secondary, regulators, documents] = await Promise.all([
+  const [pillars, sdgs, secondary, regulators, documents, team] = await Promise.all([
     db.select({ pillarId: projectPillars.pillarId }).from(projectPillars).where(eq(projectPillars.projectId, projectId)),
     db.select({ sdgId: projectSdgs.sdgId }).from(projectSdgs).where(eq(projectSdgs.projectId, projectId)),
     db
@@ -24,6 +25,7 @@ async function loadRelations(projectId: string): Promise<ProjectRelations> {
       .from(projectRegulators)
       .where(eq(projectRegulators.projectId, projectId)),
     db.select().from(projectDocuments).where(eq(projectDocuments.projectId, projectId)),
+    db.select({ userId: projectTeamAssignments.userId }).from(projectTeamAssignments).where(eq(projectTeamAssignments.projectId, projectId)),
   ]);
 
   return {
@@ -32,6 +34,7 @@ async function loadRelations(projectId: string): Promise<ProjectRelations> {
     secondaryBeneficiaryMinistryIds: secondary.map((m) => m.ministryId),
     regulatorIds: regulators.map((r) => r.agencyId),
     documents,
+    teamAssignedUserIds: team.map((t) => t.userId),
   };
 }
 

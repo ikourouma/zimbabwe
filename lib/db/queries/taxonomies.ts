@@ -1,8 +1,9 @@
-import { asc } from "drizzle-orm";
+import { and, asc, count, eq, isNull } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import {
   contactReasons,
   ministries,
+  projects,
   provinces,
   sdgs,
   sectors,
@@ -10,6 +11,7 @@ import {
   subsectors,
 } from "@/lib/db/schema";
 import { sdgs as seedSdgs } from "@/lib/data/taxonomies";
+import { slugify } from "@/lib/utils";
 import type { ContactReason, Ministry, MouTemplateDefaults, SDG, Sector, StrategicPillar } from "@/lib/types";
 
 export interface TaxonomyBundle {
@@ -79,6 +81,7 @@ export async function fetchTaxonomies(): Promise<TaxonomyBundle> {
       type: m.type,
       representativeTitle: m.representativeTitle ?? undefined,
       defaultMouTerms: (m.defaultMouTerms as MouTemplateDefaults | null) ?? undefined,
+      assignedStaffUserId: m.assignedStaffUserId ?? undefined,
       status: m.status,
     })),
     contactReasons: contactReasonRows.map((c) => ({
@@ -99,4 +102,50 @@ export async function fetchTaxonomies(): Promise<TaxonomyBundle> {
           }))
         : seedSdgs,
   };
+}
+
+/**
+ * Sets (or clears, via `null`) a ministry's default ZIDA Case Manager (Team Ministry
+ * Traceability Batch, Phase 2, item 6). Deliberately its own tiny query function rather than
+ * routed through the generic taxonomy PATCH — see PATCH /api/ministries/[id]/case-manager for
+ * the entitlement-parity rationale (admin + super_admin, not super_admin-only like the rest of
+ * Ministries taxonomy CRUD).
+ */
+export async function setMinistryCaseManager(ministryId: string, staffUserId: string | null): Promise<void> {
+  await db.update(ministries).set({ assignedStaffUserId: staffUserId, updatedAt: new Date() }).where(eq(ministries.id, ministryId));
+}
+
+/** How many projects currently fall back to a ministry's default Case Manager (i.e. have no
+ *  per-project override) — surfaced by the Phase 8 safe-handoff confirmation when changing that
+ *  default, so staff can see the blast radius before carrying it over. */
+export async function countProjectsInheritingMinistryDefault(ministryId: string): Promise<number> {
+  const [row] = await db
+    .select({ value: count() })
+    .from(projects)
+    .where(and(eq(projects.primaryBeneficiaryMinistryId, ministryId), isNull(projects.assignedStaffUserId)));
+  return row?.value ?? 0;
+}
+
+/**
+ * Resolves a proposer's free-text "Other (not listed)" subsector into a real `subsectorId` —
+ * creating a `pending_validation` row under the chosen sector if no matching name exists yet
+ * (Deal Room Feedback Batch v2, item 7). The proposal is never blocked waiting on approval; a
+ * super_admin later approves (-> `active`, selectable platform-wide) or archives it from the
+ * Taxonomies "Subsectors" tab (see app/api/taxonomies/route.ts's addSubsector/approveSubsector/
+ * archiveSubsector actions). Idempotent for repeat submissions of the same name+sector.
+ */
+export async function resolveOrCreatePendingSubsector(sectorId: string, rawName: string): Promise<string> {
+  const name = rawName.trim();
+  const slug = slugify(name);
+  const id = `sub-${sectorId}-${slug}`;
+
+  const [existing] = await db.select({ id: subsectors.id }).from(subsectors).where(eq(subsectors.id, id)).limit(1);
+  if (existing) return existing.id;
+
+  await db
+    .insert(subsectors)
+    .values({ id, sectorId, name, slug, status: "pending_validation" })
+    .onConflictDoNothing();
+
+  return id;
 }

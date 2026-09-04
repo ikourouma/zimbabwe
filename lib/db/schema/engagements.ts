@@ -46,6 +46,19 @@ export const investorEngagements = pgTable("investor_engagements", {
   // Compliance Dossier round) — admin/super_admin only, audited, surfaced in both the Engagement
   // Detail drawer and the Users & Roles dossier's Portfolio tab. Null until staff first set it.
   followThroughStatus: followThroughStatusEnum("follow_through_status"),
+  // Delegate model (Team Ministry Traceability Batch, Phase 5, item 5) — a validated Team Member
+  // the org admin (or ministry_admin, or ZIDA staff on their behalf) grants equal authority on this
+  // one engagement. Never exclusive: the org admin (`userId`) always retains full authority too,
+  // whether or not a delegate is assigned — see resolveEngagementActor's ownership gate.
+  assignedUserId: text("assigned_user_id"),
+  assignedBy: text("assigned_by"),
+  assignedAt: timestamp("assigned_at", { withTimezone: true }),
+  // Primary-contact clarity (Phase 8, item 2) — advisory only, never an access gate: under the
+  // Delegate model above, the owner and Delegate have equal authority, so ZIDA needs a
+  // non-blocking signal for "who's actually driving replies right now" to avoid inconsistent
+  // responses from either side. Nullable so a pre-existing engagement with no primaryContactUserId
+  // set yet falls back to `userId` (the owner) at the application layer — see mapDbEngagementToApp.
+  primaryContactUserId: text("primary_contact_user_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

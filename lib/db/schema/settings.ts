@@ -1,4 +1,6 @@
-import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import type { PublicNavVisibility } from "@/lib/governance/public-nav";
+import type { FieldVisibilityMatrix } from "@/lib/entitlements/matrix";
 
 // Singleton row (id is always "singleton") — replaces context/site-settings-context.tsx's
 // localStorage-backed settings. Also holds the super-admin-managed flash banner (see
@@ -14,6 +16,11 @@ export const siteSettings = pgTable("site_settings", {
   // slot shown at a time, auto-advancing through all active banners) — lets Super Admin choose how
   // multiple simultaneous announcements are displayed sitewide.
   bannerDisplayMode: text("banner_display_mode").notNull().default("stack"),
+  /** Per-href visibility for the public marketing header (Platform Feedback Batch v4, Phase 9).
+   *  Missing keys default to visible. Hidden links disappear from SiteHeader; the page itself
+   *  stays reachable by direct URL. */
+  publicNavVisibility: jsonb("public_nav_visibility").$type<PublicNavVisibility>(),
+  fieldVisibility: jsonb("field_visibility").$type<FieldVisibilityMatrix>(),
   updatedBy: text("updated_by"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

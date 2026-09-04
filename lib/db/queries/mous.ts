@@ -38,9 +38,13 @@ async function buildSeedContent(ctx: MouSeedContext): Promise<MouContent> {
   return {
     parties: `ZIDA (on behalf of the Government of Zimbabwe) and ${ctx.investorName}`,
     projectReference: project.title,
-    ...(ctx.ticketSize ? { indicativeCapital: ctx.ticketSize } : {}),
-    ...(termBullets.length ? { termBullets } : {}),
-    ...(specialConditions ? { specialConditions } : {}),
+    purpose: `Non-binding framework to explore ${ctx.ticketSize ? `an indicative investment of ${ctx.ticketSize} in` : "an investment in"} "${project.title}", and to align both parties on the scope of collaboration ahead of a binding agreement.`,
+    scope: "Parties agree to collaborate in good faith on due diligence, site/regulatory facilitation, and structuring for the project referenced above, within the timelines set out in the term bullets below.",
+    indicativeCapital: ctx.ticketSize ?? undefined,
+    termBullets: termBullets.length ? termBullets : undefined,
+    nonBindingStatement: "This Memorandum of Understanding is non-binding and does not create any legal obligation on either party to proceed with the proposed investment, except for the confidentiality and governing law provisions, which survive termination of discussions.",
+    governingLaw: "This Memorandum is governed by, and construed in accordance with, the laws of the Republic of Zimbabwe. Any dispute arising from it shall first be referred to good-faith negotiation between the parties.",
+    specialConditions: specialConditions || undefined,
   };
 }
 

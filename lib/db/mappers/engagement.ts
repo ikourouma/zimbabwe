@@ -23,6 +23,10 @@ export function mapDbEngagementToApp(row: EngagementRow): InvestorEngagement {
     deleteRequestReason: row.deleteRequestReason ?? undefined,
     deleteRequestStatus: (row.deleteRequestStatus as InvestorEngagement["deleteRequestStatus"]) ?? undefined,
     followThroughStatus: row.followThroughStatus ?? undefined,
+    assignedUserId: row.assignedUserId ?? undefined,
+    assignedBy: row.assignedBy ?? undefined,
+    assignedAt: row.assignedAt?.toISOString() ?? undefined,
+    primaryContactUserId: row.primaryContactUserId ?? undefined,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

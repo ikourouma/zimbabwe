@@ -1,7 +1,7 @@
-import { pgTable, text, timestamp, jsonb, serial } from "drizzle-orm/pg-core";
+import { boolean, pgTable, text, timestamp, jsonb, serial } from "drizzle-orm/pg-core";
 import { accountRoleEnum, accountStatusEnum } from "./enums";
 import { ministries } from "./taxonomies";
-import type { NotificationPreferences } from "@/lib/types";
+import type { NotificationPreferences, CreatedByContext } from "@/lib/types";
 
 /**
  * 1:1 with a Neon Managed Better Auth user (`neon_auth.user`), linked by `userId`. Not a hard
@@ -47,6 +47,26 @@ export const profiles = pgTable("profiles", {
   hqAddress: text("hq_address"),
   businessRegistrationId: text("business_registration_id"),
   websiteUrl: text("website_url"),
+  // The authorized company representative on file (Deal Room Feedback Batch v2, item 6) —
+  // `organization` above already doubles as the company/sponsor name; these two cover the named
+  // signatory so "Propose a Project" can prepopulate Project Owner + Authorized Representative
+  // read-only from the investor's own profile instead of asking for them on every proposal.
+  executiveRepresentativeName: text("executive_representative_name"),
+  executiveRepresentativeTitle: text("executive_representative_title"),
+  // R2 object key for a self-uploaded business registration certificate (My Profile document
+  // vault) — same private-object pattern as avatarKey, served via a signed URL rather than a
+  // public path since this is a real compliance artifact, not a low-sensitivity avatar image.
+  businessRegistrationDocKey: text("business_registration_doc_key"),
+  mfaEnabled: boolean("mfa_enabled").notNull().default(false),
+  mfaSecret: text("mfa_secret"),
+  // Chain-of-custody (Team Ministry Traceability Batch, Phase 7, item 9) — a soft link (no FK: the
+  // creating actor may later be deleted/deactivated, and this must remain a durable historical
+  // record) to whoever created or invited this account, plus an immutable point-in-time snapshot of
+  // that actor so the audit trail reads correctly even if the actor's own org/ministry/role changes
+  // later. Populated once at creation and never rewritten. Null for self-service signups (nothing to
+  // attribute) and for every profile that predates this column.
+  createdByUserId: text("created_by_user_id"),
+  createdByContext: jsonb("created_by_context").$type<CreatedByContext>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
