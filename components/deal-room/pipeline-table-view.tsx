@@ -60,10 +60,10 @@ export function PipelineTableView({ projects, onCardClick }: PipelineTableViewPr
     <DataTable
       columns={columns}
       data={projects}
-      searchPlaceholder="Search projects…"
       emptyMessage="No projects match the current filters."
       onRowClick={onCardClick}
       getRowId={(row) => row.id}
+      hideSearch
     />
   );
 }

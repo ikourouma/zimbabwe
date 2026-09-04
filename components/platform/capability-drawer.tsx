@@ -102,7 +102,7 @@ function PersonaGatedConsoleLink({
       <Link href="/auth/sign-in" className="underline" style={{ color: "var(--color-gold)" }}>
         Sign in
       </Link>{" "}
-      with an {requiredPersona === "admin" ? "admin" : "super admin"} pilot account to open this console.
+      with an {requiredPersona === "admin" ? "admin" : "super admin"} account to open this console.
     </p>
   );
 }

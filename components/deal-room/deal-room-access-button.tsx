@@ -10,17 +10,19 @@ interface DealRoomAccessButtonProps {
 }
 
 /**
- * Entry point from the public project page into the Deal Room, for viewers who actually have
- * access to it — qualified investors (approved) plus ZIDA staff (admin/super_admin). Uses real
- * `useAuth()` (not the demo-persona toggle) so it reflects true entitlement, and deep-links into
- * the pipeline pre-focused on this project (see /deal-room/pipeline?projectId=). Renders nothing
- * for anyone without Deal Room access.
+ * Entry point from the public project page into the Deal Room — any authenticated role now lands
+ * in the tiered Investor Dashboard (see the Investor Dashboard Expansion plan), so a plain
+ * `registered` viewer gets this CTA too, not just qualified/staff (feedback item 1: registered
+ * users had no visible way "in" from here even though the base route was never actually gated).
+ * Uses real `useAuth()` (not the demo-persona toggle) so it reflects true entitlement, and
+ * deep-links into the pipeline pre-focused on this project (see /deal-room/pipeline?projectId=).
+ * Renders nothing for anonymous visitors.
  */
 export function DealRoomAccessButton({ projectId }: DealRoomAccessButtonProps) {
-  const { isQualified, isAdmin, isSuperAdmin, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const t = useTranslations();
 
-  if (!isAuthenticated || !(isQualified || isAdmin || isSuperAdmin)) return null;
+  if (!isAuthenticated) return null;
 
   return (
     <div

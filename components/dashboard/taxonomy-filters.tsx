@@ -16,6 +16,7 @@ import {
   Layers,
   ShieldCheck,
   SlidersHorizontal,
+  Tags,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -35,6 +36,7 @@ import { cn } from "@/lib/utils";
 
 const CATEGORY_ICONS: Record<TaxonomyCategory, LucideIcon> = {
   sectors: Layers,
+  subsectors: Tags,
   ministries: Building2,
   provinces: MapPin,
   pillars: Landmark,
@@ -61,6 +63,10 @@ function Pill({ active, onClick, children }: { active: boolean; onClick: () => v
 
 interface TaxonomyFiltersBarProps {
   counts: Record<TaxonomyCategory, number>;
+  /** Per-category count of rows awaiting super_admin review (currently only non-zero for
+   *  "subsectors" — investor "Other (not listed)" suggestions land as pending_validation).
+   *  Surfaced as an amber badge on the category pill so it's noticeable without opening the tab. */
+  pendingCounts?: Partial<Record<TaxonomyCategory, number>>;
   activeCategory: TaxonomyCategory;
   onSelectCategory: (category: TaxonomyCategory) => void;
   filters: TaxonomyFilters;
@@ -74,6 +80,7 @@ interface TaxonomyFiltersBarProps {
 
 export function TaxonomyFiltersBar({
   counts,
+  pendingCounts,
   activeCategory,
   onSelectCategory,
   filters,
@@ -192,10 +199,20 @@ export function TaxonomyFiltersBar({
         {TAXONOMY_CATEGORY_ORDER.map((key) => {
           const Icon = CATEGORY_ICONS[key];
           const active = activeCategory === key;
+          const pending = pendingCounts?.[key] ?? 0;
           return (
             <Pill key={key} active={active} onClick={() => onSelectCategory(key)}>
               <Icon className="h-3.5 w-3.5" style={active ? { color: "var(--color-gold)" } : undefined} />
               {TAXONOMY_CATEGORY_LABELS[key]} ({counts[key]})
+              {pending > 0 && (
+                <span
+                  className="ml-0.5 inline-flex items-center rounded-full px-1.5 text-[10px] font-semibold"
+                  style={{ backgroundColor: "rgba(251,191,36,0.18)", color: "#fbbf24" }}
+                  title={`${pending} awaiting super_admin review`}
+                >
+                  {pending} pending
+                </span>
+              )}
             </Pill>
           );
         })}

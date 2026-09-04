@@ -14,21 +14,21 @@ export function DealRoomAccessGate({ isAuthenticated }: DealRoomAccessGateProps)
         className="inline-block mb-4 text-xs font-semibold px-2.5 py-1 rounded-full"
         style={{ backgroundColor: "rgba(255,211,0,0.15)", color: "#fde047" }}
       >
-        Pilot — sign in with a qualified account
+        Sign in required
       </span>
-      <h1 className="text-2xl font-semibold text-white mb-2">Deal Room</h1>
+      <h1 className="text-2xl font-semibold text-white mb-2">Investor Dashboard</h1>
       <p className="text-sm mb-6" style={{ color: "var(--color-text-secondary)" }}>
-        The Deal Room is reserved for qualified investors, government/ministry users, and platform admins working an
-        active deal.
+        Sign in to open the Investor Dashboard. Registered investors can browse the pipeline and saved projects;
+        qualification unlocks proposals, engagements, and the Communication Hub.
       </p>
       <RegistrationPrompt
-        message="Register your interest to be considered for Deal Room access once your qualification is confirmed."
-        ctaLabel="Register to request access"
+        message="Create an account to start browsing the governed pipeline. Qualification is a separate ZIDA review step."
+        ctaLabel="Register"
         dark
       />
       {!isAuthenticated && (
         <p className="text-xs mt-6" style={{ color: "var(--color-text-muted)" }}>
-          Already have pilot access?{" "}
+          Already have an account?{" "}
           <Link href="/auth/sign-in" className="underline">
             Sign in
           </Link>

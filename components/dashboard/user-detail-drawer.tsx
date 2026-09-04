@@ -8,10 +8,13 @@ import {
   Eye,
   FileSignature,
   Handshake,
+  History,
   KeyRound,
   ListChecks,
   Lock,
   MailWarning,
+  MessageCircle,
+  Pencil,
   Radar,
   ShieldCheck,
   UserX,
@@ -30,10 +33,12 @@ import { formatAccountRef } from "@/lib/utils/account-ref";
 import { MOU_STATUS_LABELS } from "@/lib/governance/mou-workflow";
 import { parseCapitalTotalMillions, formatMillions } from "@/lib/utils/capital";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { ElevatedTabsList, ElevatedTabsTrigger } from "@/components/ui/elevated-tabs";
 import { Button } from "@/components/ui/button";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { EngagementStatusPill } from "@/components/deal-room/engagement-status-pill";
+import { MessageThread } from "@/components/deal-room/message-thread";
 import { ROLE_LABELS } from "@/components/dashboard/role-change-modal";
 
 const STATUS_LABELS: Record<AdminUserRecord["accountStatus"], string> = {
@@ -69,6 +74,10 @@ interface UserDetailDrawerProps {
   /** Ministry rebind (Institutional Compliance Dossier round) — previously only settable at
    *  account creation. `null` unassigns it. */
   onUpdateMinistry: (userId: string, ministryId: string | null) => Promise<void>;
+  /** Opens the shared Edit Details modal (Platform Feedback Batch v4, Phase 4) — owned by the
+   *  parent workspace, same as the row action's "Edit details" menu item, so there's only ever one
+   *  edit flow/one source of truth for the underlying save. */
+  onEdit: (user: AdminUserRecord) => void;
 }
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -119,13 +128,27 @@ export function UserDetailDrawer({
   onRequestRoleChange,
   onRequestStatusChange,
   onUpdateMinistry,
+  onEdit,
 }: UserDetailDrawerProps) {
   const [audit, setAudit] = useState<AuditLogEntry[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
   const { ministries } = useTaxonomyStore();
 
   const userId = user?.userId ?? null;
-  const { dossier, isLoading: dossierLoading } = useUserDossier(userId);
+  const { dossier, isLoading: dossierLoading, refresh: refreshDossier } = useUserDossier(userId);
+
+  // Cross-component refresh: the Edit Details modal is owned by the parent workspace (so there's
+  // one save flow whether it's opened from here or from the table row action) — once it saves, this
+  // picks up the change if this same account's drawer is still open. Mirrors the
+  // zim:engagement-updated pattern already used by the Engagement Detail Drawer.
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ userId?: string }>).detail;
+      if (detail?.userId && detail.userId === userId) refreshDossier();
+    };
+    window.addEventListener("zim:user-details-updated", handler);
+    return () => window.removeEventListener("zim:user-details-updated", handler);
+  }, [userId, refreshDossier]);
 
   const loadAudit = useCallback(async (id: string) => {
     setAuditLoading(true);
@@ -165,28 +188,38 @@ export function UserDetailDrawer({
                   {formatAccountRef(dossier?.accountSeq ?? user.accountSeq)}
                 </span>
               </div>
-              <SheetTitle>{user.name}</SheetTitle>
-              <SheetDescription>{user.email}</SheetDescription>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <SheetTitle>{user.name}</SheetTitle>
+                  <SheetDescription>{user.email}</SheetDescription>
+                </div>
+                <Button variant="outline" size="sm" className="shrink-0" onClick={() => onEdit(user)}>
+                  <Pencil className="h-3.5 w-3.5" /> Edit
+                </Button>
+              </div>
             </SheetHeader>
 
             <Tabs defaultValue="institutional">
-              {/* 4 tabs with longer labels overflow the drawer's fixed-height inline-flex TabsList
-                  (clipping the last tab, as flagged) — scroll horizontally instead of wrapping, so
-                  the tab row stays a single touch-friendly strip on narrow/mobile viewports. */}
-              <TabsList className="bg-white/5 flex overflow-x-auto scrollbar-hide">
-                <TabsTrigger value="institutional" className="shrink-0">
+              {/* 5 tabs with longer labels overflow the drawer's fixed-width row (clipping the last
+                  tab, as flagged) — scroll horizontally instead of wrapping, so the tab row stays a
+                  single touch-friendly strip on narrow/mobile viewports. */}
+              <ElevatedTabsList className="scrollbar-hide">
+                <ElevatedTabsTrigger value="institutional" icon={UserSquare}>
                   Institutional Profile
-                </TabsTrigger>
-                <TabsTrigger value="compliance" className="shrink-0">
+                </ElevatedTabsTrigger>
+                <ElevatedTabsTrigger value="compliance" icon={ShieldCheck}>
                   Compliance &amp; NDA
-                </TabsTrigger>
-                <TabsTrigger value="portfolio" className="shrink-0">
+                </ElevatedTabsTrigger>
+                <ElevatedTabsTrigger value="portfolio" icon={Wallet}>
                   Portfolio &amp; Activity
-                </TabsTrigger>
-                <TabsTrigger value="security" className="shrink-0">
+                </ElevatedTabsTrigger>
+                <ElevatedTabsTrigger value="interactions" icon={MessageCircle}>
+                  Interactions
+                </ElevatedTabsTrigger>
+                <ElevatedTabsTrigger value="security" icon={Lock}>
                   Security &amp; Governance
-                </TabsTrigger>
-              </TabsList>
+                </ElevatedTabsTrigger>
+              </ElevatedTabsList>
 
               <TabsContent value="institutional" className="mt-4">
                 <InstitutionalTab
@@ -205,6 +238,10 @@ export function UserDetailDrawer({
 
               <TabsContent value="portfolio" className="mt-4">
                 <PortfolioTab dossier={dossier} isLoading={dossierLoading} audit={audit} auditLoading={auditLoading} />
+              </TabsContent>
+
+              <TabsContent value="interactions" className="mt-4">
+                <InteractionsTab user={user} isSelf={isSelf} />
               </TabsContent>
 
               <TabsContent value="security" className="mt-4">
@@ -294,7 +331,16 @@ function InstitutionalTab({
         <InfoRow label="Phone" value={user.phone ?? "—"} />
       </div>
 
-      {user.role === "government" && (
+      <div className="dashboard-panel p-3">
+        <p className="text-[11px] uppercase tracking-wide mb-1 flex items-center gap-1.5" style={{ color: "var(--color-text-muted)" }}>
+          <History className="h-3 w-3" /> Chain of custody
+        </p>
+        <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+          {formatChainOfCustody(dossier)}
+        </p>
+      </div>
+
+      {(user.role === "government" || user.role === "ministry_admin") && (
         <div className="dashboard-panel p-3 space-y-2">
           <p className="text-[11px] uppercase tracking-wide" style={{ color: "var(--color-text-muted)" }}>
             Ministry binding
@@ -345,6 +391,27 @@ function InstitutionalTab({
       </div>
     </div>
   );
+}
+
+/**
+ * "Chain of custody" line (Team Ministry Traceability Batch, Phase 7) — renders the immutable
+ * `createdByContext` snapshot captured once at account-creation time. Three cases: direct-created
+ * by staff, invited by an org/ministry owner (self-service signups later validated separately),
+ * and pre-this-column/self-service accounts with nothing to attribute.
+ */
+function formatChainOfCustody(dossier: UserDossier | null): string {
+  if (!dossier) return "Loading…";
+  const ctx = dossier.createdByContext;
+  if (!ctx) return "No creator on record — likely a self-service signup, or an account created before chain-of-custody tracking began.";
+
+  const roleLabel = ROLE_LABELS[ctx.actorRole] ?? ctx.actorRole;
+  const isStaffCreator = ctx.actorRole === "admin" || ctx.actorRole === "super_admin";
+  const orgOrMinistry = ctx.ministryName ?? ctx.organization;
+
+  if (isStaffCreator) {
+    return `Created directly by ${ctx.actorName} (${roleLabel}).`;
+  }
+  return `Invited by ${ctx.actorName} (${roleLabel}${orgOrMinistry ? ` · ${orgOrMinistry}` : ""}).`;
 }
 
 /* -------------------------------------------------------------- Compliance & NDA ---- */
@@ -435,21 +502,7 @@ function ComplianceTab({
         </div>
       )}
 
-      <div className="space-y-2">
-        <p className="text-[11px] uppercase tracking-wide" style={{ color: "var(--color-text-muted)" }}>
-          Accreditation documents
-        </p>
-        <DeferredAction
-          icon={FileSignature}
-          label="Commitment Letter"
-          note="Upload + ZIDA review queue coming soon."
-        />
-        <DeferredAction
-          icon={FileSignature}
-          label="Investment Guarantee Letter"
-          note="Upload + ZIDA review queue coming soon."
-        />
-      </div>
+      <AccreditationReview userId={user.userId} />
     </div>
   );
 }
@@ -576,6 +629,46 @@ function PortfolioTab({
   );
 }
 
+/* ------------------------------------------------------------------- Interactions ---- */
+
+/**
+ * Direct comms with this account (Deal Room Feedback Batch v2, item 17) — reuses the same General
+ * Concierge channel and MessageThread UI as the investor-facing Deal Room, just opened from the
+ * staff side with `ownerUserId` pinned to this profile. No separate messaging system: a note left
+ * here shows up for the investor in their own Concierge tab, and vice versa.
+ */
+function InteractionsTab({ user, isSelf }: { user: AdminUserRecord; isSelf: boolean }) {
+  if (isSelf) {
+    return (
+      <div className="dashboard-panel p-6 text-center">
+        <MessageCircle className="h-5 w-5 mx-auto mb-2" style={{ color: "var(--color-text-muted)" }} />
+        <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+          This is your own account — open the Communication Hub to message other users.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="dashboard-panel p-3">
+        <div className="flex items-center gap-2 text-sm text-white mb-1">
+          <MessageCircle className="h-4 w-4" style={{ color: "var(--color-gold)" }} /> General Concierge thread
+        </div>
+        <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+          Direct, project-less notes with {user.name}. Visible to them under their own Concierge
+          channel unless marked Internal.
+        </p>
+      </div>
+      <MessageThread
+        concierge={{ ownerUserId: user.userId }}
+        isStaff
+        emptyMessage={`No messages with ${user.name} yet. Start the conversation below.`}
+      />
+    </div>
+  );
+}
+
 /* ---------------------------------------------------------- Security & Governance ---- */
 
 function SecurityTab({
@@ -630,11 +723,7 @@ function SecurityTab({
           label="Console Policy Enforced"
           note="Available once platform MFA is enabled in the Neon Console."
         />
-        <DeferredAction
-          icon={Radar}
-          label="Active Device & IP Telemetry"
-          note="Neon Auth's admin session API exists but isn't wired in yet — tracked in BACKLOG.md."
-        />
+        <UserSessionTelemetry userId={user.userId} />
         {!isSelf && user.accountStatus !== "deactivated" && (
           <div className="pt-2 border-t border-white/10">
             <Button size="sm" variant="destructive" onClick={() => onRequestStatusChange(user, "deactivate")}>
@@ -643,6 +732,105 @@ function SecurityTab({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function AccreditationReview({ userId }: { userId: string }) {
+  const [rows, setRows] = useState<{ id: string; kind: string; fileName: string; status: string; createdAt: string }[]>([]);
+  const [notes, setNotes] = useState<Record<string, string>>({});
+
+  const load = useCallback(() => {
+    fetch(`/api/accreditation?userId=${encodeURIComponent(userId)}`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setRows)
+      .catch(() => setRows([]));
+  }, [userId]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const decide = async (id: string, decision: "approved" | "declined") => {
+    const res = await fetch("/api/accreditation", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, decision, notes: notes[id] }),
+    });
+    if (res.ok) load();
+  };
+
+  return (
+    <div className="space-y-2">
+      <p className="text-[11px] uppercase tracking-wide" style={{ color: "var(--color-text-muted)" }}>
+        Accreditation documents
+      </p>
+      {rows.length === 0 ? (
+        <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+          No Commitment Letter or Investment Guarantee Letter uploaded yet.
+        </p>
+      ) : (
+        rows.map((row) => (
+          <div key={row.id} className="rounded-md p-3" style={{ border: "1px solid var(--color-sovereign-border)" }}>
+            <p className="text-sm text-white">
+              {row.kind === "commitment_letter" ? "Commitment Letter" : "Investment Guarantee Letter"} · {row.fileName}
+            </p>
+            <p className="text-xs mb-2" style={{ color: "var(--color-text-muted)" }}>
+              {row.status} · {new Date(row.createdAt).toLocaleString()}
+            </p>
+            <a href={`/api/accreditation/${row.id}/download`} className="text-xs underline" style={{ color: "var(--color-gold)" }}>
+              Open
+            </a>
+            {row.status === "pending" && (
+              <div className="mt-2 space-y-2">
+                <input
+                  className="dashboard-input text-xs"
+                  placeholder="Review note"
+                  value={notes[row.id] ?? ""}
+                  onChange={(e) => setNotes((prev) => ({ ...prev, [row.id]: e.target.value }))}
+                />
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => decide(row.id, "approved")}>Approve</Button>
+                  <Button size="sm" variant="destructive" onClick={() => decide(row.id, "declined")}>Decline</Button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
+function UserSessionTelemetry({ userId }: { userId: string }) {
+  const [rows, setRows] = useState<{ userAgent?: string | null; ipAddress?: string | null; updatedAt?: string | null }[] | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/users/${userId}/sessions`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setRows)
+      .catch(() => setRows([]));
+  }, [userId]);
+
+  return (
+    <div className="rounded-md px-3 py-2" style={{ border: "1px solid var(--color-sovereign-border)" }}>
+      <div className="flex items-center gap-2 text-sm text-white mb-2">
+        <Radar className="h-3.5 w-3.5" /> Active Device & IP Telemetry
+      </div>
+      {rows === null ? (
+        <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>Loading sessions…</p>
+      ) : rows.length === 0 ? (
+        <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>No sessions returned by Neon Auth.</p>
+      ) : (
+        <ul className="space-y-1 text-xs" style={{ color: "var(--color-text-secondary)" }}>
+          {rows.map((s, i) => (
+            <li key={`${s.ipAddress ?? "ip"}-${i}`}>
+              {s.ipAddress || "IP unavailable"} · {s.userAgent?.slice(0, 80) || "Unknown device"}
+              {s.updatedAt ? ` · ${new Date(s.updatedAt).toLocaleString()}` : ""}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

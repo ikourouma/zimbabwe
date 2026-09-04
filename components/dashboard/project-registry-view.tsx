@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Trash2 } from "lucide-react";
@@ -9,21 +10,21 @@ import { useProjectStore } from "@/context/project-store-context";
 import { useTaxonomyStore } from "@/context/taxonomy-store-context";
 import { useAuth } from "@/context/auth-context";
 import { roleToWorkflowRole } from "@/lib/auth/role-map";
+import { resolveProjectWorkflowRole, type WorkflowRoleActor } from "@/lib/auth/project-workflow-role";
 import { filterProjects } from "@/lib/entitlements/visibility";
 import { STATUS_LABELS, isInReviewStatus } from "@/lib/governance/project-workflow";
+import { projectMatchesMinistry, resolveProjectCaseManager } from "@/lib/entitlements/ministry-scope";
 import { paramsToFilters, syncFiltersToUrl } from "@/lib/utils/project-filters-url";
-import { slugify, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { DataTable } from "@/components/dashboard/data-table";
 import { ProjectDetailDrawer } from "@/components/dashboard/project-detail-drawer";
 import { StatusBadge } from "@/components/projects/status-badge";
 import { ProjectFiltersBar } from "@/components/projects/project-filters";
-import { ProjectForm } from "@/components/admin/project-form";
 import { DealRoomKanban } from "@/components/deal-room/deal-room-kanban";
 import { PipelineViewSwitcher, type PipelineView } from "@/components/deal-room/pipeline-view-switcher";
 import { PipelineListView } from "@/components/deal-room/pipeline-list-view";
 import { PipelineMatrixView } from "@/components/deal-room/pipeline-matrix-view";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 /** "all" and the synthetic "in_review" grouping sit alongside the concrete ProjectStatus values.
  *  "in_review" is no longer its own pill (see STATUS_CHIPS below) but stays a valid value purely
@@ -60,27 +61,51 @@ interface ProjectRegistryViewProps {
  * pre-filtered queue and admins can bookmark/share operational views.
  */
 export function ProjectRegistryView({ basePath }: ProjectRegistryViewProps) {
-  const { projects, addProject, updateProject, isLoading } = useProjectStore();
-  const { sectors } = useTaxonomyStore();
-  const { role, isLoading: authLoading } = useAuth();
+  const router = useRouter();
+  const { projects, updateProject, isLoading } = useProjectStore();
+  const { sectors, ministries } = useTaxonomyStore();
+  const { role, userId, ministryId, isLoading: authLoading } = useAuth();
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [editReason, setEditReason] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("all");
+  const [investorOnly, setInvestorOnly] = useState(false);
+  const [assignedToMeOnly, setAssignedToMeOnly] = useState(false);
+  // "My Ministry" (Ministry Desk management dashboard plan, Part 2) — ministry_admin sees their own
+  // ministry's projects by default, with an opt-in toggle to browse the full national pipeline for
+  // context. Defaults true unconditionally (safe for every other role too — this only ever narrows
+  // the list when combined with the ministry_admin-gated predicate below, so it's a no-op for
+  // admin/super_admin regardless of this initial value). Read-only outside their own ministry either
+  // way — resolveProjectWorkflowRole already returns null (no write authority) there.
+  const [myMinistryOnly, setMyMinistryOnly] = useState(true);
   const [filters, setFilters] = useState<ProjectFilters>({});
   const [view, setView] = useState<PipelineView>("table");
   const mountedRef = useRef(false);
   const viewStorageKey = `zimbabwe.registry.${basePath}.view`;
 
-  const workflowRole = role ? roleToWorkflowRole(role) : null;
+  // Coarse, viewer-level role — used for the Kanban board's single canDrag/canTransition gate and
+  // the drawer's "Edit" button availability. `ministry_admin` (Team Ministry Traceability Batch,
+  // Phase 3, item 8; re-tiered to "reviewer" in Platform Feedback Batch v4, Phase 7 — full
+  // stewardship of their own ministry's projects through Approved, but Publish is admin/super_admin
+  // only) resolves here since /ministry/projects' visibility (isVisibleToMinistryAdmin) already
+  // scopes what they see almost entirely to their own ministry — the rare secondary-beneficiary
+  // exception is caught by the precise per-project resolution below (drawer) and by the server's
+  // own resolveProjectWorkflowRole re-check on every PATCH.
+  const workflowRole =
+    role === "ministry_admin" ? (ministryId ? "reviewer" : null) : role ? roleToWorkflowRole(role) : null;
+  const actor: WorkflowRoleActor | null = role && userId ? { role, userId, ministryId } : null;
+  const canCreate = role === "admin" || role === "super_admin" || (role === "ministry_admin" && Boolean(ministryId));
   const selectedProject = projects.find((p) => p.id === selectedId) ?? null;
+  // Precise per-project resolution (drawer Actions tab) — matters when a ministry_admin's own
+  // ministry is only a *secondary* beneficiary on the selected project (view-only, per the plan).
+  const selectedWorkflowRole = selectedProject && actor ? resolveProjectWorkflowRole(actor, selectedProject) : workflowRole;
   const sectorName = useCallback((id: string) => sectors.find((s) => s.id === id)?.name ?? "—", [sectors]);
 
-  // Read the deep-linked ?status= / filter params / ?new= on mount (from KPI cards, the topbar
-  // quick action, a shared link, or the Taxonomies workspace's linked-project counts) and register
-  // the Ctrl/Cmd+N "new project" power-user shortcut. Also restores the persisted view preference
-  // client-side only, to avoid an SSR/client hydration mismatch (same pattern as /deal-room/pipeline).
+  // Read the deep-linked ?status= / filter params on mount (from KPI cards, a shared link, or the
+  // Taxonomies workspace's linked-project counts) and register the Ctrl/Cmd+N "new project"
+  // power-user shortcut — a real navigation to the full-page wizard (Phase 5), same as the topbar's
+  // "Create Project" quick action, rather than a `?new=1` param + Dialog (the old flow's "must
+  // reload to reopen" bug simply doesn't exist for a real route). Also restores the persisted view
+  // preference client-side only, to avoid an SSR/client hydration mismatch (same pattern as
+  // /deal-room/pipeline).
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const status = params.get("status");
@@ -89,25 +114,22 @@ export function ProjectRegistryView({ basePath }: ProjectRegistryViewProps) {
     const restored = paramsToFilters(params);
     if (Object.keys(restored).length > 0) setFilters(restored);
 
-    if (params.get("new") === "1") {
-      setCreateOpen(true);
-      params.delete("new");
-      const qs = params.toString();
-      window.history.replaceState(null, "", `${basePath}${qs ? `?${qs}` : ""}`);
-    }
-
     const savedView = localStorage.getItem(viewStorageKey) as PipelineView | null;
     if (savedView === "kanban" || savedView === "list" || savedView === "table" || savedView === "matrix") {
       setView(savedView);
     }
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "n") {
+      // Project creation is an Admin/Super-Admin capability (see POST /api/projects's role
+      // ceiling) — ministry_admin gets read-only access to this shared registry component (Deal
+      // Room Feedback Batch v2, Phase 6), so the shortcut is a no-op for them rather than
+      // navigating to a wizard whose save would just 403 server-side.
+      if (canCreate && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "n") {
         const target = e.target as HTMLElement | null;
         const typing = target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
         if (typing) return;
         e.preventDefault();
-        setCreateOpen(true);
+        router.push(`${basePath}/new`);
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -149,18 +171,49 @@ export function ProjectRegistryView({ basePath }: ProjectRegistryViewProps) {
     [projects, filters]
   );
 
+  // "My Assigned Projects" (Team Ministry Traceability Batch, Phase 2, item 6) — the signed-in
+  // staff member is the *effective* Case Manager (direct project override, or inherited via their
+  // primary ministry's default desk officer) for these rows. Same ministry map lookup the
+  // ProjectDetailDrawer's CaseManagerSection uses.
+  const ministryById = useMemo(() => new Map(ministries.map((m) => [m.id, m])), [ministries]);
+  const isAssignedToMe = useCallback(
+    (p: InvestmentProject) => {
+      if (!userId) return false;
+      const ministry = ministryById.get(p.primaryBeneficiaryMinistryId);
+      return resolveProjectCaseManager(p, ministry) === userId;
+    },
+    [ministryById, userId]
+  );
+
   const filteredProjects = useMemo(() => {
-    if (statusFilter === "in_review") return taxonomyFilteredProjects.filter((p) => isInReviewStatus(p.projectStatus));
-    if (statusFilter !== "all") return taxonomyFilteredProjects.filter((p) => p.projectStatus === statusFilter);
-    return taxonomyFilteredProjects;
-  }, [taxonomyFilteredProjects, statusFilter]);
+    const byStatus =
+      statusFilter === "in_review"
+        ? taxonomyFilteredProjects.filter((p) => isInReviewStatus(p.projectStatus))
+        : statusFilter !== "all"
+          ? taxonomyFilteredProjects.filter((p) => p.projectStatus === statusFilter)
+          : taxonomyFilteredProjects;
+    const byInvestor = investorOnly ? byStatus.filter((p) => p.investorSubmitted) : byStatus;
+    const byAssigned = assignedToMeOnly ? byInvestor.filter(isAssignedToMe) : byInvestor;
+    return role === "ministry_admin" && myMinistryOnly && ministryId
+      ? byAssigned.filter((p) => projectMatchesMinistry(p, ministryId))
+      : byAssigned;
+  }, [taxonomyFilteredProjects, statusFilter, investorOnly, assignedToMeOnly, isAssignedToMe, role, myMinistryOnly, ministryId]);
 
   const columns: ColumnDef<InvestmentProject, unknown>[] = useMemo(
     () => [
       {
         accessorKey: "title",
         header: "Title",
-        cell: ({ row }) => <span className="text-white font-medium">{row.original.title.slice(0, 60)}</span>,
+        cell: ({ row }) => (
+          <span className="inline-flex items-center gap-2">
+            <span className="text-white font-medium">{row.original.title.slice(0, 60)}</span>
+            {row.original.investorSubmitted && (
+              <span className="status-badge status-badge-info text-[10px]" title="Originated by a qualified investor via Propose a Project">
+                Investor
+              </span>
+            )}
+          </span>
+        ),
       },
       { id: "sector", header: "Sector", accessorFn: (row) => sectorName(row.sectorId) },
       {
@@ -178,73 +231,11 @@ export function ProjectRegistryView({ basePath }: ProjectRegistryViewProps) {
     [sectorName]
   );
 
-  const handleCreate = async (partial: Partial<InvestmentProject>, submit = false) => {
-    const now = new Date().toISOString();
-    const payload: InvestmentProject = {
-      id: "",
-      title: partial.title!,
-      slug: slugify(partial.title!),
-      sectorId: partial.sectorId!,
-      subsectorId: partial.subsectorId,
-      strategicPillarIds: partial.strategicPillarIds ?? [],
-      sdgIds: partial.sdgIds ?? [],
-      primaryBeneficiaryMinistryId: partial.primaryBeneficiaryMinistryId!,
-      secondaryBeneficiaryMinistryIds: partial.secondaryBeneficiaryMinistryIds,
-      projectOwner: partial.projectOwner!,
-      location: partial.location!,
-      province: partial.province,
-      capitalRequired: partial.capitalRequired,
-      financingType: partial.financingType,
-      projectReadiness: partial.projectReadiness!,
-      projectStatus: submit ? "submitted_for_review" : "draft",
-      visibilityLevel: partial.visibilityLevel ?? "public",
-      opportunitySummary: partial.opportunitySummary!,
-      description: partial.description!,
-      scope: partial.scope ?? [],
-      developmentImpact: partial.developmentImpact ?? [],
-      documents: partial.documents ?? [],
-      dataVerificationStatus: "pending_review",
-      sourceReference: "Created via Admin Console",
-      createdBy: "Admin Console",
-      submittedAt: submit ? now : undefined,
-      createdAt: now,
-      updatedAt: now,
-    };
-    try {
-      const created = await addProject(payload);
-      toast.success(submit ? "Project submitted for review" : "Draft saved");
-      setCreateOpen(false);
-      return created;
-    } catch {
-      toast.error("Failed to save project");
-      return undefined;
-    }
-  };
-
-  const editProject = projects.find((p) => p.id === editId) ?? null;
-  const editRequiresReason =
-    editProject != null && (editProject.projectStatus === "approved" || editProject.projectStatus === "published");
-
+  // Full-page wizard replaces the old ProjectForm-in-Dialog popup (Phase 5) — editing now
+  // navigates straight to a real route instead of closing the drawer to open a second overlay.
   const openEdit = (project: InvestmentProject) => {
     setSelectedId(null);
-    setEditReason("");
-    setEditId(project.id);
-  };
-
-  const handleEdit = async (partial: Partial<InvestmentProject>) => {
-    if (!editId) return;
-    if (editRequiresReason && !editReason.trim()) {
-      toast.error("A reason is required to edit a live project");
-      return;
-    }
-    try {
-      await updateProject(editId, { ...partial, reason: editRequiresReason ? editReason.trim() : undefined } as Partial<InvestmentProject>);
-      toast.success("Project updated");
-      setEditId(null);
-      setEditReason("");
-    } catch {
-      toast.error("Failed to update project");
-    }
+    router.push(`${basePath}/${project.id}/edit`);
   };
 
   const handleAction = async (projectId: string, status: ProjectStatus, notes?: string) => {
@@ -290,9 +281,8 @@ export function ProjectRegistryView({ basePath }: ProjectRegistryViewProps) {
   return (
     <div>
       {/* No page-level "New Project" CTA here — the dashboard topbar's persistent gold "Create
-       *  Project" quick action (components/dashboard/dashboard-topbar.tsx) already deep-links to
-       *  ?new=1, which the mount effect above opens via setCreateOpen. A second button here was a
-       *  duplicate CTA. */}
+       *  Project" quick action (components/dashboard/dashboard-topbar.tsx) already links straight
+       *  to `${basePath}/new`. A second button here was a duplicate CTA. */}
       <div className="mb-4">
         <ProjectFiltersBar
           variant="dashboard"
@@ -320,6 +310,49 @@ export function ProjectRegistryView({ basePath }: ProjectRegistryViewProps) {
               {chip.label} ({countFor(chip.value)})
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => setInvestorOnly((v) => !v)}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+              investorOnly
+                ? "border-[var(--color-gold)] bg-[var(--color-gold)]/15 text-white"
+                : "border-[var(--color-sovereign-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-gold)]/50"
+            )}
+            title="Show only projects originated by qualified investors via Propose a Project"
+          >
+            Investor Proposals ({taxonomyFilteredProjects.filter((p) => p.investorSubmitted).length})
+          </button>
+          {(role === "admin" || role === "super_admin") && (
+            <button
+              type="button"
+              onClick={() => setAssignedToMeOnly((v) => !v)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                assignedToMeOnly
+                  ? "border-[var(--color-gold)] bg-[var(--color-gold)]/15 text-white"
+                  : "border-[var(--color-sovereign-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-gold)]/50"
+              )}
+              title="Show only projects where you're the effective Case Manager (direct or via ministry default)"
+            >
+              My Assigned Projects ({taxonomyFilteredProjects.filter(isAssignedToMe).length})
+            </button>
+          )}
+          {role === "ministry_admin" && ministryId && (
+            <button
+              type="button"
+              onClick={() => setMyMinistryOnly((v) => !v)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                myMinistryOnly
+                  ? "border-[var(--color-gold)] bg-[var(--color-gold)]/15 text-white"
+                  : "border-[var(--color-sovereign-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-gold)]/50"
+              )}
+              title="Toggle between your ministry's own projects and the full national pipeline. You can only create/edit/advance your ministry's own projects either way."
+            >
+              My Ministry Only ({taxonomyFilteredProjects.filter((p) => projectMatchesMinistry(p, ministryId)).length})
+            </button>
+          )}
         </div>
         <PipelineViewSwitcher view={view} onChange={changeView} />
       </div>
@@ -358,46 +391,10 @@ export function ProjectRegistryView({ basePath }: ProjectRegistryViewProps) {
       <ProjectDetailDrawer
         project={selectedProject}
         onClose={() => setSelectedId(null)}
-        workflowRole={workflowRole}
+        workflowRole={selectedWorkflowRole}
         onAction={handleAction}
-        onEdit={workflowRole ? openEdit : undefined}
+        onEdit={selectedWorkflowRole ? openEdit : undefined}
       />
-
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>New Project</DialogTitle>
-          </DialogHeader>
-          <ProjectForm mode="create" onSave={(p) => handleCreate(p, false)} onSubmit={(p) => handleCreate(p, true)} />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={editId !== null} onOpenChange={(o) => { if (!o) { setEditId(null); setEditReason(""); } }}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Project</DialogTitle>
-          </DialogHeader>
-          {editProject && (
-            <>
-              {editRequiresReason && (
-                <div className="rounded-lg p-3 mb-1" style={{ backgroundColor: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.2)" }}>
-                  <label className="text-xs font-medium mb-1 block" style={{ color: "#fbbf24" }}>
-                    Reason for change (required — this project is {editProject.projectStatus === "published" ? "published" : "approved"})
-                  </label>
-                  <textarea
-                    value={editReason}
-                    onChange={(e) => setEditReason(e.target.value)}
-                    rows={2}
-                    placeholder="e.g. Corrected capital figure per updated feasibility study"
-                    className="dashboard-input w-full"
-                  />
-                </div>
-              )}
-              <ProjectForm mode="edit" initial={editProject} onSave={handleEdit} onSubmit={handleEdit} />
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

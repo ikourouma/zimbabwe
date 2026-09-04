@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { CalendarClock, CheckCircle2, CornerDownRight, FileText, Lock, MessageCircle, Paperclip, PhoneCall, Reply, ShieldAlert, Trash2, UserCheck, X } from "lucide-react";
+import { Fragment, useEffect, useRef, useState } from "react";
+import { CalendarClock, CheckCircle2, CornerDownRight, FileEdit, FileText, Handshake, Lock, MessageCircle, Paperclip, PhoneCall, Reply, ShieldAlert, Trash2, UserCheck, X } from "lucide-react";
 import { toast } from "sonner";
 import { timeAgo } from "@/components/dashboard/activity-feed";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/context/auth-context";
 import { useThreadMessages, type PendingAttachment, type ThreadChannel } from "@/lib/hooks/use-project-messages";
+import { NO_SUBJECT, OTHER_SUBJECT, SUBJECT_OPTIONS, resolveSubject } from "@/lib/governance/message-subjects";
 import type { MessageAttachment, MessageVisibility, ProjectMessage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +25,13 @@ interface DealTeamMember {
   role: string;
 }
 
+interface EngagedInvestor {
+  userId: string;
+  name: string;
+  role: string;
+  organization?: string | null;
+}
+
 interface MessageThreadProps {
   projectId?: string;
   /** Narrows to one engagement's thread (e.g. an MOU comment thread) — omit for the project's
@@ -35,6 +43,10 @@ interface MessageThreadProps {
   /** Staff (admin/super_admin/government) can post "internal" notes and pick visibility;
    *  investors always post "investor_visible" and may route to a named case manager. */
   isStaff: boolean;
+  /** Read-only oversight viewer (ministry_admin — Subject Dropdown + Ministry Engagements plan,
+   *  Part B): sees the full thread the server returns for them but the composer and "Reply" are
+   *  hidden entirely — no posting, no Action Card decisions — regardless of `isStaff`. */
+  readOnly?: boolean;
   emptyMessage?: string;
   className?: string;
   /** Called after an interactive Action Card is resolved (approve/decline) so parents can refresh. */
@@ -49,22 +61,36 @@ export function MessageThread({
   engagementId,
   concierge,
   isStaff,
+  readOnly = false,
   emptyMessage,
   className,
   onActionResolved,
 }: MessageThreadProps) {
-  const { userId, role } = useAuth();
+  const { userId, role, ministryId } = useAuth();
   const channel: ThreadChannel = concierge
     ? { kind: "concierge", ownerUserId: concierge.ownerUserId }
     : { kind: "project", projectId: projectId ?? null, engagementId };
   const { messages, isLoading, refresh, postMessage, uploadAttachment } = useThreadMessages(channel);
 
   const [draft, setDraft] = useState("");
+  const [subjectOption, setSubjectOption] = useState<string>(NO_SUBJECT);
+  const [subjectOther, setSubjectOther] = useState("");
   const [visibility, setVisibility] = useState<MessageVisibility>("investor_visible");
   const [isSending, setIsSending] = useState(false);
   const [replyTo, setReplyTo] = useState<ProjectMessage | null>(null);
   const [recipientId, setRecipientId] = useState<string>(NO_RECIPIENT);
   const [dealTeam, setDealTeam] = useState<DealTeamMember[]>([]);
+  // Ministry Message Recipient Targeting plan — a ministry_admin composes with isStaff=true (they
+  // get "internal" visibility on their own ministry's projects) so the investor-only recipient
+  // picker above never applies to them; this is their parallel "To" directory instead, split into
+  // the ministry-wide part (fetched once) and the per-project investor part (refetched on
+  // `projectId` change, since that's the only thing scoping who's a valid target).
+  const [ministryDirectory, setMinistryDirectory] = useState<{ government: DealTeamMember[]; staff: DealTeamMember[] }>({
+    government: [],
+    staff: [],
+  });
+  const [ministryInvestors, setMinistryInvestors] = useState<EngagedInvestor[]>([]);
+  const isMinistryAdmin = role === "ministry_admin";
   const [pending, setPending] = useState<PendingAttachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const [resolving, setResolving] = useState<string | null>(null);
@@ -75,9 +101,10 @@ export function MessageThread({
     ? ["investor_visible", "internal"]
     : ["internal", "investor_visible", "mou"];
 
-  // Investors can route a message to a named case manager — load the directory once.
+  // Investors can route a message to a named case manager — load the directory once. Skipped
+  // entirely for a read-only viewer, who never sees the composer this directory powers.
   useEffect(() => {
-    if (isStaff) return;
+    if (isStaff || readOnly) return;
     let cancelled = false;
     fetch("/api/deal-team")
       .then((r) => (r.ok ? r.json() : []))
@@ -87,6 +114,39 @@ export function MessageThread({
       cancelled = true;
     };
   }, [isStaff]);
+
+  // Ministry Message Recipient Targeting plan — the ministry-wide half of a ministry_admin's "To"
+  // directory (government officials in my ministry + ZIDA admin/super_admin). Doesn't depend on
+  // projectId, so it's loaded once per mount.
+  useEffect(() => {
+    if (!isMinistryAdmin || readOnly) return;
+    let cancelled = false;
+    fetch("/api/ministry/recipients")
+      .then((r) => (r.ok ? r.json() : { government: [], staff: [] }))
+      .then((data) => !cancelled && setMinistryDirectory(data))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isMinistryAdmin, readOnly]);
+
+  // The other half — investors engaged on this specific project — is refetched whenever the
+  // project changes, and any stale selection from a different project's list is cleared.
+  useEffect(() => {
+    setRecipientId(NO_RECIPIENT);
+    if (!isMinistryAdmin || readOnly || !projectId) {
+      setMinistryInvestors([]);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/projects/${projectId}/engaged-investors`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: EngagedInvestor[]) => !cancelled && setMinistryInvestors(data))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isMinistryAdmin, readOnly, projectId]);
 
   const authorNameById = (id?: string | null) =>
     (id && messages.find((m) => m.id === id)?.authorName) || "a message";
@@ -114,12 +174,15 @@ export function MessageThread({
     setIsSending(true);
     try {
       await postMessage(draft.trim(), {
+        subject: resolveSubject(subjectOption, subjectOther),
         visibility: isStaff ? visibility : undefined,
         parentMessageId: replyTo?.id,
-        recipientUserId: !isStaff && recipientId !== NO_RECIPIENT ? recipientId : undefined,
+        recipientUserId: (!isStaff || isMinistryAdmin) && recipientId !== NO_RECIPIENT ? recipientId : undefined,
         attachments: pending.length > 0 ? pending : undefined,
       });
       setDraft("");
+      setSubjectOption(NO_SUBJECT);
+      setSubjectOther("");
       setReplyTo(null);
       setRecipientId(NO_RECIPIENT);
       setPending([]);
@@ -184,7 +247,9 @@ export function MessageThread({
                 message={m}
                 currentUserId={userId}
                 actorRole={role}
+                viewerMinistryId={ministryId}
                 isStaff={isStaff}
+                readOnly={readOnly}
                 resolving={resolving === m.id}
                 onReply={() => setReplyTo(m)}
                 onAction={handleAction}
@@ -199,7 +264,9 @@ export function MessageThread({
                     message={reply}
                     currentUserId={userId}
                     actorRole={role}
+                    viewerMinistryId={ministryId}
                     isStaff={isStaff}
+                    readOnly={readOnly}
                     resolving={resolving === reply.id}
                     onReply={() => setReplyTo(m)}
                     onAction={handleAction}
@@ -212,6 +279,7 @@ export function MessageThread({
         )}
       </div>
 
+      {!readOnly && (
       <div className="mt-4 space-y-2 border-t pt-3" style={{ borderColor: "var(--color-sovereign-border)" }}>
         {replyTo && (
           <div
@@ -230,13 +298,61 @@ export function MessageThread({
           </div>
         )}
 
-        {isStaff && (
+        {/* Full Persona Communication Parity plan — a ministry_admin's concierge carve-out
+         *  (their own escalation thread, or replying into an official's thread) never supports
+         *  "internal" visibility server-side (app/api/concierge/messages/route.ts's STAFF_ROLES
+         *  excludes ministry_admin on purpose); hide the toggle here so the UI never offers a
+         *  choice that would silently downgrade to investor_visible. Still shown for ministry_admin
+         *  on project threads, where they do have internal-note authority on their own ministry. */}
+        {isStaff && !(concierge && isMinistryAdmin) && (
           <Select value={visibility} onValueChange={(v) => setVisibility(v as MessageVisibility)}>
             <SelectTrigger className="h-8 text-xs w-56"><SelectValue /></SelectTrigger>
             <SelectContent>
               {visibilityOptions.map((v) => (
                 <SelectItem key={v} value={v}>{VISIBILITY_LABEL[v]}</SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {isMinistryAdmin && (ministryInvestors.length > 0 || ministryDirectory.government.length > 0 || ministryDirectory.staff.length > 0) && (
+          <Select value={recipientId} onValueChange={setRecipientId}>
+            <SelectTrigger className="h-8 text-xs w-64">
+              <SelectValue placeholder="To: General (visible to everyone)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NO_RECIPIENT}>To: General (visible to everyone)</SelectItem>
+              {ministryInvestors.length > 0 && (
+                <SelectGroup>
+                  <SelectLabel>Investors</SelectLabel>
+                  {ministryInvestors.map((i) => (
+                    <SelectItem key={i.userId} value={i.userId}>
+                      {i.name}
+                      {i.organization ? ` · ${i.organization}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              )}
+              {ministryDirectory.government.length > 0 && (
+                <SelectGroup>
+                  <SelectLabel>Government (my ministry)</SelectLabel>
+                  {ministryDirectory.government.map((g) => (
+                    <SelectItem key={g.userId} value={g.userId}>
+                      {g.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              )}
+              {ministryDirectory.staff.length > 0 && (
+                <SelectGroup>
+                  <SelectLabel>ZIDA Staff</SelectLabel>
+                  {ministryDirectory.staff.map((s) => (
+                    <SelectItem key={s.userId} value={s.userId}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              )}
             </SelectContent>
           </Select>
         )}
@@ -280,6 +396,31 @@ export function MessageThread({
           </div>
         )}
 
+        {/* Subject is a lightweight organizational aid, not a threading key — only offered on a new
+         *  top-level message; a reply already inherits its parent's context. */}
+        {!replyTo && (
+          <div className="space-y-1.5">
+            <Select value={subjectOption} onValueChange={setSubjectOption}>
+              <SelectTrigger className="h-8 text-xs w-full"><SelectValue placeholder="Subject (optional)" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_SUBJECT}>No subject</SelectItem>
+                {SUBJECT_OPTIONS.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {subjectOption === OTHER_SUBJECT && (
+              <input
+                className="dashboard-input h-8 text-xs"
+                placeholder="Describe the subject…"
+                value={subjectOther}
+                onChange={(e) => setSubjectOther(e.target.value)}
+                maxLength={140}
+              />
+            )}
+          </div>
+        )}
+
         <textarea
           className="dashboard-input min-h-[70px]"
           placeholder="Write a message…"
@@ -315,6 +456,7 @@ export function MessageThread({
           </button>
         </div>
       </div>
+      )}
     </div>
   );
 }
@@ -323,7 +465,9 @@ function MessageCard({
   message: m,
   currentUserId,
   actorRole,
+  viewerMinistryId,
   isStaff,
+  readOnly = false,
   resolving,
   onReply,
   onAction,
@@ -332,7 +476,9 @@ function MessageCard({
   message: ProjectMessage;
   currentUserId: string | null;
   actorRole: string | null;
+  viewerMinistryId?: string | null;
   isStaff: boolean;
+  readOnly?: boolean;
   resolving: boolean;
   onReply: () => void;
   onAction: (messageId: string, decision: "approve" | "decline" | "request_briefing") => void;
@@ -396,8 +542,11 @@ function MessageCard({
           </p>
         </div>
       </div>
+      {m.subject && (
+        <p className="text-sm font-semibold text-white mt-1.5">{m.subject}</p>
+      )}
       {m.body && (
-        <p className="text-sm mt-1.5 whitespace-pre-wrap" style={{ color: "var(--color-text-secondary)" }}>
+        <p className={cn("text-sm whitespace-pre-wrap", m.subject ? "mt-0.5" : "mt-1.5")} style={{ color: "var(--color-text-secondary)" }}>
           {m.body}
         </p>
       )}
@@ -405,7 +554,8 @@ function MessageCard({
         <ActionCardBody
           message={m}
           actorRole={actorRole}
-          isStaff={isStaff}
+          viewerMinistryId={viewerMinistryId}
+          isStaff={isStaff && !readOnly}
           resolving={resolving}
           onAction={onAction}
           onCounter={onReply}
@@ -418,14 +568,16 @@ function MessageCard({
           ))}
         </div>
       )}
-      <button
-        type="button"
-        onClick={onReply}
-        className="mt-2 inline-flex items-center gap-1 text-[11px] hover:text-white"
-        style={{ color: "var(--color-text-muted)" }}
-      >
-        <Reply className="h-3 w-3" /> Reply
-      </button>
+      {!readOnly && (
+        <button
+          type="button"
+          onClick={onReply}
+          className="mt-2 inline-flex items-center gap-1 text-[11px] hover:text-white"
+          style={{ color: "var(--color-text-muted)" }}
+        >
+          <Reply className="h-3 w-3" /> Reply
+        </button>
+      )}
     </div>
   );
 }
@@ -434,6 +586,7 @@ function MessageCard({
 function ActionCardBody({
   message: m,
   actorRole,
+  viewerMinistryId,
   isStaff,
   resolving,
   onAction,
@@ -441,6 +594,7 @@ function ActionCardBody({
 }: {
   message: ProjectMessage;
   actorRole: string | null;
+  viewerMinistryId?: string | null;
   isStaff: boolean;
   resolving: boolean;
   onAction: (messageId: string, decision: "approve" | "decline" | "request_briefing") => void;
@@ -450,18 +604,55 @@ function ActionCardBody({
   if (!p) return null;
   const isCall = p.type === "schedule_call";
   const isDelete = p.type === "delete_request";
+  const isAmendment = p.type === "project_amendment_request";
+  const isAssociation = p.type === "ministry_association_request";
   // A delete_request stays actionable through "briefing_requested" (still pending a decision);
-  // every other card type is only actionable while "open".
-  const isActionable = p.status === "open" || (isDelete && p.status === "briefing_requested");
-  // Government is copied on delete_request cards for transparency and may request a briefing, but
-  // has no Approve/Decline authority (see POST /api/messages/[id]/action) — every other card type
-  // keeps the existing isStaff-wide authority.
+  // "escalated" (Phase 8) — a government-filed amendment request its own ministry_admin already
+  // approved — is likewise still pending (ZIDA's final call); every other card/status combination
+  // is only actionable while "open".
+  const isActionable = p.status === "open" || p.status === "escalated" || (isDelete && p.status === "briefing_requested");
+  // Government is copied on delete_request/project_amendment_request/ministry_association_request
+  // cards for transparency but has no Approve/Decline authority on any of the three (see POST
+  // /api/messages/[id]/action) — every other card type keeps the existing isStaff-wide authority.
   const isGovernmentOnDelete = isDelete && actorRole === "government";
-  const canDecide = isStaff && !isGovernmentOnDelete;
+  const isGovernmentOnAmendment = isAmendment && actorRole === "government";
+  const isGovernmentOnAssociation = isAssociation && actorRole === "government";
+  // ministry_admin has exactly one decision authority platform-wide (Phase 8): an "open",
+  // government-filed amendment request from their own ministry — never ministry_association_request
+  // (admin/super_admin-only, same as the project's Publish gate), and never a government-filed
+  // amendment request that's already "escalated" (that's ZIDA's call now). Everything else stays
+  // blocked for them even though `isStaff` is often true for a ministry_admin (see
+  // ProjectDetailDrawer/CommunicationHubView's isStaff wiring).
+  const isMinistryAdminOnAssociation = isAssociation && actorRole === "ministry_admin";
+  const isGovFiledAmendment = isAmendment && m.authorRole === "government";
+  const isMinistryAdminAmendmentStage1 =
+    isGovFiledAmendment &&
+    actorRole === "ministry_admin" &&
+    p.status === "open" &&
+    Boolean(viewerMinistryId) &&
+    p.requestingMinistryId === viewerMinistryId;
+  const isMinistryAdminBlockedOnAmendment = isAmendment && actorRole === "ministry_admin" && !isMinistryAdminAmendmentStage1;
+  // A plain admin must wait for the ministry-level decision on an "open" government-filed request
+  // — mirrors the server-side gate in POST /api/messages/[id]/action. Super Admin keeps full
+  // override authority at every stage (isStaff is never narrowed for them here).
+  const isAdminAwaitingMinistryStage = isGovFiledAmendment && p.status === "open" && actorRole === "admin";
+  const canDecide =
+    isStaff &&
+    !isGovernmentOnDelete &&
+    !isGovernmentOnAmendment &&
+    !isGovernmentOnAssociation &&
+    !isMinistryAdminOnAssociation &&
+    !isMinistryAdminBlockedOnAmendment &&
+    !isAdminAwaitingMinistryStage;
   const canRequestBriefing = isStaff; // admin, super_admin, and government alike (delete_request only)
 
   const statusStyle: Record<string, { bg: string; fg: string; label: string }> = {
-    open: { bg: "rgba(255,211,0,0.15)", fg: "#fde047", label: "Awaiting review" },
+    open: {
+      bg: "rgba(255,211,0,0.15)",
+      fg: "#fde047",
+      label: isGovFiledAmendment ? "Awaiting Ministry Admin" : "Awaiting review",
+    },
+    escalated: { bg: "rgba(168,85,247,0.15)", fg: "#d8b4fe", label: "Escalated — awaiting ZIDA" },
     briefing_requested: { bg: "rgba(59,130,246,0.15)", fg: "#93c5fd", label: "Briefing requested" },
     resolved: { bg: "rgba(34,197,94,0.15)", fg: "#4ade80", label: isCall ? "Accepted" : isDelete ? "Deleted" : "Approved" },
     declined: { bg: "rgba(248,113,113,0.15)", fg: "#f87171", label: "Declined" },
@@ -475,18 +666,67 @@ function ActionCardBody({
     <div className="mt-2 rounded-md p-2.5" style={{ backgroundColor: "rgba(255,255,255,0.03)" }}>
       <div className="flex items-center justify-between gap-2 mb-1.5">
         <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: isDelete ? "#f87171" : "var(--color-gold)" }}>
-          {isCall ? <CalendarClock className="h-3 w-3" /> : isDelete ? <Trash2 className="h-3 w-3" /> : <ShieldAlert className="h-3 w-3" />}
-          {isCall ? "Call proposal" : isDelete ? "Deletion request (approved engagement)" : "Correction request"}
+          {isCall ? (
+            <CalendarClock className="h-3 w-3" />
+          ) : isDelete ? (
+            <Trash2 className="h-3 w-3" />
+          ) : isAmendment ? (
+            <FileEdit className="h-3 w-3" />
+          ) : isAssociation ? (
+            <Handshake className="h-3 w-3" />
+          ) : (
+            <ShieldAlert className="h-3 w-3" />
+          )}
+          {isCall
+            ? "Call proposal"
+            : isDelete
+              ? "Deletion request (approved engagement)"
+              : isAmendment
+                ? "Project amendment request"
+                : isAssociation
+                  ? "Ministry association request"
+                  : "Correction request"}
         </span>
         <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ backgroundColor: s.bg, color: s.fg }}>
           {s.label}
         </span>
       </div>
 
-      {isGovernmentOnDelete && (
+      {(isGovernmentOnDelete || isGovernmentOnAssociation || isMinistryAdminOnAssociation) && (
         <p className="text-[11px] mb-1.5 italic" style={{ color: "var(--color-text-muted)" }}>
-          You&apos;re copied on this for transparency — ZIDA Admin / Platform Admin decide the outcome, though you may
-          request a briefing before they do.
+          You&apos;re copied on this for transparency — ZIDA Admin / Platform Admin decide the outcome
+          {isGovernmentOnDelete ? ", though you may request a briefing before they do." : "."}
+        </p>
+      )}
+      {isGovernmentOnAmendment && (
+        <p className="text-[11px] mb-1.5 italic" style={{ color: "var(--color-text-muted)" }}>
+          {p.status === "escalated"
+            ? "Your ministry's Ministry Admin approved this — ZIDA Admin makes the final call."
+            : "Awaiting a decision from your ministry's Ministry Admin, then ZIDA Admin for final action."}
+        </p>
+      )}
+      {isMinistryAdminBlockedOnAmendment && (
+        <p className="text-[11px] mb-1.5 italic" style={{ color: "var(--color-text-muted)" }}>
+          You&apos;re copied on this for transparency — ZIDA Admin decides the final outcome.
+        </p>
+      )}
+      {isAdminAwaitingMinistryStage && (
+        <p className="text-[11px] mb-1.5 italic" style={{ color: "var(--color-text-muted)" }}>
+          Awaiting a decision from {p.requestingMinistryName ?? "the requester's ministry"}&apos;s Ministry Admin. A Super
+          Admin can override if needed.
+        </p>
+      )}
+
+      {(isAssociation || isGovFiledAmendment) && (
+        <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-xs mb-1.5">
+          <span style={{ color: "var(--color-text-muted)" }}>Requesting ministry</span>
+          <span className="text-white">{p.requestingMinistryName ?? "—"}</span>
+        </div>
+      )}
+      {p.firstStageApprovedByName && (
+        <p className="text-[11px] mb-1.5" style={{ color: "var(--color-text-muted)" }}>
+          Ministry-approved by {p.firstStageApprovedByName}
+          {p.firstStageApprovedAt ? ` · ${timeAgo(p.firstStageApprovedAt)}` : ""}
         </p>
       )}
 
@@ -514,6 +754,17 @@ function ActionCardBody({
         </div>
       )}
 
+      {isAmendment && p.proposedChanges && (
+        <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-xs mb-1.5">
+          {Object.entries(p.proposedChanges).map(([field, value]) => (
+            <Fragment key={field}>
+              <span style={{ color: "var(--color-text-muted)" }}>{field}</span>
+              <span style={{ color: "#4ade80" }}>{String(value)}</span>
+            </Fragment>
+          ))}
+        </div>
+      )}
+
       {(p.status === "resolved" || p.status === "declined") && p.resolvedByName && (
         <p className="text-[11px] mb-1" style={{ color: "var(--color-text-muted)" }}>
           {p.status === "resolved" ? (isCall ? "Accepted" : isDelete ? "Deletion approved" : "Approved") : "Declined"} by{" "}
@@ -532,10 +783,18 @@ function ActionCardBody({
               className="btn-sovereign text-xs px-3 py-1.5 inline-flex items-center gap-1 disabled:opacity-50"
             >
               <CheckCircle2 className="h-3.5 w-3.5" />{" "}
-              {resolving ? "Working…" : isCall ? "Accept" : isDelete ? "Approve Deletion" : "Approve"}
+              {resolving
+                ? "Working…"
+                : isCall
+                  ? "Accept"
+                  : isDelete
+                    ? "Approve Deletion"
+                    : isMinistryAdminAmendmentStage1
+                      ? "Approve & Escalate to ZIDA"
+                      : "Approve"}
             </button>
           )}
-          {canDecide && !isCall && !isDelete && (
+          {canDecide && !isCall && !isDelete && !isAmendment && !isAssociation && (
             <button
               type="button"
               onClick={onCounter}

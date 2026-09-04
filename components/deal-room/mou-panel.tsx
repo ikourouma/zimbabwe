@@ -2,16 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Check, Download, FileSignature, Lock, Printer, RotateCcw } from "lucide-react";
+import { Check, Download, FileDown, FileSignature, Lock, MessageSquare, Printer, RotateCcw } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useEngagementMou } from "@/lib/hooks/use-engagement-mou";
+import { useMouFieldComments } from "@/lib/hooks/use-mou-field-comments";
 import {
   MOU_STATUS_LABELS,
   MOU_STATUS_ORDER,
   canEditMouContent,
   isZidaApproverRole,
 } from "@/lib/governance/mou-workflow";
-import type { MouAction, MouContent, MouFormatting, MouSignatureMetadata } from "@/lib/types";
+import type { MouAction, MouContent, MouFieldComment, MouFormatting, MouSignatureMetadata } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -23,6 +24,26 @@ const CONTENT_FIELDS: Array<{ key: keyof Omit<MouContent, "termBullets">; label:
   { key: "indicativeCapital", label: "Indicative Capital", placeholder: "e.g. USD 12–15M" },
   { key: "effectiveDate", label: "Effective Date", placeholder: "YYYY-MM-DD" },
 ];
+
+// Phase 7 — the base-template sections a standalone MOU document needs beyond the deal-specific
+// terms above; rendered as full-width textareas since each holds a sentence or two of prose rather
+// than a short value. Pre-filled with standard boilerplate by buildSeedContent() in
+// lib/db/queries/mous.ts, so ZIDA only ever edits, never starts from a blank field.
+const PROSE_FIELDS: Array<{ key: keyof Pick<MouContent, "purpose" | "scope" | "nonBindingStatement" | "governingLaw">; label: string; rows: number }> = [
+  { key: "purpose", label: "Purpose", rows: 2 },
+  { key: "scope", label: "Scope of Collaboration", rows: 2 },
+  { key: "nonBindingStatement", label: "Non-Binding Clause", rows: 2 },
+  { key: "governingLaw", label: "Governing Law", rows: 2 },
+];
+
+// Every field a per-field comment thread can attach to (Phase 7) — mirrors CONTENT_FIELDS +
+// PROSE_FIELDS plus the two freeform textareas that don't fit the key/label array shape.
+const FIELD_LABELS: Record<string, string> = {
+  ...Object.fromEntries(CONTENT_FIELDS.map((f) => [f.key, f.label])),
+  ...Object.fromEntries(PROSE_FIELDS.map((f) => [f.key, f.label])),
+  termBullets: "Key Terms",
+  specialConditions: "Special Conditions",
+};
 
 function fmtDate(iso?: string | null) {
   if (!iso) return null;
@@ -41,6 +62,7 @@ interface MouPanelProps {
 export function MouPanel({ engagementId, investorName }: MouPanelProps) {
   const { role } = useAuth();
   const { mou, engagementStatus, isLoading, updateDraft, runAction, error } = useEngagementMou(engagementId);
+  const { comments, addComment, resolveComment } = useMouFieldComments(engagementId);
 
   const [draft, setDraft] = useState<MouContent | null>(null);
   const [termBulletsText, setTermBulletsText] = useState("");
@@ -50,11 +72,44 @@ export function MouPanel({ engagementId, investorName }: MouPanelProps) {
   const [changesNotes, setChangesNotes] = useState("");
   const [executeOpen, setExecuteOpen] = useState(false);
   const [signature, setSignature] = useState<MouSignatureMetadata>({});
+  const [commentField, setCommentField] = useState<string | null>(null);
+  const [newComment, setNewComment] = useState("");
 
   const canEdit = role ? canEditMouContent(role) : false;
   const isZida = role ? isZidaApproverRole(role) : false;
   const isInvestor = role === "qualified";
   const canActAtAll = canEdit || isZida || isInvestor;
+
+  const unresolvedCounts = comments.reduce<Record<string, number>>((acc, c) => {
+    if (!c.resolvedAt) acc[c.fieldKey] = (acc[c.fieldKey] ?? 0) + 1;
+    return acc;
+  }, {});
+  const activeThread = commentField ? comments.filter((c) => c.fieldKey === commentField) : [];
+
+  function CommentBadge({ fieldKey }: { fieldKey: string }) {
+    const count = unresolvedCounts[fieldKey] ?? 0;
+    return (
+      <button
+        type="button"
+        onClick={() => setCommentField(fieldKey)}
+        className="inline-flex items-center gap-0.5 text-[10px] rounded px-1 py-0.5 transition-colors hover:bg-white/10"
+        style={{ color: count > 0 ? "var(--color-gold)" : "var(--color-text-muted)" }}
+        title="View/add review comments on this field"
+      >
+        <MessageSquare className="h-3 w-3" />
+        {count > 0 && count}
+      </button>
+    );
+  }
+
+  async function submitComment() {
+    if (!commentField || !newComment.trim()) return;
+    setBusy(true);
+    const ok = await addComment(commentField, newComment.trim());
+    setBusy(false);
+    if (ok) setNewComment("");
+    else toast.error("Failed to post comment");
+  }
 
   useEffect(() => {
     if (!mou) return;
@@ -251,8 +306,8 @@ export function MouPanel({ engagementId, investorName }: MouPanelProps) {
             <div className="grid grid-cols-2 gap-3">
               {CONTENT_FIELDS.map((f) => (
                 <div key={f.key}>
-                  <label className="text-xs font-medium mb-1 block" style={{ color: "var(--color-text-muted)" }}>
-                    {f.label}
+                  <label className="text-xs font-medium mb-1 flex items-center gap-1" style={{ color: "var(--color-text-muted)" }}>
+                    {f.label} <CommentBadge fieldKey={f.key} />
                   </label>
                   <input
                     value={content[f.key] ?? ""}
@@ -263,9 +318,24 @@ export function MouPanel({ engagementId, investorName }: MouPanelProps) {
                 </div>
               ))}
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              {PROSE_FIELDS.map((f) => (
+                <div key={f.key}>
+                  <label className="text-xs font-medium mb-1 flex items-center gap-1" style={{ color: "var(--color-text-muted)" }}>
+                    {f.label} <CommentBadge fieldKey={f.key} />
+                  </label>
+                  <textarea
+                    value={content[f.key] ?? ""}
+                    onChange={(e) => setField(f.key, e.target.value)}
+                    rows={f.rows}
+                    className="dashboard-input"
+                  />
+                </div>
+              ))}
+            </div>
             <div>
-              <label className="text-xs font-medium mb-1 block" style={{ color: "var(--color-text-muted)" }}>
-                Term Bullets (one per line)
+              <label className="text-xs font-medium mb-1 flex items-center gap-1" style={{ color: "var(--color-text-muted)" }}>
+                Term Bullets (one per line) <CommentBadge fieldKey="termBullets" />
               </label>
               <textarea
                 value={termBulletsText}
@@ -276,8 +346,8 @@ export function MouPanel({ engagementId, investorName }: MouPanelProps) {
               />
             </div>
             <div>
-              <label className="text-xs font-medium mb-1 block" style={{ color: "var(--color-text-muted)" }}>
-                Special Conditions
+              <label className="text-xs font-medium mb-1 flex items-center gap-1" style={{ color: "var(--color-text-muted)" }}>
+                Special Conditions <CommentBadge fieldKey="specialConditions" />
               </label>
               <textarea
                 value={specialConditions}
@@ -294,16 +364,23 @@ export function MouPanel({ engagementId, investorName }: MouPanelProps) {
           </div>
         ) : (
           <div className="space-y-2 text-sm" style={{ color: "var(--color-text-secondary)" }}>
-            {displayContent.parties && <p><span className="text-white font-medium">Parties: </span>{displayContent.parties}</p>}
-            {displayContent.projectReference && <p><span className="text-white font-medium">Project: </span>{displayContent.projectReference}</p>}
-            {displayContent.indicativeCapital && <p><span className="text-white font-medium">Indicative Capital: </span>{displayContent.indicativeCapital}</p>}
-            {displayContent.effectiveDate && <p><span className="text-white font-medium">Effective Date: </span>{displayContent.effectiveDate}</p>}
+            {displayContent.parties && <p><span className="text-white font-medium">Parties: </span>{displayContent.parties} <CommentBadge fieldKey="parties" /></p>}
+            {displayContent.projectReference && <p><span className="text-white font-medium">Project: </span>{displayContent.projectReference} <CommentBadge fieldKey="projectReference" /></p>}
+            {displayContent.purpose && <p><span className="text-white font-medium">Purpose: </span>{displayContent.purpose} <CommentBadge fieldKey="purpose" /></p>}
+            {displayContent.scope && <p><span className="text-white font-medium">Scope: </span>{displayContent.scope} <CommentBadge fieldKey="scope" /></p>}
+            {displayContent.indicativeCapital && <p><span className="text-white font-medium">Indicative Capital: </span>{displayContent.indicativeCapital} <CommentBadge fieldKey="indicativeCapital" /></p>}
+            {displayContent.effectiveDate && <p><span className="text-white font-medium">Effective Date: </span>{displayContent.effectiveDate} <CommentBadge fieldKey="effectiveDate" /></p>}
             {(displayContent.termBullets ?? []).length > 0 && (
-              <ul className="list-disc pl-5 space-y-0.5">
-                {displayContent.termBullets!.map((t, i) => <li key={i}>{t}</li>)}
-              </ul>
+              <div>
+                <ul className="list-disc pl-5 space-y-0.5">
+                  {displayContent.termBullets!.map((t, i) => <li key={i}>{t}</li>)}
+                </ul>
+                <CommentBadge fieldKey="termBullets" />
+              </div>
             )}
-            {displayContent.specialConditions && <p className="italic">{displayContent.specialConditions}</p>}
+            {displayContent.specialConditions && <p className="italic">{displayContent.specialConditions} <CommentBadge fieldKey="specialConditions" /></p>}
+            {displayContent.nonBindingStatement && <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>{displayContent.nonBindingStatement}</p>}
+            {displayContent.governingLaw && <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>{displayContent.governingLaw}</p>}
             {!displayContent.parties && !displayContent.projectReference && (displayContent.termBullets ?? []).length === 0 && (
               <p className="italic" style={{ color: "var(--color-text-muted)" }}>
                 {isDrafting ? "ZIDA is preparing the draft terms." : "No terms recorded."}
@@ -443,6 +520,11 @@ export function MouPanel({ engagementId, investorName }: MouPanelProps) {
               <Button size="sm" variant="secondary" onClick={() => window.print()}>
                 <Printer className="h-3.5 w-3.5" /> Print / Export
               </Button>
+              <Button size="sm" variant="secondary" asChild>
+                <a href={`/api/engagements/${engagementId}/mou/export`} download title="Download the current terms as a Word document">
+                  <FileDown className="h-3.5 w-3.5" /> Download DOCX
+                </a>
+              </Button>
               <Button size="sm" variant="secondary" onClick={downloadSnapshot} title="Download the frozen MOU record as JSON">
                 <Download className="h-3.5 w-3.5" /> Download Snapshot
               </Button>
@@ -545,6 +627,63 @@ export function MouPanel({ engagementId, investorName }: MouPanelProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Per-field review comments (Phase 7) */}
+      <Dialog open={commentField !== null} onOpenChange={(o) => { if (!o) { setCommentField(null); setNewComment(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Comments — {commentField ? FIELD_LABELS[commentField] ?? commentField : ""}</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-64 overflow-y-auto space-y-3">
+            {activeThread.length === 0 ? (
+              <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>No comments on this field yet.</p>
+            ) : (
+              activeThread.map((c) => <CommentRow key={c.id} comment={c} onResolve={resolveComment} />)
+            )}
+          </div>
+          <div className="pt-2 border-t" style={{ borderColor: "var(--color-sovereign-border)" }}>
+            <textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              rows={2}
+              placeholder="Leave a note for the other party or ZIDA reviewer…"
+              className="dashboard-input min-h-[64px]"
+            />
+            <div className="flex justify-end mt-2">
+              <Button size="sm" onClick={submitComment} disabled={!newComment.trim() || busy}>
+                Post Comment
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function CommentRow({ comment, onResolve }: { comment: MouFieldComment; onResolve: (id: string) => Promise<boolean> }) {
+  const resolved = Boolean(comment.resolvedAt);
+  return (
+    <div className="rounded-md p-2.5" style={{ backgroundColor: resolved ? "rgba(74,222,128,0.06)" : "rgba(255,255,255,0.04)" }}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-medium text-white">{comment.authorName}</p>
+        <p className="text-[10px]" style={{ color: "var(--color-text-muted)" }}>{fmtDate(comment.createdAt)}</p>
+      </div>
+      <p className="text-sm mt-0.5" style={{ color: "var(--color-text-secondary)" }}>{comment.body}</p>
+      {resolved ? (
+        <p className="text-[10px] mt-1 flex items-center gap-1" style={{ color: "#4ade80" }}>
+          <Check className="h-3 w-3" /> Resolved by {comment.resolvedBy}
+        </p>
+      ) : (
+        <button
+          type="button"
+          onClick={() => onResolve(comment.id)}
+          className="text-[10px] mt-1 hover:underline"
+          style={{ color: "var(--color-gold)" }}
+        >
+          Mark resolved
+        </button>
+      )}
     </div>
   );
 }

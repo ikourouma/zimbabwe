@@ -7,6 +7,7 @@ import { useAuth } from "@/context/auth-context";
 import {
   CONSOLE_META,
   consolesForRole,
+  getConsoleMeta,
   type DashboardConsole,
   type DashboardNavItem,
 } from "@/components/dashboard/dashboard-nav-config";
@@ -29,7 +30,9 @@ export function CommandPaletteTrigger() {
   const entries = useMemo<PaletteEntry[]>(() => {
     const consoles = consolesForRole(role);
     return consoles.flatMap((console) =>
-      CONSOLE_META[console].nav.map((item) => ({ ...item, console }))
+      CONSOLE_META[console].nav
+        .filter((item) => !item.minRole || (role && item.minRole.includes(role)))
+        .map((item) => ({ ...item, console }))
     );
   }, [role]);
 
@@ -37,9 +40,9 @@ export function CommandPaletteTrigger() {
     const q = query.trim().toLowerCase();
     if (!q) return entries;
     return entries.filter(
-      (e) => e.label.toLowerCase().includes(q) || CONSOLE_META[e.console].label.toLowerCase().includes(q)
+      (e) => e.label.toLowerCase().includes(q) || getConsoleMeta(e.console, role).label.toLowerCase().includes(q)
     );
-  }, [entries, query]);
+  }, [entries, query, role]);
 
   useEffect(() => setActiveIndex(0), [query]);
 
@@ -154,7 +157,7 @@ export function CommandPaletteTrigger() {
                       <Icon className="h-4 w-4 shrink-0" style={{ color: "var(--color-text-muted)" }} />
                       <span className="text-white">{entry.label}</span>
                       <span className="ml-auto text-xs" style={{ color: "var(--color-text-muted)" }}>
-                        {CONSOLE_META[entry.console].label}
+                        {getConsoleMeta(entry.console, role).label}
                       </span>
                     </button>
                   );

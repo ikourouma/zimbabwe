@@ -429,14 +429,13 @@ export function MarketingCmsManager() {
   return (
     <section className="dashboard-panel p-5 space-y-6">
       <div>
-        <h2 className="text-sm font-semibold text-white mb-1">Page Content (Phase 1)</h2>
+        <h2 className="text-sm font-semibold text-white mb-1">Page Content — Phase 1 pages only</h2>
         <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-          Highest-traffic marketing content only. Sector descriptions are managed on the{" "}
+          Home hero (English only), About intro, and FAQ are editable here. Sector descriptions are managed on the{" "}
           <a href="/super-admin/taxonomies" className="underline" style={{ color: "var(--color-gold)" }}>
             Taxonomies → Sectors
           </a>{" "}
-          tab. Opportunity, Platform, Investor Journey, Legal, Zimbabwe Profile, and Glossary pages are planned for a
-          future CMS phase.
+          tab. Opportunity, Platform, Investor Journey, Legal, and Zimbabwe Profile are <strong>not</strong> CMS-editable.
         </p>
       </div>
 

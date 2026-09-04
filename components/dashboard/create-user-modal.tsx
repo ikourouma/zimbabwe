@@ -16,6 +16,12 @@ interface CreateUserModalProps {
   onCreated?: () => void;
   /** Roles the current actor may assign (server re-enforces the ceiling). Defaults to all. */
   assignableRoles?: AccountRole[];
+  /** ministry_admin's own "Create User" capability (Platform Feedback Batch v3, Phase 1) has a
+   *  single fixed ceiling — hides the Role selector entirely and always creates `government` staff. */
+  lockedRole?: AccountRole;
+  /** Force-locks the ministry to the actor's own `ministryId`, showing it as read-only text instead
+   *  of a dropdown — a ministry_admin can never create staff for another ministry. */
+  lockedMinistryId?: { id: string; label: string };
 }
 
 interface RevealedCredentials {
@@ -32,18 +38,29 @@ interface RevealedCredentials {
  * only records intent for later manual follow-up): this one actually creates a sign-in-ready
  * account right now.
  */
-export function CreateUserModal({ open, onOpenChange, onCreated, assignableRoles }: CreateUserModalProps) {
+export function CreateUserModal({
+  open,
+  onOpenChange,
+  onCreated,
+  assignableRoles,
+  lockedRole,
+  lockedMinistryId,
+}: CreateUserModalProps) {
   const { ministries } = useTaxonomyStore();
   const { createUser } = useAdminUsers();
   const roles = assignableRoles && assignableRoles.length > 0 ? assignableRoles : (Object.keys(ROLE_LABELS) as AccountRole[]);
 
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [role, setRole] = useState<AccountRole>(roles[0] ?? "registered");
+  const [role, setRole] = useState<AccountRole>(lockedRole ?? roles[0] ?? "registered");
   const [organization, setOrganization] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [phone, setPhone] = useState("");
-  const [ministryId, setMinistryId] = useState("");
+  const [ministryId, setMinistryId] = useState(lockedMinistryId?.id ?? "");
+  // Justification capture (Platform Feedback Batch v3, Phase 2) — direct creation has no separate
+  // review queue (it's instant), so unlike org-invites this is audit-log-only context, not a
+  // persisted column: it explains *why* this account exists for anyone reviewing the Audit Log later.
+  const [justification, setJustification] = useState("");
   const [pending, setPending] = useState(false);
   const [revealed, setRevealed] = useState<RevealedCredentials | null>(null);
   const [copied, setCopied] = useState(false);
@@ -52,11 +69,12 @@ export function CreateUserModal({ open, onOpenChange, onCreated, assignableRoles
     if (open) {
       setEmail("");
       setName("");
-      setRole(roles[0] ?? "registered");
+      setRole(lockedRole ?? roles[0] ?? "registered");
       setOrganization("");
       setJobTitle("");
       setPhone("");
-      setMinistryId("");
+      setMinistryId(lockedMinistryId?.id ?? "");
+      setJustification("");
       setRevealed(null);
       setCopied(false);
     }
@@ -72,6 +90,10 @@ export function CreateUserModal({ open, onOpenChange, onCreated, assignableRoles
       toast.error("Enter the user's full name.");
       return;
     }
+    if (role === "ministry_admin" && !ministryId) {
+      toast.error("Select the designated ministry for this Ministry Admin account.");
+      return;
+    }
     setPending(true);
     try {
       const result = await createUser({
@@ -81,7 +103,8 @@ export function CreateUserModal({ open, onOpenChange, onCreated, assignableRoles
         organization: organization.trim() || undefined,
         jobTitle: jobTitle.trim() || undefined,
         phone: phone.trim() || undefined,
-        ministryId: role === "government" ? ministryId || undefined : undefined,
+        ministryId: role === "government" || role === "ministry_admin" ? ministryId || undefined : undefined,
+        justification: justification.trim() || undefined,
       });
       setRevealed({ email: result.email, name: result.name, role: result.role, tempPassword: result.tempPassword });
       onCreated?.();
@@ -179,18 +202,27 @@ export function CreateUserModal({ open, onOpenChange, onCreated, assignableRoles
               />
             </div>
           </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>
-              Role
-            </label>
-            <select value={role} onChange={(e) => setRole(e.target.value as AccountRole)} className="dashboard-input">
-              {roles.map((r) => (
-                <option key={r} value={r} style={{ background: "#0a140a" }}>
-                  {ROLE_LABELS[r]}
-                </option>
-              ))}
-            </select>
-          </div>
+          {lockedRole ? (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>
+                Role
+              </label>
+              <p className="dashboard-input flex items-center opacity-70">{ROLE_LABELS[lockedRole]}</p>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>
+                Role
+              </label>
+              <select value={role} onChange={(e) => setRole(e.target.value as AccountRole)} className="dashboard-input">
+                {roles.map((r) => (
+                  <option key={r} value={r} style={{ background: "#0a140a" }}>
+                    {ROLE_LABELS[r]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">
@@ -223,21 +255,41 @@ export function CreateUserModal({ open, onOpenChange, onCreated, assignableRoles
             <input value={phone} onChange={(e) => setPhone(e.target.value)} className="dashboard-input" placeholder="+263…" />
           </div>
 
-          {role === "government" && (
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>
-                Beneficiary ministry
-              </label>
-              <select value={ministryId} onChange={(e) => setMinistryId(e.target.value)} className="dashboard-input">
-                <option value="">Select ministry…</option>
-                {ministries.map((m) => (
-                  <option key={m.id} value={m.id} style={{ background: "#0a140a" }}>
-                    {m.shortName}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          {(role === "government" || role === "ministry_admin") &&
+            (lockedMinistryId ? (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>
+                  Ministry
+                </label>
+                <p className="dashboard-input flex items-center opacity-70">{lockedMinistryId.label}</p>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>
+                  {role === "ministry_admin" ? "Designated ministry" : "Beneficiary ministry"}
+                </label>
+                <select value={ministryId} onChange={(e) => setMinistryId(e.target.value)} className="dashboard-input">
+                  <option value="">Select ministry…</option>
+                  {ministries.map((m) => (
+                    <option key={m.id} value={m.id} style={{ background: "#0a140a" }}>
+                      {m.shortName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>
+              Reason for creating this account (optional, recorded in the Audit Log)
+            </label>
+            <textarea
+              value={justification}
+              onChange={(e) => setJustification(e.target.value)}
+              className="dashboard-input min-h-[60px] resize-none"
+              placeholder="e.g. Onboarding a new ministry liaison per ZIDA Coordinator handoff"
+            />
+          </div>
         </div>
 
         <DialogFooter>

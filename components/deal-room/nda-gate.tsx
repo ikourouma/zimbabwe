@@ -1,92 +1,57 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { ShieldCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth-context";
-import { NDA_CLAUSES, NDA_TITLE, NDA_VERSION } from "@/lib/governance/nda";
+import { NDA_CLAUSES, NDA_TITLE, NDA_VERSION, requiresNdaAcceptance } from "@/lib/governance/nda";
 
 /**
- * Blocking clickwrap NDA gate for the Deal Room. Renders `children` immediately for anyone who
- * doesn't need the NDA (staff, unauthenticated/loading — those are handled by the access gate),
- * and for qualified investors who have already accepted the current version. Otherwise it overlays
- * a non-dismissible acceptance dialog. Server routes independently enforce authorization; this is
- * a UX + legal-attestation layer, not the security boundary.
+ * Blocking clickwrap NDA gate, mounted on every non-staff console shell (Deal Room + Ministry
+ * Desk — Platform Feedback Batch v3, Phase 3). Renders `children` immediately for anyone who
+ * doesn't need the NDA (staff, unauthenticated/loading — those are handled by the access gate) and
+ * for non-staff accounts who have already accepted the current version. Otherwise it overlays a
+ * non-dismissible acceptance dialog. Server routes independently enforce authorization; this is a
+ * UX + legal-attestation layer, not the security boundary.
+ *
+ * Broadened from `qualified`-only to every role `requiresNdaAcceptance()` covers (`registered`,
+ * `qualified`, `government`, `ministry_admin`) — "before accessing the platform" now means before
+ * their first dashboard visit after any approval path, not just qualified investors.
+ *
+ * Institutional KYC (company, phone, HQ address, business registration id, corporate website) is
+ * only ever shown/required for `qualified` investors — the Investor Qualification Vetting plan
+ * moved that capture earlier, into the Strategic Partnerships wizard, and made it a hard
+ * prerequisite for `role` ever becoming `qualified`. Other non-staff roles have no such
+ * prerequisite, so this section is skipped entirely for them.
  */
-/** Corporate KYC fields required before a qualified investor can complete Tier-2 (Deal Room) NDA
- *  acceptance — collected here rather than at self-registration so top-of-funnel signup stays
- *  frictionless (see the free-mail soft-warning on /register for the earlier, non-blocking step). */
-const KYC_FIELDS: { key: "organization" | "phone" | "hqAddress" | "businessRegistrationId" | "websiteUrl"; label: string; placeholder: string }[] = [
-  { key: "organization", label: "Company / Fund name", placeholder: "e.g. Meridian Capital Partners" },
-  { key: "phone", label: "Corporate phone", placeholder: "e.g. +1 212 555 0100" },
-  { key: "hqAddress", label: "Headquarters address", placeholder: "e.g. 1 Wall Street, New York, NY 10005" },
-  { key: "businessRegistrationId", label: "Business registration / incorporation number", placeholder: "e.g. DE-2014-0451123" },
-  { key: "websiteUrl", label: "Corporate website", placeholder: "e.g. https://www.example.com" },
+const KYC_FIELDS: { key: "organization" | "phone" | "hqAddress" | "businessRegistrationId" | "websiteUrl"; label: string }[] = [
+  { key: "organization", label: "Company / Fund" },
+  { key: "phone", label: "Corporate phone" },
+  { key: "hqAddress", label: "Headquarters address" },
+  { key: "businessRegistrationId", label: "Business registration ID" },
+  { key: "websiteUrl", label: "Corporate website" },
 ];
 
 export function NdaGate({ children }: { children: React.ReactNode }) {
-  const {
-    isQualified,
-    isAdmin,
-    isGovernment,
-    isSuperAdmin,
-    isLoading,
-    ndaAcceptedAt,
-    name,
-    organization,
-    phone,
-    hqAddress,
-    businessRegistrationId,
-    websiteUrl,
-    refresh,
-  } = useAuth();
+  const { role, isLoading, ndaAcceptedAt, name, organization, phone, hqAddress, businessRegistrationId, websiteUrl, refresh } = useAuth();
   const [title, setTitle] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [kyc, setKyc] = useState({
-    organization: organization ?? "",
-    phone: phone ?? "",
-    hqAddress: hqAddress ?? "",
-    businessRegistrationId: businessRegistrationId ?? "",
-    websiteUrl: websiteUrl ?? "",
-  });
+  const kyc = { organization, phone, hqAddress, businessRegistrationId, websiteUrl };
 
-  // Staff personas are ZIDA-internal and exempt; only pure investors (qualified but not staff) gate.
-  const isStaff = isAdmin || isGovernment || isSuperAdmin;
-  const needsNda = !isLoading && isQualified && !isStaff && !ndaAcceptedAt;
-  const kycComplete = Object.values(kyc).every((v) => v.trim().length > 0);
-
-  // The profile loads asynchronously after this component's first render, so seed any
-  // still-empty fields once it resolves — a plain useState initializer would otherwise miss it.
-  useEffect(() => {
-    if (isLoading) return;
-    setKyc((prev) => ({
-      organization: prev.organization || organization || "",
-      phone: prev.phone || phone || "",
-      hqAddress: prev.hqAddress || hqAddress || "",
-      businessRegistrationId: prev.businessRegistrationId || businessRegistrationId || "",
-      websiteUrl: prev.websiteUrl || websiteUrl || "",
-    }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading]);
+  const showKyc = role === "qualified";
+  const needsNda = !isLoading && role !== null && requiresNdaAcceptance(role) && !ndaAcceptedAt;
 
   async function accept() {
-    if (!agreed || !title.trim() || !kycComplete) return;
+    if (!agreed || !title.trim()) return;
     setBusy(true);
     try {
       const res = await fetch("/api/nda/accept", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: title.trim(),
-          organization: kyc.organization.trim(),
-          phone: kyc.phone.trim(),
-          hqAddress: kyc.hqAddress.trim(),
-          businessRegistrationId: kyc.businessRegistrationId.trim(),
-          websiteUrl: kyc.websiteUrl.trim(),
-        }),
+        body: JSON.stringify({ title: title.trim() }),
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
@@ -162,27 +127,26 @@ export function NdaGate({ children }: { children: React.ReactNode }) {
               />
             </div>
 
-            <div className="pt-1">
-              <p className="text-xs font-medium mb-2" style={{ color: "var(--color-text-muted)" }}>
-                Institutional details (required to access the Data Room)
-              </p>
-              <div className="grid gap-2.5 sm:grid-cols-2">
-                {KYC_FIELDS.map((field) => (
-                  <div key={field.key} className={field.key === "hqAddress" ? "sm:col-span-2" : undefined}>
-                    <label htmlFor={`kyc-${field.key}`} className="text-[11px] mb-1 block" style={{ color: "var(--color-text-muted)" }}>
-                      {field.label}
-                    </label>
-                    <input
-                      id={`kyc-${field.key}`}
-                      className="dashboard-input"
-                      placeholder={field.placeholder}
-                      value={kyc[field.key]}
-                      onChange={(e) => setKyc((prev) => ({ ...prev, [field.key]: e.target.value }))}
-                    />
-                  </div>
-                ))}
+            {showKyc && (
+              <div className="pt-1">
+                <p className="text-xs font-medium mb-2" style={{ color: "var(--color-text-muted)" }}>
+                  Institutional details on file
+                </p>
+                <div className="grid gap-2.5 sm:grid-cols-2">
+                  {KYC_FIELDS.map((field) => (
+                    <div key={field.key} className={field.key === "hqAddress" ? "sm:col-span-2" : undefined}>
+                      <p className="text-[11px] mb-1" style={{ color: "var(--color-text-muted)" }}>{field.label}</p>
+                      <div className="dashboard-input flex items-center" style={{ opacity: 0.85 }} aria-readonly="true">
+                        {kyc[field.key] || "—"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[11px] mt-1.5" style={{ color: "var(--color-text-muted)" }}>
+                  Captured during your investor application review. To update these details, contact ZIDA.
+                </p>
               </div>
-            </div>
+            )}
 
             <label className="flex items-start gap-2 text-sm" style={{ color: "var(--color-text-secondary)" }}>
               <input type="checkbox" className="mt-0.5" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
@@ -197,8 +161,8 @@ export function NdaGate({ children }: { children: React.ReactNode }) {
               </span>
             </label>
             <div className="flex justify-end">
-              <Button onClick={accept} disabled={!agreed || !title.trim() || !kycComplete || busy}>
-                Accept &amp; Enter Deal Room
+              <Button onClick={accept} disabled={!agreed || !title.trim() || busy}>
+                Accept &amp; Continue
               </Button>
             </div>
           </div>

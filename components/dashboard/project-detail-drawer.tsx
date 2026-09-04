@@ -1,6 +1,6 @@
 "use client";
 
-import type { InvestmentProject, ProjectStatus } from "@/lib/types";
+import type { InvestmentProject, Ministry, ProjectStatus } from "@/lib/types";
 import type { WorkflowRole } from "@/lib/governance/project-workflow";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { StatusBadge } from "@/components/projects/status-badge";
@@ -10,8 +10,10 @@ import { EngagementStatusPill } from "@/components/deal-room/engagement-status-p
 import { EngagementDetailDrawer } from "@/components/deal-room/engagement-detail-drawer";
 import { NewEngagementWizard } from "@/components/deal-room/new-engagement-wizard";
 import { MessageThread } from "@/components/deal-room/message-thread";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { ElevatedTabsList, ElevatedTabsTrigger } from "@/components/ui/elevated-tabs";
 import { Button } from "@/components/ui/button";
+import { WatchlistButton } from "@/components/projects/watchlist-button";
 import { toast } from "sonner";
 import { useProjectHistory } from "@/lib/hooks/use-project-history";
 import { useDealRoomStore } from "@/context/deal-room-store-context";
@@ -20,8 +22,36 @@ import { useAuth } from "@/context/auth-context";
 import { getSectorById, getSubsectorById, getPillarById, getSdgById } from "@/lib/data/taxonomies";
 import { SdgBadge } from "@/components/ui/sdg-badge";
 import { DATA_VERIFICATION_LABELS, accessLevelForRole, canAccessVisibilityLevel } from "@/lib/entitlements/visibility";
-import { CheckCircle2, ChevronRight, CircleAlert, CircleDashed, Eye, FileText, Handshake, LifeBuoy, MessageSquarePlus, Pencil, Users } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronRight,
+  CircleAlert,
+  CircleDashed,
+  ClipboardList,
+  Eye,
+  FileText,
+  Handshake,
+  LayoutDashboard,
+  LifeBuoy,
+  MessageSquare,
+  MessageSquarePlus,
+  Pencil,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import { useEffect, useState } from "react";
+import { useProjectStore } from "@/context/project-store-context";
+import { resolveProjectCaseManager, projectMatchesMinistry } from "@/lib/entitlements/ministry-scope";
+import { RequestAssociationButton } from "@/components/deal-room/request-association-modal";
+import { RequestAmendmentForm } from "@/components/deal-room/request-amendment-form";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type DrawerTab = "overview" | "timeline" | "messages" | "actions";
 
@@ -66,6 +96,275 @@ function ChipRow({ label, children }: { label: string; children: React.ReactNode
 
 function Chip({ children, tone = "info" }: { children: React.ReactNode; tone?: "info" | "active" }) {
   return <span className={`status-badge status-badge-${tone}`}>{children}</span>;
+}
+
+type CaseManagerCandidate = { userId: string; name: string; role: string };
+
+/**
+ * Case Manager chip + selector (Team Ministry Traceability Batch, Phase 2, item 6) — shown to
+ * `admin`/`super_admin` viewers on any project. Resolves the *effective* assignee (per-project
+ * override, else the project's ministry's default desk officer) via resolveProjectCaseManager,
+ * and lets staff change either the project-level override or the ministry-wide default from the
+ * same control — see the plan's "entitlement parity" note on why this lives here rather than in
+ * the super_admin-only Taxonomies tab.
+ */
+function CaseManagerSection({
+  project,
+  ministry,
+  isStaffViewer,
+}: {
+  project: InvestmentProject;
+  ministry: Ministry | undefined;
+  isStaffViewer: boolean;
+}) {
+  const { updateProject } = useProjectStore();
+  const { refresh: refreshTaxonomies } = useTaxonomyStore();
+  const [candidates, setCandidates] = useState<CaseManagerCandidate[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [setAsDefault, setSetAsDefault] = useState(false);
+  const [editing, setEditing] = useState(false);
+  // Safe reassignment handoff (Phase 8, item 3) — changing a ministry's default silently
+  // re-routes every project that has no per-project override, so we surface that blast radius
+  // before committing rather than after.
+  const [defaultChangeConfirm, setDefaultChangeConfirm] = useState<{ userId: string; inheritingCount: number } | null>(null);
+
+  useEffect(() => {
+    if (!isStaffViewer) return;
+    let cancelled = false;
+    fetch("/api/case-managers")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: CaseManagerCandidate[]) => {
+        if (!cancelled) setCandidates(data);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [isStaffViewer]);
+
+  const effectiveId = resolveProjectCaseManager(project, ministry);
+  const displayName = candidates.find((c) => c.userId === effectiveId)?.name;
+  const isOverride = Boolean(project.assignedStaffUserId);
+
+  // Advisory-only staff metadata — never shown to investors/government/ministry_admin viewers.
+  if (!isStaffViewer) return null;
+
+  async function applyChange(userId: string) {
+    setSaving(true);
+    try {
+      await updateProject(project.id, { assignedStaffUserId: userId || null });
+      if (setAsDefault && ministry) {
+        await fetch(`/api/ministries/${ministry.id}/case-manager`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ staffUserId: userId || null }),
+        });
+        await refreshTaxonomies?.();
+      }
+      toast.success(userId ? "Case Manager updated" : "Case Manager cleared");
+      setEditing(false);
+      setSetAsDefault(false);
+      setDefaultChangeConfirm(null);
+    } catch {
+      toast.error("Could not update Case Manager");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSelectChange(userId: string) {
+    if (!setAsDefault || !ministry) return applyChange(userId);
+    try {
+      const res = await fetch(`/api/ministries/${ministry.id}/case-manager`);
+      const { inheritingCount } = res.ok ? await res.json() : { inheritingCount: 0 };
+      if (inheritingCount > 0) {
+        setDefaultChangeConfirm({ userId, inheritingCount });
+        return;
+      }
+    } catch {
+      // fall through — proceed without the count rather than block the change entirely
+    }
+    applyChange(userId);
+  }
+
+  return (
+    <div>
+      <p className="text-[11px] uppercase tracking-wide mb-1.5" style={{ color: "var(--color-text-muted)" }}>
+        Case Manager
+      </p>
+      {editing ? (
+        <div className="space-y-2">
+          <select
+            className="dashboard-input w-full"
+            defaultValue={effectiveId ?? ""}
+            disabled={saving}
+            onChange={(e) => handleSelectChange(e.target.value)}
+          >
+            <option value="">Unassigned</option>
+            {candidates.map((c) => (
+              <option key={c.userId} value={c.userId}>
+                {c.name} ({c.role === "super_admin" ? "Super Admin" : "ZIDA Admin"})
+              </option>
+            ))}
+          </select>
+          {ministry && (
+            <label className="flex items-center gap-1.5 text-xs" style={{ color: "var(--color-text-muted)" }}>
+              <input type="checkbox" checked={setAsDefault} onChange={(e) => setSetAsDefault(e.target.checked)} />
+              Set as this ministry&apos;s default Case Manager
+            </label>
+          )}
+          <Button size="sm" variant="secondary" onClick={() => setEditing(false)} disabled={saving}>
+            Cancel
+          </Button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2">
+          <Chip tone={displayName ? "active" : "info"}>
+            <ShieldCheck className="h-3 w-3 mr-1 inline" />
+            {displayName ?? "Unassigned"}
+            {displayName && isOverride && <span className="opacity-70"> · override</span>}
+            {displayName && !isOverride && <span className="opacity-70"> · ministry default</span>}
+          </Chip>
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="text-xs underline"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            Change
+          </button>
+        </div>
+      )}
+
+      <Dialog open={Boolean(defaultChangeConfirm)} onOpenChange={(open) => !open && setDefaultChangeConfirm(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update {ministry?.name ?? "this ministry"}&apos;s default Case Manager?</DialogTitle>
+            <DialogDescription>
+              {defaultChangeConfirm?.inheritingCount} project{defaultChangeConfirm?.inheritingCount === 1 ? "" : "s"} with no
+              per-project override currently inherit this ministry&apos;s default and will immediately route to the new Case
+              Manager. Projects that already have their own override are unaffected.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setDefaultChangeConfirm(null)} disabled={saving}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={() => defaultChangeConfirm && applyChange(defaultChangeConfirm.userId)} disabled={saving}>
+              {saving ? "Updating…" : `Update default for all ${defaultChangeConfirm?.inheritingCount ?? 0}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+type ReviewingOfficerCandidate = { userId: string; name: string; role: string };
+
+/**
+ * "Assigned Reviewing Officer" chip + selector (Platform Feedback Batch v4, Phase 6) — a lightweight
+ * per-project assignment of one individual `government` reviewer, distinct from the Case Manager
+ * above (admin/super_admin-only, "drives" the process). Settable by the project's own `ministry_admin`
+ * or `admin`/`super_admin`; visible read-only to `government` viewers for transparency (it's what
+ * powers their own "My Assigned Projects" pipeline filter). One officer can be assigned across many
+ * projects — this is "one officer per project", never "one project per officer".
+ */
+function ReviewingOfficerSection({
+  project,
+  canEdit,
+  canView,
+}: {
+  project: InvestmentProject;
+  canEdit: boolean;
+  canView: boolean;
+}) {
+  const { updateProject } = useProjectStore();
+  const [candidates, setCandidates] = useState<ReviewingOfficerCandidate[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState(false);
+
+  useEffect(() => {
+    if (!canEdit) return;
+    let cancelled = false;
+    fetch(`/api/reviewing-officers?ministryId=${project.primaryBeneficiaryMinistryId}`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: ReviewingOfficerCandidate[]) => {
+        if (!cancelled) setCandidates(data);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [canEdit, project.primaryBeneficiaryMinistryId]);
+
+  if (!canView) return null;
+
+  const officerId = project.assignedReviewingOfficerUserId ?? null;
+  const displayName = candidates.find((c) => c.userId === officerId)?.name;
+
+  async function applyChange(userId: string) {
+    setSaving(true);
+    try {
+      await updateProject(project.id, { assignedReviewingOfficerUserId: userId || null });
+      toast.success(userId ? "Assigned Reviewing Officer updated" : "Assigned Reviewing Officer cleared");
+      setEditing(false);
+    } catch {
+      toast.error("Could not update the Assigned Reviewing Officer");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div>
+      <p className="text-[11px] uppercase tracking-wide mb-1.5" style={{ color: "var(--color-text-muted)" }}>
+        Assigned Reviewing Officer
+      </p>
+      {editing ? (
+        <div className="space-y-2">
+          <select
+            className="dashboard-input w-full"
+            defaultValue={officerId ?? ""}
+            disabled={saving}
+            onChange={(e) => applyChange(e.target.value)}
+          >
+            <option value="">Unassigned</option>
+            {candidates.map((c) => (
+              <option key={c.userId} value={c.userId}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          {candidates.length === 0 && (
+            <p className="text-[11px]" style={{ color: "var(--color-text-muted)" }}>
+              No active government reviewers are linked to this ministry yet.
+            </p>
+          )}
+          <Button size="sm" variant="secondary" onClick={() => setEditing(false)} disabled={saving}>
+            Cancel
+          </Button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2">
+          <Chip tone={displayName ? "active" : "info"}>
+            <Users className="h-3 w-3 mr-1 inline" />
+            {officerId ? (displayName ?? "Assigned") : "Unassigned"}
+          </Chip>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="text-xs underline"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              Change
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 type CheckState = "pass" | "warn" | "todo";
@@ -151,7 +450,33 @@ export function ProjectDetailDrawer({
   const { entries: history, isLoading: historyLoading } = useProjectHistory(project?.id ?? null);
   const { getEngagementsForProject, addEngagement, refresh: refreshEngagements } = useDealRoomStore();
   const { ministries } = useTaxonomyStore();
-  const { name, isQualified, isAdmin: isAdminReal, isSuperAdmin: isSuperAdminReal, role: realRole, ndaAcceptedAt } = useAuth();
+  const {
+    name,
+    userId: viewerUserId,
+    isQualified,
+    isAdmin: isAdminReal,
+    isSuperAdmin: isSuperAdminReal,
+    isGovernment: isGovernmentReal,
+    role: realRole,
+    ministryId: viewerMinistryId,
+    ndaAcceptedAt,
+  } = useAuth();
+  // Case Manager assignment (Phase 2, item 6) is symmetric admin/super_admin — same
+  // entitlement-parity convention as the rest of this drawer's staff-only affordances.
+  const isCaseManagerAdmin = isAdminReal || isSuperAdminReal;
+  // Assigned Reviewing Officer (Phase 6) — editable by the project's own ministry_admin or
+  // admin/super_admin; visible read-only to government for transparency (it's what powers their
+  // own "My Assigned Projects" pipeline filter). Strict primary-ministry match (not the broader
+  // projectMatchesMinistry, which also covers secondary beneficiaries) — mirrors exactly the same
+  // primaryBeneficiaryMinistryId check resolveProjectWorkflowRole uses to grant ministry_admin
+  // write authority on this project at all, so this edit control never renders somewhere the
+  // PATCH itself would 403.
+  const canEditReviewingOfficer =
+    isCaseManagerAdmin ||
+    (realRole === "ministry_admin" &&
+      Boolean(viewerMinistryId) &&
+      project?.primaryBeneficiaryMinistryId === viewerMinistryId);
+  const canViewReviewingOfficer = canEditReviewingOfficer || isGovernmentReal;
   const [activeTab, setActiveTab] = useState<DrawerTab>(initialTab ?? "overview");
   const [wizardOpen, setWizardOpen] = useState(false);
   // An investor (viewer with no workflow role) gets self-service engagement CTAs; staff do not.
@@ -201,20 +526,37 @@ export function ProjectDetailDrawer({
         {project && (
           <>
             <SheetHeader>
-              <div className="flex items-center gap-2 mb-1">
-                <StatusBadge status={project.projectStatus} />
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <div className="flex items-center gap-2">
+                  <StatusBadge status={project.projectStatus} />
+                  {project.investorSubmitted && (
+                    <span className="status-badge status-badge-info">Investor-Submitted Proposal</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {/* Clearly-visible Edit affordance (Platform Feedback Batch v3, Phase 5) — moved
+                   *  out of the Actions tab (where it was easy to miss) into the header, visible
+                   *  regardless of which tab is active. Navigates straight to the full-page wizard
+                   *  in edit mode instead of closing the drawer to open a second popup. */}
+                  {onEdit && (
+                    <Button size="sm" variant="secondary" onClick={() => onEdit(project)}>
+                      <Pencil className="h-3.5 w-3.5" /> Edit
+                    </Button>
+                  )}
+                  <WatchlistButton projectId={project.id} dark compact />
+                </div>
               </div>
               <SheetTitle>{project.title}</SheetTitle>
               <SheetDescription>{project.opportunitySummary}</SheetDescription>
             </SheetHeader>
 
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as DrawerTab)}>
-              <TabsList className="bg-white/5">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                <TabsTrigger value="messages">Messages</TabsTrigger>
-                {workflowRole && <TabsTrigger value="actions">Actions</TabsTrigger>}
-              </TabsList>
+              <ElevatedTabsList>
+                <ElevatedTabsTrigger value="overview" icon={LayoutDashboard}>Overview</ElevatedTabsTrigger>
+                <ElevatedTabsTrigger value="timeline" icon={ClipboardList}>Timeline</ElevatedTabsTrigger>
+                <ElevatedTabsTrigger value="messages" icon={MessageSquare}>Messages</ElevatedTabsTrigger>
+                {workflowRole && <ElevatedTabsTrigger value="actions" icon={ShieldCheck}>Actions</ElevatedTabsTrigger>}
+              </ElevatedTabsList>
 
               <TabsContent value="overview" className="mt-4 space-y-4">
                 {/* Investor action bar — the drawer is an investor's primary path into an
@@ -285,6 +627,37 @@ export function ProjectDetailDrawer({
                       {secondaryMinistries.map((m) => m && <Chip key={m.id}>{m.shortName}</Chip>)}
                     </ChipRow>
                   )}
+                  <CaseManagerSection project={project} ministry={primaryMinistry} isStaffViewer={isCaseManagerAdmin} />
+                  <ReviewingOfficerSection
+                    project={project}
+                    canEdit={canEditReviewingOfficer}
+                    canView={canViewReviewingOfficer}
+                  />
+                  {/* Request Association (Phase 6) — a ministry_admin/government viewer whose own
+                   *  ministry is a stranger to this project can ask to be added as a secondary
+                   *  beneficiary; hidden entirely for their own ministry's projects or once already
+                   *  a listed beneficiary. */}
+                  {(realRole === "ministry_admin" || isGovernmentReal) && viewerMinistryId && viewerUserId && (
+                    <RequestAssociationButton project={project} actorMinistryId={viewerMinistryId} />
+                  )}
+                  {/* Request Amendment (Platform Feedback Batch v4, Phase 8) — a government
+                   *  reviewer's governed change-request path on their own ministry's already
+                   *  locked (approved/published) project. Two-stage: their own ministry_admin
+                   *  decides first, then ZIDA Admin/Super Admin makes the final call (see
+                   *  POST /api/projects/[id]/amendment-request). ministry_admin doesn't need this
+                   *  — they keep direct-edit-with-reason authority on their own ministry's
+                   *  projects via the ordinary PATCH path, unchanged. */}
+                  {isGovernmentReal &&
+                    viewerMinistryId &&
+                    projectMatchesMinistry(project, viewerMinistryId) &&
+                    (project.projectStatus === "approved" || project.projectStatus === "published") && (
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wide mb-1.5" style={{ color: "var(--color-text-muted)" }}>
+                          Request Amendment
+                        </p>
+                        <RequestAmendmentForm project={project} />
+                      </div>
+                    )}
                 </div>
 
                 {/* Engaged Investors — pulled from the same store the Deal Room Engagements page
@@ -445,25 +818,18 @@ export function ProjectDetailDrawer({
                 <MessageThread
                   projectId={project.id}
                   isStaff={Boolean(workflowRole)}
+                  // Ministry Desk management dashboard plan, Part 3 — a ministry_admin browsing a
+                  // project outside their own ministry (Part 2's "My Ministry Only" toggle off) has
+                  // no workflowRole here and would just 403 if they tried to post; keep the thread
+                  // view-only rather than showing a composer that fails. On their own ministry's
+                  // projects, resolveProjectWorkflowRole grants a real workflowRole (isStaff=true).
+                  readOnly={realRole === "ministry_admin" && !workflowRole}
                   emptyMessage="No questions yet. Ask ZIDA anything about this project below."
                 />
               </TabsContent>
 
               {workflowRole && (
                 <TabsContent value="actions" className="mt-4">
-                  {onEdit && (
-                    <div className="mb-4 flex items-center justify-between rounded-lg p-3" style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid var(--color-sovereign-border)" }}>
-                      <div>
-                        <p className="text-sm text-white">Edit project details</p>
-                        <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-                          Correct any field at any lifecycle stage. Edits to live projects require a reason.
-                        </p>
-                      </div>
-                      <Button size="sm" variant="secondary" onClick={() => onEdit(project)}>
-                        <Pencil className="h-3.5 w-3.5" /> Edit
-                      </Button>
-                    </div>
-                  )}
                   <GovernanceChecklist project={project} sectorName={sector?.shortName ?? sector?.name} />
                   <ReviewActions
                     project={project}
@@ -485,7 +851,13 @@ export function ProjectDetailDrawer({
       engagement={selectedEngagement}
       projectTitle={project?.title}
       onClose={() => setSelectedEngagementId(null)}
-      isStaff={Boolean(workflowRole)}
+      // Ministry Desk management dashboard plan, Part 3 — fixes a real inconsistency: this nested
+      // drawer used to pass isStaff={Boolean(workflowRole)} with no readOnly, which accidentally
+      // granted a ministry_admin *full* engagement-approval authority here, contradicting the
+      // read-only stance the dedicated /ministry/engagements page enforces. Read + reply only.
+      isStaff={realRole === "ministry_admin" ? false : Boolean(workflowRole)}
+      readOnly={realRole === "ministry_admin"}
+      canMessage={realRole === "ministry_admin"}
       onUpdated={refreshEngagements}
     />
 

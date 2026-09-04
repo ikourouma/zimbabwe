@@ -8,6 +8,7 @@ import type { AccountRole } from "@/lib/auth/types";
 import {
   CONSOLE_META,
   consolesForRole,
+  getConsoleMeta,
   type DashboardConsole,
 } from "@/components/dashboard/dashboard-nav-config";
 import {
@@ -17,6 +18,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+const CONSOLE_HOME_HREF: Record<DashboardConsole, string> = {
+  admin: "/admin",
+  "super-admin": "/super-admin",
+  "deal-room": "/deal-room",
+  ministry: "/ministry",
+};
 
 function isActive(pathname: string, href: string, exact?: boolean) {
   if (exact) return pathname === href;
@@ -40,7 +48,7 @@ export function DashboardSidebar({
   onToggleCollapse,
 }: DashboardSidebarProps) {
   const pathname = usePathname();
-  const meta = CONSOLE_META[activeConsole];
+  const meta = getConsoleMeta(activeConsole, role);
   const switchableConsoles = consolesForRole(role).filter((c) => c !== activeConsole);
 
   return (
@@ -88,7 +96,7 @@ export function DashboardSidebar({
               >
                 {[activeConsole, ...switchableConsoles].map((c) => (
                   <DropdownMenuItem key={c} asChild className="cursor-pointer focus:bg-white/10 focus:text-white">
-                    <Link href={c === "admin" ? "/admin" : c === "super-admin" ? "/super-admin" : "/deal-room"}>
+                    <Link href={CONSOLE_HOME_HREF[c]}>
                       <span className={cn(c === activeConsole && "font-semibold text-white")}>
                         {CONSOLE_META[c].label}
                       </span>
@@ -108,7 +116,9 @@ export function DashboardSidebar({
         </div>
 
         <nav className={cn("flex-1 overflow-y-auto py-4 space-y-1", collapsed ? "px-2" : "px-3")}>
-          {meta.nav.map((item) => {
+          {meta.nav
+            .filter((item) => !item.minRole || (role && item.minRole.includes(role)))
+            .map((item) => {
             const active = isActive(pathname, item.href, item.exact);
             const Icon = item.icon;
             const link = (

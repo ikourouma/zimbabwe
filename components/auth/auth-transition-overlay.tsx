@@ -10,7 +10,8 @@ export function AuthTransitionOverlay() {
 
   if (phase === "idle") return null;
 
-  const label = phase === "signing_in" ? t.auth.signingIn : t.auth.signingOut;
+  const label =
+    phase === "signing_in" ? t.auth.signingIn : phase === "signing_up" ? t.auth.signingUp : t.auth.signingOut;
 
   return (
     <div

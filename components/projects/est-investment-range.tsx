@@ -1,6 +1,8 @@
 "use client";
 
-import { useDemoPersona } from "@/context/demo-persona-context";
+import { useAuth } from "@/context/auth-context";
+import { useSiteSettings } from "@/context/site-settings-context";
+import { accessLevelForRole, isQualifiedTier } from "@/lib/entitlements/visibility";
 import { cn } from "@/lib/utils";
 
 interface EstInvestmentRangeProps {
@@ -49,9 +51,15 @@ export function EstInvestmentRange({
   valueClassName,
   footnote,
 }: EstInvestmentRangeProps) {
-  const { isQualified } = useDemoPersona();
+  const { role } = useAuth();
+  const { costStructureHidden } = useSiteSettings();
+  const accessLevel = accessLevelForRole(role);
 
-  if (!isQualified) return null;
+  // Aggregate investment range is qualified-only by fixed product policy (see isQualifiedTier),
+  // independent of the configurable financialsE1 matrix row that governs the public headline
+  // capitalRequired string. costStructureHidden remains a sitewide kill switch above that.
+  if (costStructureHidden && accessLevel !== "admin") return null;
+  if (!isQualifiedTier(accessLevel)) return null;
 
   const mutedClass = dark ? "text-[var(--color-text-muted)]" : "text-zim-muted";
   const borderClass = dark ? "border-[var(--color-sovereign-border)]" : "border-zim-border";

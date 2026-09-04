@@ -38,6 +38,7 @@ function getMenuLinks(
     investorJourney: string;
     strategicInquiries: string;
     dealRoom: string;
+    ministryDesk: string;
     adminConsole: string;
     superAdmin: string;
   },
@@ -61,8 +62,18 @@ function getMenuLinks(
         { href: "/projects", label: links.projectRegistry },
         { href: "/strategic-partnerships", label: links.strategicInquiries },
       ];
+    // Ministry Desk (Fix Ministry Admin Console Access plan) — previously fell through to the
+    // `default` anonymous-visitor branch below, hiding the entire /ministry console from its own
+    // signed-in users. Skips Investor Journey/Strategic Inquiries: both are investor-facing
+    // marketing copy that doesn't apply to a ministry official.
+    case "ministry_admin":
+      return [
+        { href: "/ministry", label: links.ministryDesk },
+        { href: "/projects", label: links.projectRegistry },
+      ];
     default:
       return [
+        { href: "/deal-room", label: links.dealRoom },
         { href: "/projects", label: links.projectRegistry },
         { href: "/investor-journey", label: links.investorJourney },
         { href: "/strategic-partnerships", label: links.strategicInquiries },

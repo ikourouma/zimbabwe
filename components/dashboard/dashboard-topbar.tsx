@@ -4,9 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, Plus } from "lucide-react";
 import { UserAccountMenu } from "@/components/layout/user-account-menu";
-import { CONSOLE_META, type DashboardConsole } from "@/components/dashboard/dashboard-nav-config";
+import { getConsoleMeta, type DashboardConsole } from "@/components/dashboard/dashboard-nav-config";
 import { NotificationBell } from "@/components/dashboard/notification-bell";
 import { CommandPaletteTrigger } from "@/components/dashboard/command-palette";
+import { useAuth } from "@/context/auth-context";
 
 interface DashboardTopbarProps {
   console: DashboardConsole;
@@ -15,16 +16,24 @@ interface DashboardTopbarProps {
 
 export function DashboardTopbar({ console: activeConsole, onMenuClick }: DashboardTopbarProps) {
   const pathname = usePathname();
-  const meta = CONSOLE_META[activeConsole];
+  const { role } = useAuth();
+  const meta = getConsoleMeta(activeConsole, role);
   const currentItem = meta.nav.find((item) => (item.exact ? pathname === item.href : pathname.startsWith(item.href)));
-  // Project creation is an Admin/Super-Admin capability — surfaced as a persistent quick action so
-  // staff can spin up a project from anywhere in those consoles (deep-links to ?new=1).
-  const createHref =
+  // Project creation is an Admin/Super-Admin capability, plus (Team Ministry Traceability Batch,
+  // Phase 3, item 8) ministry_admin for their own ministry — surfaced as a persistent quick action
+  // so staff can spin up a project from anywhere in those consoles. Links straight to the real
+  // full-page wizard route (Platform Feedback Batch v3, Phase 5) rather than a `?new=1` deep link
+  // into a Dialog — a genuine route navigation has no "must reload to reopen" failure mode to work
+  // around in the first place.
+  const createBasePath =
     activeConsole === "super-admin"
-      ? "/super-admin/projects?new=1"
+      ? "/super-admin/projects"
       : activeConsole === "admin"
-        ? "/admin/projects?new=1"
-        : null;
+        ? "/admin/projects"
+        : activeConsole === "ministry"
+          ? "/ministry/projects"
+          : null;
+  const createHref = createBasePath ? `${createBasePath}/new` : null;
 
   return (
     <header className="dashboard-topbar sticky top-0 z-30 flex items-center gap-3 px-4 sm:px-6 h-14 shrink-0">

@@ -26,8 +26,10 @@ import { RoleChangeModal, ROLE_LABELS } from "@/components/dashboard/role-change
 import { AccountStatusModal, type AccountStatusAction } from "@/components/dashboard/account-status-modal";
 import { formatAccountRef } from "@/lib/utils/account-ref";
 import { UserDetailDrawer } from "@/components/dashboard/user-detail-drawer";
+import { EditUserDetailsModal, type EditUserDetailsPayload } from "@/components/dashboard/edit-user-details-modal";
 import { InviteUserModal } from "@/components/dashboard/invite-user-modal";
 import { CreateUserModal } from "@/components/dashboard/create-user-modal";
+import { TeamInviteValidationQueue } from "@/components/dashboard/team-invite-validation-queue";
 import {
   Dialog,
   DialogContent,
@@ -171,11 +173,15 @@ export function UsersWorkspace({ tier }: { tier: UsersWorkspaceTier }) {
     }
   };
 
-  const saveDetails = async (updates: { organization: string | null; jobTitle: string | null; phone: string | null }) => {
+  const saveDetails = async (updates: EditUserDetailsPayload) => {
     if (!editDetailsUser) return;
     try {
       await updateUser(editDetailsUser.userId, { ...updates, reason: `Profile details edited from ${tier} console` });
       toast.success(`${editDetailsUser.name}'s details were updated`);
+      // Lets an already-open User Detail Drawer for this same account refresh its dossier (the KYC
+      // + Executive Representative fields live there, not on the lighter AdminUserRecord row) —
+      // mirrors the zim:engagement-updated cross-component refresh pattern used elsewhere.
+      window.dispatchEvent(new CustomEvent("zim:user-details-updated", { detail: { userId: editDetailsUser.userId } }));
       setEditDetailsUser(null);
     } catch {
       toast.error("Failed to update details");
@@ -359,8 +365,8 @@ export function UsersWorkspace({ tier }: { tier: UsersWorkspaceTier }) {
         title="Sign in required"
         description={
           tier === "super-admin"
-            ? "Use a super admin pilot account to manage platform users and roles."
-            : "Use a ZIDA admin account to manage users below the admin tier."
+            ? "Sign in with a super admin account to manage platform users and roles."
+            : "Sign in with a ZIDA admin account to manage users below the admin tier."
         }
       />
     );
@@ -409,6 +415,8 @@ export function UsersWorkspace({ tier }: { tier: UsersWorkspaceTier }) {
         />
       </div>
 
+      <TeamInviteValidationQueue />
+
       <UserDirectoryFiltersBar
         users={users}
         ministries={ministries}
@@ -451,6 +459,7 @@ export function UsersWorkspace({ tier }: { tier: UsersWorkspaceTier }) {
         onRequestRoleChange={(user, nextRole) => setPendingRoleChange({ user, nextRole })}
         onRequestStatusChange={(user, action) => setPendingStatusChange({ user, action })}
         onUpdateMinistry={updateMinistry}
+        onEdit={setEditDetailsUser}
       />
 
       <RoleChangeModal
@@ -468,7 +477,6 @@ export function UsersWorkspace({ tier }: { tier: UsersWorkspaceTier }) {
       />
 
       <InviteUserModal open={inviteOpen} onOpenChange={setInviteOpen} assignableRoles={assignableRoles(actorRole)} />
-
       <CreateUserModal open={createOpen} onOpenChange={setCreateOpen} assignableRoles={assignableRoles(actorRole)} />
 
       <BulkRoleModal
@@ -478,93 +486,8 @@ export function UsersWorkspace({ tier }: { tier: UsersWorkspaceTier }) {
         onConfirm={applyBulkRole}
       />
 
-      <EditDetailsModal user={editDetailsUser} onCancel={() => setEditDetailsUser(null)} onSave={saveDetails} />
+      <EditUserDetailsModal user={editDetailsUser} onCancel={() => setEditDetailsUser(null)} onSave={saveDetails} />
     </div>
-  );
-}
-
-/** "Edit details" row action — lets staff correct another user's organization/job title/phone,
- *  fields that live in our own `profiles` table (safe to admin-edit). Deliberately excludes
- *  Name/Email, which are Better-Auth-owned and can't be safely admin-edited here. */
-function EditDetailsModal({
-  user,
-  onCancel,
-  onSave,
-}: {
-  user: AdminUserRecord | null;
-  onCancel: () => void;
-  onSave: (updates: { organization: string | null; jobTitle: string | null; phone: string | null }) => Promise<void>;
-}) {
-  const [organization, setOrganization] = useState("");
-  const [jobTitle, setJobTitle] = useState("");
-  const [phone, setPhone] = useState("");
-  const [busy, setBusy] = useState(false);
-  const open = Boolean(user);
-
-  useEffect(() => {
-    if (user) {
-      setOrganization(user.organization ?? "");
-      setJobTitle(user.jobTitle ?? "");
-      setPhone(user.phone ?? "");
-      setBusy(false);
-    }
-  }, [user]);
-
-  if (!user) return null;
-
-  const submit = async () => {
-    setBusy(true);
-    try {
-      await onSave({
-        organization: organization.trim() || null,
-        jobTitle: jobTitle.trim() || null,
-        phone: phone.trim() || null,
-      });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={(o) => !o && onCancel()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Edit details for {user.name}</DialogTitle>
-          <DialogDescription>
-            Organization, job title, and phone are the only fields admin-editable here — name and email are managed by
-            the account&apos;s own sign-in provider.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>
-              Organization
-            </label>
-            <input value={organization} onChange={(e) => setOrganization(e.target.value)} className="dashboard-input" />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>
-              Job title
-            </label>
-            <input value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} className="dashboard-input" />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>
-              Phone
-            </label>
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} className="dashboard-input" />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" size="sm" onClick={onCancel} disabled={busy}>
-            Cancel
-          </Button>
-          <Button size="sm" onClick={submit} disabled={busy}>
-            {busy ? "Saving…" : "Save details"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
 

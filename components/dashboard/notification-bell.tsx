@@ -85,8 +85,10 @@ export function NotificationBell() {
     }
   };
 
-  // Qualified investors aren't in-scope for /api/audit-logs — render a quiet, inert bell rather
-  // than nothing, so the topbar layout stays consistent across roles.
+  // Qualified investors aren't in-scope for /api/audit-logs at all — render a quiet, inert bell
+  // rather than nothing, so the topbar layout stays consistent across roles. ministry_admin now has
+  // a real, ministry-scoped feed (Ministry Desk management dashboard plan, Part 4 — GET
+  // /api/audit-logs branches to fetchAuditLogsForMinistry for this role), so it's a live bell below.
   if (role === "qualified") {
     return (
       <button

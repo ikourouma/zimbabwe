@@ -17,7 +17,7 @@ interface DashboardShellProps {
 }
 
 export function DashboardShell({ pathname, children }: DashboardShellProps) {
-  const { role } = useAuth();
+  const { role, accountStatus } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const activeConsole = consoleFromPathname(pathname);
@@ -63,8 +63,16 @@ export function DashboardShell({ pathname, children }: DashboardShellProps) {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <DashboardTopbar console={activeConsole} onMenuClick={() => setMobileOpen(true)} />
         <main className="flex-1 overflow-y-auto">
+          {accountStatus !== "active" && (
+            <div
+              className="px-4 sm:px-6 py-3 text-sm"
+              style={{ backgroundColor: "rgba(248,113,113,0.12)", color: "#fca5a5", borderBottom: "1px solid rgba(248,113,113,0.25)" }}
+            >
+              This account is {accountStatus}. API actions are blocked until a ZIDA administrator reinstates access.
+            </div>
+          )}
           <div className="px-4 sm:px-6 py-6 max-w-[1400px]">
-            {activeConsole === "deal-room" ? <NdaGate>{children}</NdaGate> : children}
+            {activeConsole === "deal-room" || activeConsole === "ministry" ? <NdaGate>{children}</NdaGate> : children}
           </div>
         </main>
       </div>

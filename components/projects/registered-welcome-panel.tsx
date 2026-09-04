@@ -93,7 +93,11 @@ export function RegisteredWelcomePanel({ showWelcomeParam }: RegisteredWelcomePa
             <button
               type="button"
               onClick={dismiss}
+              // `.btn-sovereign-ghost` hardcodes white text for the dark dashboard shell — this
+              // panel lives on the light public `/projects` page, so it needs the light-shell ink
+              // color explicitly, or the label is invisible (feedback item 19).
               className="btn-sovereign-ghost text-xs px-4 py-2 whitespace-nowrap"
+              style={{ color: "var(--color-ink)" }}
             >
               {wp.dismiss}
             </button>

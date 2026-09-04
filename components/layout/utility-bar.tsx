@@ -5,11 +5,14 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Search } from "lucide-react";
 import { useTranslations } from "@/context/locale-context";
+import { useSiteSettings } from "@/context/site-settings-context";
+import { isPublicNavHrefVisible } from "@/lib/governance/public-nav";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 
 export function UtilityBar() {
   const router = useRouter();
   const t = useTranslations();
+  const { publicNavVisibility } = useSiteSettings();
   const [query, setQuery] = useState("");
 
   const handleSearch = (e: FormEvent) => {
@@ -40,7 +43,7 @@ export function UtilityBar() {
         </form>
 
         <nav className="ml-auto flex items-center gap-4 text-[0.7rem] font-medium" aria-label="Utility navigation">
-          {t.nav.utility.map((link) => (
+          {t.nav.utility.filter((link) => isPublicNavHrefVisible(link.href, publicNavVisibility)).map((link) => (
             <Link key={link.href} href={link.href} className="utility-link">
               {link.label}
             </Link>

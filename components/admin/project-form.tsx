@@ -37,6 +37,12 @@ interface ProjectFormProps {
   onSave: (project: Partial<InvestmentProject>) => void | Promise<InvestmentProject | void>;
   onSubmit?: (project: Partial<InvestmentProject>) => void | Promise<InvestmentProject | void>;
   mode?: "create" | "edit";
+  /** Team Ministry Traceability Batch, Phase 3 (item 8) — when a ministry_admin opens this form,
+   *  the Primary Beneficiary Ministry is pre-filled to their own ministry and the selector is
+   *  disabled (never a free-text override): the server ignores/overwrites the field for that role
+   *  anyway (see POST /api/projects), so locking it here is purely about not showing a control
+   *  that would silently do nothing. */
+  lockedMinistryId?: string;
 }
 
 const emptyForm: Partial<InvestmentProject> = {
@@ -56,9 +62,13 @@ const emptyForm: Partial<InvestmentProject> = {
   dataVerificationStatus: "pending_review",
 };
 
-export function ProjectForm({ initial, onSave, onSubmit, mode = "create" }: ProjectFormProps) {
+export function ProjectForm({ initial, onSave, onSubmit, mode = "create", lockedMinistryId }: ProjectFormProps) {
   const { ministries } = useTaxonomyStore();
-  const [form, setForm] = useState<Partial<InvestmentProject>>({ ...emptyForm, ...initial });
+  const [form, setForm] = useState<Partial<InvestmentProject>>({
+    ...emptyForm,
+    ...initial,
+    ...(lockedMinistryId ? { primaryBeneficiaryMinistryId: lockedMinistryId } : null),
+  });
   const [scopeText, setScopeText] = useState((initial?.scope ?? []).join("\n"));
   const [impactText, setImpactText] = useState((initial?.developmentImpact ?? []).join("\n"));
   const [documents, setDocuments] = useState<ProjectDocumentRecord[]>(initial?.documentRecords ?? []);
@@ -215,6 +225,7 @@ export function ProjectForm({ initial, onSave, onSubmit, mode = "create" }: Proj
           <Label>Primary Beneficiary Ministry *</Label>
           <Select
             value={form.primaryBeneficiaryMinistryId ?? ""}
+            disabled={Boolean(lockedMinistryId)}
             onValueChange={(v) =>
               setForm({
                 ...form,
@@ -230,6 +241,11 @@ export function ProjectForm({ initial, onSave, onSubmit, mode = "create" }: Proj
               {ministries.map((m) => <SelectItem key={m.id} value={m.id}>{m.shortName}</SelectItem>)}
             </SelectContent>
           </Select>
+          {lockedMinistryId && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Locked to your own ministry — Ministry Admins create projects on behalf of their designated ministry only.
+            </p>
+          )}
         </div>
         <div>
           <Label>Co-sponsoring Ministries (optional)</Label>

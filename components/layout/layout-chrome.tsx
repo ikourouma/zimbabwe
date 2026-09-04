@@ -9,6 +9,7 @@ import { CookieBanner } from "@/components/layout/cookie-banner";
 import { StickyBreadcrumb } from "@/components/layout/sticky-breadcrumb";
 import { UtilityBar } from "@/components/layout/utility-bar";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { MarketingPopupModal } from "@/components/layout/marketing-popup-modal";
 
 const LIGHT_PREFIXES = ["/contact"];
 const HIDE_CHROME = ["/register", "/auth"];
@@ -16,7 +17,7 @@ const HIDE_CHROME = ["/register", "/auth"];
 // (components/dashboard/dashboard-shell.tsx) — they replace the marketing SiteHeader/SiteFooter
 // entirely rather than sitting on top of them, matching the rest of the authenticated,
 // dark-themed experience (sign-in, project detail pages).
-const DASHBOARD_PREFIXES = ["/admin", "/super-admin", "/deal-room"];
+const DASHBOARD_PREFIXES = ["/admin", "/super-admin", "/deal-room", "/ministry"];
 
 function isLightRoute(pathname: string) {
   // "/projects" (the registry list) stays on the light zim-theme, but "/projects/[slug]" (the
@@ -60,6 +61,7 @@ export function LayoutChrome({ children }: { children: React.ReactNode }) {
       {children}
       <SiteFooter />
       <CookieBanner />
+      <MarketingPopupModal />
     </>
   );
 }

@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
-const ACTOR_ROLE_ORDER: AccountRole[] = ["registered", "qualified", "government", "admin", "super_admin"];
+const ACTOR_ROLE_ORDER: AccountRole[] = ["registered", "qualified", "government", "ministry_admin", "admin", "super_admin"];
 const TIME_HORIZON_ORDER: AuditTimeHorizon[] = ["all", "today", "24h", "7d", "custom"];
 
 interface AuditLogFiltersBarProps {

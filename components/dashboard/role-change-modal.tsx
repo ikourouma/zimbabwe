@@ -15,12 +15,13 @@ export const ROLE_LABELS: Record<AccountRole, string> = {
   registered: "Registered",
   qualified: "Qualified Investor",
   government: "Government",
+  ministry_admin: "Ministry Admin",
   admin: "ZIDA Admin",
   super_admin: "Platform Admin",
 };
 
 /** Roles that grant elevated platform authority — flagged with a stronger warning in the modal. */
-const PRIVILEGED_ROLES: AccountRole[] = ["admin", "super_admin", "government"];
+const PRIVILEGED_ROLES: AccountRole[] = ["admin", "super_admin", "government", "ministry_admin"];
 
 interface RoleChangeModalProps {
   user: AdminUserRecord | null;

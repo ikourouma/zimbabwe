@@ -76,7 +76,11 @@ export function InquiryFiltersBar({
 
   const statusCounts: Record<InquiryStatusFilter, number> = {
     all: countFor("status", () => true),
+    // "draft" never appears in `inquiries` — GET /api/inquiries excludes it from the admin queue
+    // entirely (see the Investor Qualification Vetting plan) — kept here only to satisfy the type.
+    draft: 0,
     pending: countFor("status", (i) => (i.status ?? "pending") === "pending"),
+    changes_requested: countFor("status", (i) => i.status === "changes_requested"),
     approved: countFor("status", (i) => i.status === "approved"),
     declined: countFor("status", (i) => i.status === "declined"),
   };
@@ -201,8 +205,8 @@ export function InquiryFiltersBar({
         </div>
       )}
 
-      {/* Row 3 — Status filter pills, always visible, live dynamic counts. Only the three states
-          the schema actually supports (pending/approved/declined) — no "Under Review"/"Archived". */}
+      {/* Row 3 — Status filter pills, always visible, live dynamic counts. "draft" is deliberately
+          excluded (see INQUIRY_STATUS_ORDER) — those rows never reach this admin queue. */}
       <div className="flex flex-wrap items-center gap-2">
         <Pill active={statusFilter === "all"} onClick={() => onStatusFilterChange("all")}>
           All ({statusCounts.all})

@@ -7,6 +7,7 @@ import { useAuth } from "@/context/auth-context";
 import { useDealRoomStore } from "@/context/deal-room-store-context";
 import { useProjectStore } from "@/context/project-store-context";
 import { useCommunicationHub } from "@/lib/hooks/use-communication-hub";
+import { projectMatchesMinistry } from "@/lib/entitlements/ministry-scope";
 import { timeAgo } from "@/components/dashboard/activity-feed";
 import { MessageThread } from "@/components/deal-room/message-thread";
 import { NewMessageModal } from "@/components/deal-room/new-message-modal";
@@ -47,11 +48,24 @@ const SCOPE_TABS: { id: ScopeFilter; label: string }[] = [
  * content). Scope tabs filter the list; investors can always start a General Concierge thread.
  */
 export function CommunicationHubView() {
-  const { isAdmin, isGovernment } = useAuth();
-  const isStaff = isAdmin || isGovernment;
+  const { userId, isAdmin, isGovernment, isMinistryAdmin, ministryId } = useAuth();
+  const isStaff = isAdmin || isGovernment || isMinistryAdmin;
   const { messages, isLoading, refresh } = useCommunicationHub();
   const { engagements } = useDealRoomStore();
-  const { getProject } = useProjectStore();
+  const { projects, getProject } = useProjectStore();
+  // Ministry Desk management dashboard plan, Part 3 — no concierge channel for ministry_admin
+  // (that stays investor<->ZIDA), so "New Message" gets a project picker instead of the staff
+  // broadcast tool / investor desk-routing dropdown. fetchMessagesForActor already ministry-scopes
+  // the thread list itself; this just needs the full set of ministry projects to start a new one.
+  const ministryProjectOptions = useMemo(
+    () =>
+      isMinistryAdmin && ministryId
+        ? projects
+            .filter((p) => projectMatchesMinistry(p, ministryId))
+            .map((p) => ({ id: p.id, title: p.title }))
+        : undefined,
+    [isMinistryAdmin, ministryId, projects]
+  );
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [scope, setScope] = useState<ScopeFilter>("all");
   const [lastSeen, setLastSeen] = useState(0);
@@ -79,6 +93,10 @@ export function CommunicationHubView() {
         if (m.authorUserId === owner) ownerNames.set(owner, m.authorName);
         const key = `concierge:${owner}`;
         const existing = map.get(key);
+        // A staff-role viewer looking at *their own* thread (ministry_admin's escalation channel
+        // to ZIDA, or government's "Message ZIDA" channel) is not triaging someone else's enquiry
+        // — title it like the investor-facing view, not with their own name.
+        const isOwnThread = owner === userId;
         if (existing) {
           existing.count += 1;
         } else {
@@ -86,8 +104,12 @@ export function CommunicationHubView() {
             key,
             kind: "concierge",
             category: "general",
-            title: isStaff ? ownerNames.get(owner) ?? "General enquiry" : "General Concierge",
-            subtitle: isStaff ? "General channel" : "ZIDA general channel",
+            title: isOwnThread
+              ? "My General Channel with ZIDA"
+              : isStaff
+                ? ownerNames.get(owner) ?? "General enquiry"
+                : "General Concierge",
+            subtitle: isOwnThread ? "ZIDA general channel" : isStaff ? "General channel" : "ZIDA general channel",
             ownerUserId: isStaff ? owner : null,
             latest: m,
             count: 1,
@@ -116,7 +138,7 @@ export function CommunicationHubView() {
 
     // Backfill staff concierge titles now that we've seen all owner-authored messages.
     for (const t of map.values()) {
-      if (t.kind === "concierge" && isStaff && t.ownerUserId) {
+      if (t.kind === "concierge" && isStaff && t.ownerUserId && t.ownerUserId !== userId) {
         t.title = ownerNames.get(t.ownerUserId) ?? t.title;
       }
     }
@@ -188,8 +210,10 @@ export function CommunicationHubView() {
         open={composeOpen}
         onOpenChange={setComposeOpen}
         isStaff={isStaff}
+        isGovernment={isGovernment}
         onSent={refresh}
         onSelectProjectThread={handleSelectProjectThread}
+        ministryProjectOptions={ministryProjectOptions}
       />
 
       {/* Scope tabs */}
@@ -316,7 +340,9 @@ export function CommunicationHubView() {
                   <ThreadToolbar
                     threadTitle={selected.title}
                     threadMessages={messages.filter((m) => belongsToThread(m, selected))}
-                    canEscalate={isStaff && selected.kind === "concierge" && Boolean(selected.ownerUserId)}
+                    canEscalate={
+                      isStaff && !isMinistryAdmin && selected.kind === "concierge" && Boolean(selected.ownerUserId)
+                    }
                     ownerUserId={selected.ownerUserId ?? null}
                     onEscalated={refresh}
                   />

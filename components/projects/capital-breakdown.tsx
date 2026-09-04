@@ -1,7 +1,8 @@
 "use client";
 
-import { useDemoPersona } from "@/context/demo-persona-context";
+import { useAuth } from "@/context/auth-context";
 import { useSiteSettings } from "@/context/site-settings-context";
+import { accessLevelForRole, isQualifiedTier } from "@/lib/entitlements/visibility";
 import { parseCapitalBreakdown } from "@/lib/utils/capital";
 import { cn } from "@/lib/utils";
 
@@ -16,16 +17,17 @@ interface CapitalBreakdownProps {
 }
 
 export function CapitalBreakdown({ value, dark = false, maxItems, className, label }: CapitalBreakdownProps) {
-  const { isQualified } = useDemoPersona();
+  const { role } = useAuth();
   const { costStructureHidden } = useSiteSettings();
   const items = parseCapitalBreakdown(value);
+  const accessLevel = accessLevelForRole(role);
 
   if (items.length === 0) return null;
-  // Full hide, no blur/lock teaser: a project's own cost figures are reserved for admin-approved
-  // qualified investors, not merely registered ones. Non-qualified visitors already get the
-  // registration/verification model explained via the page-level "Register to unlock" prompts,
-  // so this stays silent — matching the Beneficiary Ministry pattern.
-  if (costStructureHidden || !isQualified) return null;
+  // Itemized dollar breakdown is qualified-only by fixed product policy (see isQualifiedTier),
+  // independent of the configurable financialsE1 matrix row that governs the public headline
+  // capitalRequired string. costStructureHidden remains a sitewide kill switch above that.
+  if (costStructureHidden && accessLevel !== "admin") return null;
+  if (!isQualifiedTier(accessLevel)) return null;
 
   const visible = maxItems ? items.slice(0, maxItems) : items;
   const hiddenCount = items.length - visible.length;

@@ -2,12 +2,28 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Archive, ArchiveRestore, CalendarClock, Clock, Lock, Pencil, Send, Trash2, Undo2 } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  CalendarClock,
+  Clock,
+  FileText,
+  Info,
+  Lock,
+  MessageSquare,
+  Pencil,
+  Send,
+  Trash2,
+  UserCog,
+  Undo2,
+} from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { EngagementStatusPill } from "@/components/deal-room/engagement-status-pill";
 import { MouPanel } from "@/components/deal-room/mou-panel";
 import { MessageThread } from "@/components/deal-room/message-thread";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EngagementDelegatePicker } from "@/components/deal-room/engagement-delegate-picker";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { ElevatedTabsList, ElevatedTabsTrigger } from "@/components/ui/elevated-tabs";
 import {
   Dialog,
   DialogContent,
@@ -55,6 +71,82 @@ function FieldLabel({ htmlFor, children }: { htmlFor?: string; children: React.R
     <label htmlFor={htmlFor} className="text-xs font-medium mb-1 block" style={{ color: "var(--color-text-muted)" }}>
       {children}
     </label>
+  );
+}
+
+/**
+ * Primary-contact clarity (Team Ministry Traceability Batch, Phase 8, item 2) — advisory-only
+ * "who's actually driving replies right now" signal. Only rendered when a Delegate is assigned
+ * (with no Delegate there's no ambiguity to resolve). Either the owner or the Delegate may switch
+ * it themselves; staff and any other viewer see the same badge read-only.
+ */
+function PrimaryContactControl({
+  engagement,
+  canSwitch,
+}: {
+  engagement: InvestorEngagement;
+  canSwitch: boolean;
+}) {
+  const [saving, setSaving] = useState(false);
+  if (!engagement.assignedUserId || !engagement.userId) return null;
+
+  const effective = engagement.primaryContactUserId ?? engagement.userId;
+  const isOwnerPrimary = effective === engagement.userId;
+
+  const switchTo = async (userId: string) => {
+    if (userId === effective) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/engagements/${engagement.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ primaryContactUserId: userId }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Primary contact updated");
+      window.dispatchEvent(new CustomEvent("zim:engagement-updated"));
+    } catch {
+      toast.error("Could not update primary contact");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3 flex items-center justify-between gap-2">
+      <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+        Primary contact:{" "}
+        <strong className="text-white">{isOwnerPrimary ? "Owner" : "Delegate"}</strong>
+      </span>
+      {canSwitch && (
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            disabled={saving || isOwnerPrimary}
+            onClick={() => switchTo(engagement.userId!)}
+            className="text-[10px] font-medium px-2 py-1 rounded border transition-colors disabled:opacity-40"
+            style={{
+              borderColor: isOwnerPrimary ? "var(--color-gold)" : "var(--color-sovereign-border)",
+              color: isOwnerPrimary ? "var(--color-gold)" : "var(--color-text-muted)",
+            }}
+          >
+            Owner
+          </button>
+          <button
+            type="button"
+            disabled={saving || !isOwnerPrimary}
+            onClick={() => switchTo(engagement.assignedUserId!)}
+            className="text-[10px] font-medium px-2 py-1 rounded border transition-colors disabled:opacity-40"
+            style={{
+              borderColor: !isOwnerPrimary ? "var(--color-gold)" : "var(--color-sovereign-border)",
+              color: !isOwnerPrimary ? "var(--color-gold)" : "var(--color-text-muted)",
+            }}
+          >
+            Delegate
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -137,8 +229,22 @@ interface EngagementDetailDrawerProps {
    *  can post internal notes in Messages — a qualified investor only ever sees their own row
    *  (enforced server-side too, see GET /api/engagements and .../mou). */
   isStaff: boolean;
+  /** Read-only oversight viewer (ministry_admin — Subject Dropdown + Ministry Engagements plan,
+   *  Part B): full visibility (Details fields, MOU tab, Messages incl. internal notes) but no
+   *  composer, no self-service/correction/call/deletion actions, and Follow-Through shown
+   *  read-only. Pass alongside `isStaff={false}`. */
+  readOnly?: boolean;
+  /** Ministry Desk management dashboard plan, Part 3 — decouples "read-only for governance
+   *  actions" from "read-only for messaging" so a ministry_admin can read + reply in the Messages
+   *  tab (their Communication Hub) without gaining MOU/status authority. Only affects the Messages
+   *  tab; Details/MOU keep using `isStaff`/`readOnly` untouched. Pass alongside `readOnly`. */
+  canMessage?: boolean;
   /** Called after a successful draft edit / publish / correction so the parent list refreshes. */
   onUpdated?: () => void;
+  /** Which tab opens first — the MOU registry (Platform Feedback Batch v3, Phase 8) opens straight
+   *  to "mou" since that's the entire reason a row was clicked there; every other caller keeps the
+   *  "details" default. */
+  defaultTab?: "details" | "mou" | "messages";
 }
 
 /** Row-level drill-down for a single investor engagement — makes each Engagements row clickable
@@ -151,7 +257,10 @@ export function EngagementDetailDrawer({
   projectTitle,
   onClose,
   isStaff,
+  readOnly = false,
+  canMessage = false,
   onUpdated,
+  defaultTab,
 }: EngagementDetailDrawerProps) {
   return (
     <Sheet open={Boolean(engagement)} onOpenChange={(open) => !open && onClose()}>
@@ -177,26 +286,44 @@ export function EngagementDetailDrawer({
               </SheetDescription>
             </SheetHeader>
 
-            <Tabs defaultValue="details">
-              <TabsList className="bg-white/5">
-                <TabsTrigger value="details">Details</TabsTrigger>
-                <TabsTrigger value="mou">MOU</TabsTrigger>
-                <TabsTrigger value="messages">Messages</TabsTrigger>
-              </TabsList>
+            {/* Keyed by engagement id so `defaultTab` (e.g. the MOU registry always opening
+             *  straight to "mou") re-applies correctly when a different row is clicked while the
+             *  drawer is already open, rather than inheriting whatever tab was last active. */}
+            <Tabs key={engagement.id} defaultValue={defaultTab ?? "details"}>
+              <ElevatedTabsList>
+                <ElevatedTabsTrigger value="details" icon={Info}>Details</ElevatedTabsTrigger>
+                <ElevatedTabsTrigger value="mou" icon={FileText}>MOU</ElevatedTabsTrigger>
+                <ElevatedTabsTrigger value="messages" icon={MessageSquare}>Messages</ElevatedTabsTrigger>
+              </ElevatedTabsList>
 
               <TabsContent value="details" className="mt-4">
-                <EngagementDetailsTab engagement={engagement} isStaff={isStaff} onUpdated={onUpdated} onClose={onClose} />
+                <EngagementDetailsTab
+                  engagement={engagement}
+                  isStaff={isStaff}
+                  readOnly={readOnly}
+                  onUpdated={onUpdated}
+                  onClose={onClose}
+                />
               </TabsContent>
 
               <TabsContent value="mou" className="mt-4">
                 <MouPanel engagementId={engagement.id} investorName={engagement.investorName} />
               </TabsContent>
 
-              <TabsContent value="messages" className="mt-4">
+              <TabsContent value="messages" className="mt-4 space-y-3">
+                {engagement.assignedUserId && (
+                  <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                    Primary contact:{" "}
+                    <strong className="text-white">
+                      {(engagement.primaryContactUserId ?? engagement.userId) === engagement.userId ? "Owner" : "Delegate"}
+                    </strong>
+                  </p>
+                )}
                 <MessageThread
                   projectId={engagement.projectId}
                   engagementId={engagement.id}
-                  isStaff={isStaff}
+                  isStaff={isStaff || canMessage}
+                  readOnly={readOnly && !canMessage}
                   emptyMessage="No messages on this engagement yet."
                 />
               </TabsContent>
@@ -211,20 +338,31 @@ export function EngagementDetailDrawer({
 function EngagementDetailsTab({
   engagement,
   isStaff,
+  readOnly = false,
   onUpdated,
   onClose,
 }: {
   engagement: InvestorEngagement;
   isStaff: boolean;
+  readOnly?: boolean;
   onUpdated?: () => void;
   onClose?: () => void;
 }) {
   const { userId, role } = useAuth();
   const canEditFollowThrough = role === "admin" || role === "super_admin";
   const isOwner = !isStaff && Boolean(engagement.userId) && engagement.userId === userId;
-  // Both the owning investor and staff (on the investor's behalf) may edit a draft; only the
-  // investor's publish requires a certification attestation.
-  const canEdit = isDraftEditable(engagement.status) && (isOwner || isStaff);
+  // Delegate model (Team Ministry Traceability Batch, Phase 5) — a Team Member the owner assigned
+  // equal authority to on this one engagement; matches the widened PATCH ownership gate.
+  const isDelegate = !isStaff && Boolean(engagement.assignedUserId) && engagement.assignedUserId === userId;
+  // The owning investor, their assigned Delegate, and staff (on the investor's behalf) may edit a
+  // draft; only the investor's own publish requires a certification attestation.
+  const canEdit = isDraftEditable(engagement.status) && (isOwner || isDelegate || isStaff);
+
+  useEffect(() => {
+    const handler = () => onUpdated?.();
+    window.addEventListener("zim:engagement-updated", handler);
+    return () => window.removeEventListener("zim:engagement-updated", handler);
+  }, [onUpdated]);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [deleteRequestOpen, setDeleteRequestOpen] = useState(false);
@@ -560,7 +698,27 @@ function EngagementDetailsTab({
     </>
   );
 
-  // ---- Editable draft view (owner or staff) ----
+  // Delegate model (Team Ministry Traceability Batch, Phase 5) — an interactive picker for the
+  // true owner (assign/unassign), a plain "Delegate: {name}" chip for the assigned Delegate/staff
+  // viewing the same record. Visible regardless of draft/locked status — it's roster metadata, not
+  // part of the compliance content itself.
+  const delegateSection = (
+    <>
+      {isOwner ? (
+        <EngagementDelegatePicker engagementId={engagement.id} assignedUserId={engagement.assignedUserId} isOwner />
+      ) : engagement.assignedUserId && (isDelegate || isStaff) ? (
+        <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3 flex items-center gap-2">
+          <UserCog className="h-3.5 w-3.5" style={{ color: "var(--color-text-muted)" }} />
+          <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+            {isDelegate ? "You are the Delegate on this engagement — full authority alongside the owner." : "A Delegate is assigned to this engagement."}
+          </span>
+        </div>
+      ) : null}
+      <PrimaryContactControl engagement={engagement} canSwitch={isOwner || isDelegate} />
+    </>
+  );
+
+  // ---- Editable draft view (owner, delegate, or staff) ----
   if (canEdit) {
     return (
       <div className="space-y-4">
@@ -573,9 +731,11 @@ function EngagementDetailsTab({
             This engagement is a <strong>draft</strong>.{" "}
             {isStaff
               ? "Refine the details below on the investor's behalf, then publish to move it into review."
-              : "Only you and the ZIDA deal team can see it. Refine the details below, then certify and publish to submit it for review."}
+              : "Only you, your delegate (if any), and the ZIDA deal team can see it. Refine the details below, then certify and publish to submit it for review."}
           </span>
         </div>
+
+        {delegateSection}
 
         {isStaff && <FollowThroughControl engagement={engagement} canEdit={canEditFollowThrough} onUpdated={onUpdated} />}
 
@@ -663,7 +823,11 @@ function EngagementDetailsTab({
         </div>
       )}
 
-      {isStaff && <FollowThroughControl engagement={engagement} canEdit={canEditFollowThrough} onUpdated={onUpdated} />}
+      {delegateSection}
+
+      {(isStaff || readOnly) && (
+        <FollowThroughControl engagement={engagement} canEdit={canEditFollowThrough} onUpdated={onUpdated} />
+      )}
 
       <Field label="Investor" value={engagement.investorName} />
       <Field label="Organization" value={engagement.investorOrganization} />
@@ -677,9 +841,9 @@ function EngagementDetailsTab({
       <Field label="Logged" value={new Date(engagement.createdAt).toLocaleString()} />
       <Field label="Last Updated" value={new Date(engagement.updatedAt).toLocaleString()} />
 
-      {(isOwner || isStaff) && (
+      {(isOwner || isDelegate || isStaff) && (
         <div className="pt-1 flex flex-wrap gap-2">
-          {isOwner && !isDraftEditable(engagement.status) && (
+          {(isOwner || isDelegate) && !isDraftEditable(engagement.status) && (
             <Button variant="outline" onClick={() => setCorrectionOpen(true)}>
               Request Correction
             </Button>

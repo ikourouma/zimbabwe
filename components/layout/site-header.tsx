@@ -7,13 +7,17 @@ import { useState } from "react";
 import { Menu } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useLocale, useTranslations } from "@/context/locale-context";
+import { useSiteSettings } from "@/context/site-settings-context";
+import { isPublicNavHrefVisible } from "@/lib/governance/public-nav";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 export function SiteHeader() {
   const { locale } = useLocale();
   const { isAuthenticated, isLoading } = useAuth();
   const t = useTranslations();
+  const { publicNavVisibility } = useSiteSettings();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const primaryNav = t.nav.primary.filter((link) => isPublicNavHrefVisible(link.href, publicNavVisibility));
   const headerPlatformName = t.platformName.shortHeader;
   const useShortNavLabels = locale === "fr";
 
@@ -34,7 +38,7 @@ export function SiteHeader() {
           className="hidden lg:flex items-center gap-0.5 xl:gap-1 flex-1 min-w-0 flex-nowrap justify-center mx-2 xl:mx-3"
           aria-label="Primary navigation"
         >
-          {t.nav.primary.map((link) => (
+          {primaryNav.map((link) => (
             <Link key={link.href} href={link.href} className="nav-link">
               {"shortLabel" in link && link.shortLabel ? (
                 useShortNavLabels ? (
@@ -80,7 +84,7 @@ export function SiteHeader() {
                 <UserAccountMenu variant="mobile" onNavigate={() => setMobileOpen(false)} />
               )}
               <nav className="mt-2 flex flex-col gap-1" aria-label="Mobile navigation">
-                {t.nav.primary.map((link) => (
+                {primaryNav.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}

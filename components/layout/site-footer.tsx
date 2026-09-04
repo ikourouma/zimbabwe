@@ -3,9 +3,15 @@
 import Link from "next/link";
 import { SiteLogoLockup } from "@/components/layout/site-logo-lockup";
 import { useTranslations } from "@/context/locale-context";
+import { useSiteSettings } from "@/context/site-settings-context";
+import { isPublicNavHrefVisible } from "@/lib/governance/public-nav";
 
 export function SiteFooter() {
   const t = useTranslations();
+  const { publicNavVisibility } = useSiteSettings();
+  const footerPlatform = t.nav.footerPlatform.filter((link) =>
+    isPublicNavHrefVisible(link.href, publicNavVisibility)
+  );
 
   return (
     <footer style={{ backgroundColor: "var(--color-footer-bg)" }}>
@@ -27,7 +33,7 @@ export function SiteFooter() {
             <div>
               <p className="section-overline mb-3 text-[0.6rem]">{t.footer.platformNav}</p>
               <ul className="space-y-2">
-                {t.nav.footerPlatform.map((link) => (
+                {footerPlatform.map((link) => (
                   <li key={link.href}>
                     <Link href={link.href} className="text-sm footer-link">
                       {link.label}
@@ -42,7 +48,7 @@ export function SiteFooter() {
             <div>
               <p className="section-overline mb-3 text-[0.6rem]">{t.footer.executiveAccess}</p>
               <ul className="space-y-2 text-sm">
-                {t.nav.footerExecutive.map((link) => (
+                {t.nav.footerExecutive.filter((link) => isPublicNavHrefVisible(link.href, publicNavVisibility)).map((link) => (
                   <li key={link.href}>
                     <Link href={link.href} className="footer-link">
                       {link.label}

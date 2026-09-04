@@ -1,15 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Check, FileText, CalendarClock, Handshake } from "lucide-react";
-import { useDemoPersona } from "@/context/demo-persona-context";
+import { ArrowLeft, ArrowRight, Check, FileText, CalendarClock, Handshake, Save } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
 import { useLeadCapture } from "@/context/lead-capture-context";
 import { useProjectStore } from "@/context/project-store-context";
 import { sectors } from "@/lib/data/taxonomies";
 import { getRoutingDesk } from "@/lib/data/routing-desks";
 import type { LeadInquiry } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import {
+  isWizardStep1Valid,
+  isWizardStep2Valid,
+  isWizardStep3Valid,
+  type InquiryWizardPayload,
+} from "@/lib/governance/inquiry-wizard-validation";
 
 type EngagementType = "investor" | "government_dfi" | "strategic_partner";
 type AskType = "document_request" | "meeting_request" | "investment_interest";
@@ -72,6 +78,12 @@ interface FormState {
   email: string;
   organization: string;
   phone: string;
+  // Institutional KYC fields (investor-only, required) — captured up-front here now instead of
+  // only after qualification at the Deal Room NDA gate. See the Investor Qualification Vetting
+  // plan's KYC-before-qualified rule.
+  hqAddress: string;
+  businessRegistrationId: string;
+  websiteUrl: string;
   investorType: string;
   sectorIds: string[];
   ticketSizeRange: string;
@@ -88,6 +100,9 @@ const INITIAL_FORM: FormState = {
   email: "",
   organization: "",
   phone: "",
+  hqAddress: "",
+  businessRegistrationId: "",
+  websiteUrl: "",
   investorType: "",
   sectorIds: [],
   ticketSizeRange: "",
@@ -96,6 +111,35 @@ const INITIAL_FORM: FormState = {
   partnershipType: "",
   objective: "",
 };
+
+function splitName(fullName: string): { firstName: string; lastName: string } {
+  const trimmed = fullName.trim();
+  if (!trimmed) return { firstName: "", lastName: "" };
+  const parts = trimmed.split(/\s+/);
+  return { firstName: parts[0], lastName: parts.slice(1).join(" ") };
+}
+
+/** Maps the wizard's split firstName/lastName form shape to the shared server/client validation
+ *  payload shape (a single combined `name`, matching how LeadInquiry actually stores it). */
+function toWizardPayload(form: FormState, objectiveOverride?: string): InquiryWizardPayload {
+  return {
+    engagementType: form.engagementType,
+    name: `${form.firstName} ${form.lastName}`.trim(),
+    email: form.email,
+    organization: form.organization,
+    phone: form.phone,
+    hqAddress: form.hqAddress,
+    businessRegistrationId: form.businessRegistrationId,
+    websiteUrl: form.websiteUrl,
+    investorType: form.investorType,
+    sectorIds: form.sectorIds,
+    ticketSizeRange: form.ticketSizeRange,
+    ministryRepresented: form.ministryRepresented,
+    natureOfEngagement: form.natureOfEngagement,
+    partnershipType: form.partnershipType,
+    message: objectiveOverride ?? form.objective,
+  };
+}
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
@@ -109,7 +153,7 @@ const inputClass =
   "w-full px-3 py-2.5 rounded text-sm transition-colors outline-none focus:bg-[#FFD300] focus:text-black placeholder-gray-600";
 
 export function EngagementWizard() {
-  const { persona } = useDemoPersona();
+  const auth = useAuth();
   const { addInquiry } = useLeadCapture();
   const { getProject } = useProjectStore();
 
@@ -131,17 +175,77 @@ export function EngagementWizard() {
 
   const project = projectId ? getProject(projectId) : undefined;
   const isProjectLinked = paramsResolved && Boolean(project);
+  // The autosaved/resumable "become a Qualified Investor" flow only applies to the standalone
+  // wizard — a project-anchored document/meeting/investment ask is a different, one-shot inquiry
+  // type and was never covered by draft persistence (Investor Qualification Vetting plan).
+  const draftEligible = auth.isAuthenticated && !isProjectLinked;
 
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [submitted, setSubmitted] = useState(false);
   const [routedDesk, setRoutedDesk] = useState<string>("");
+  const [draftLoaded, setDraftLoaded] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const prefillApplied = useRef(false);
 
   useEffect(() => {
     if (isProjectLinked) {
       setForm((f) => (f.engagementType ? f : { ...f, engagementType: "investor" }));
     }
   }, [isProjectLinked]);
+
+  // Resume: fetch any existing draft/changes_requested application and repopulate the form,
+  // falling back to the signed-in profile for a fresh applicant's identity fields, so a
+  // returning investor never has to retype what's already known about them.
+  useEffect(() => {
+    if (auth.isLoading || !draftEligible || prefillApplied.current) return;
+    prefillApplied.current = true;
+
+    (async () => {
+      try {
+        const res = await fetch("/api/inquiries/draft");
+        const draft = res.ok ? ((await res.json()) as LeadInquiry | null) : null;
+        if (draft) {
+          const { firstName, lastName } = splitName(draft.name);
+          setForm((f) => ({
+            ...f,
+            engagementType: draft.engagementType || f.engagementType,
+            firstName,
+            lastName,
+            email: draft.email || f.email,
+            organization: draft.organization || f.organization,
+            phone: draft.phone || f.phone,
+            hqAddress: draft.hqAddress || f.hqAddress,
+            businessRegistrationId: draft.businessRegistrationId || f.businessRegistrationId,
+            websiteUrl: draft.websiteUrl || f.websiteUrl,
+            investorType: draft.investorType || f.investorType,
+            sectorIds: draft.sectorIds ?? f.sectorIds,
+            ticketSizeRange: draft.ticketSizeRange || f.ticketSizeRange,
+            ministryRepresented: draft.ministryRepresented || f.ministryRepresented,
+            natureOfEngagement: draft.natureOfEngagement || f.natureOfEngagement,
+            partnershipType: draft.partnershipType || f.partnershipType,
+            objective: draft.message || f.objective,
+          }));
+        } else {
+          const { firstName, lastName } = splitName(auth.name ?? "");
+          setForm((f) => ({
+            ...f,
+            firstName: f.firstName || firstName,
+            lastName: f.lastName || lastName,
+            email: f.email || auth.email || "",
+            organization: f.organization || auth.organization || "",
+            phone: f.phone || auth.phone || "",
+            hqAddress: f.hqAddress || auth.hqAddress || "",
+            businessRegistrationId: f.businessRegistrationId || auth.businessRegistrationId || "",
+            websiteUrl: f.websiteUrl || auth.websiteUrl || "",
+          }));
+        }
+      } finally {
+        setDraftLoaded(true);
+      }
+    })();
+  }, [auth.isLoading, draftEligible, auth.name, auth.email, auth.organization, auth.phone, auth.hqAddress, auth.businessRegistrationId, auth.websiteUrl]);
 
   const update = (patch: Partial<FormState>) => setForm((f) => ({ ...f, ...patch }));
 
@@ -154,31 +258,56 @@ export function EngagementWizard() {
     }));
   };
 
-  const step1Valid = Boolean(form.engagementType && form.firstName && form.lastName && form.email && form.organization);
-
-  const step2Valid = (() => {
-    if (isProjectLinked) return true;
-    switch (form.engagementType) {
-      case "investor":
-        return Boolean(form.investorType && form.sectorIds.length > 0 && form.ticketSizeRange);
-      case "government_dfi":
-        return Boolean(form.ministryRepresented && form.natureOfEngagement);
-      case "strategic_partner":
-        return Boolean(form.partnershipType && form.sectorIds.length > 0);
-      default:
-        return false;
-    }
-  })();
-
-  const step3Valid = Boolean(form.objective);
+  const step1Valid = isWizardStep1Valid(toWizardPayload(form));
+  const step2Valid = isWizardStep2Valid(toWizardPayload(form), isProjectLinked);
+  const step3Valid = isWizardStep3Valid(toWizardPayload(form));
 
   const canAdvance = step === 1 ? step1Valid : step === 2 ? step2Valid : step3Valid;
 
-  const handleSubmit = () => {
+  /** Fire-and-forget autosave, called after every successful "Continue" — never blocks
+   *  navigation and never surfaces a transient network error to the applicant. */
+  const autosaveDraft = () => {
+    if (!draftEligible) return;
+    setSavingDraft(true);
+    fetch("/api/inquiries/draft", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(toWizardPayload(form)),
+    })
+      .catch(() => {})
+      .finally(() => setSavingDraft(false));
+  };
+
+  const goNext = () => {
+    autosaveDraft();
+    setStep((s) => Math.min(3, s + 1));
+  };
+
+  const handleSubmit = async () => {
     const desk = getRoutingDesk(form.engagementType || undefined, isProjectLinked);
     setRoutedDesk(desk);
+    setSubmitError(null);
 
     const name = `${form.firstName} ${form.lastName}`.trim();
+
+    if (draftEligible) {
+      try {
+        const res = await fetch("/api/inquiries/draft", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...toWizardPayload(form), isProjectLinked }),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          setSubmitError(body.error ?? "Failed to submit your application. Please try again.");
+          return;
+        }
+        setSubmitted(true);
+      } catch {
+        setSubmitError("Failed to submit your application. Please try again.");
+      }
+      return;
+    }
 
     if (isProjectLinked && project && ask) {
       addInquiry({
@@ -248,8 +377,9 @@ export function EngagementWizard() {
           {routedDesk}
         </p>
         <p className="text-sm leading-relaxed mb-10" style={{ color: "var(--color-text-secondary)" }}>
-          In a production deployment, this desk would follow up directly at {form.email}. This demo stores the
-          inquiry locally for the admin inbox preview.
+          {form.engagementType === "investor"
+            ? `The desk will review your institutional details and follow up at ${form.email}. Once your application is approved, your account is upgraded to Qualified Investor and the Deal Room unlocks automatically.`
+            : `The desk will follow up directly at ${form.email}.`}
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link href="/projects" className="btn-sovereign justify-center text-center">
@@ -387,7 +517,7 @@ export function EngagementWizard() {
             </div>
 
             <div>
-              <Label>Phone (optional)</Label>
+              <Label>{form.engagementType === "investor" ? "Phone" : "Phone (optional)"}</Label>
               <input
                 type="tel"
                 value={form.phone}
@@ -398,11 +528,55 @@ export function EngagementWizard() {
               />
             </div>
 
-            {persona === "public" && (
+            {form.engagementType === "investor" && (
+              <div className="pt-2 border-t" style={{ borderColor: "var(--color-sovereign-border)" }}>
+                <p className="text-xs mb-4 mt-4" style={{ color: "var(--color-text-muted)" }}>
+                  Institutional KYC — required to qualify as an investor. Captured once here rather than
+                  again later at the Deal Room gate.
+                </p>
+                <div className="space-y-4">
+                  <div>
+                    <Label>HQ Address</Label>
+                    <input
+                      value={form.hqAddress}
+                      onChange={(e) => update({ hqAddress: e.target.value })}
+                      placeholder="Registered headquarters address"
+                      className={inputClass}
+                      style={fieldStyle(!!form.hqAddress)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Business Registration ID</Label>
+                      <input
+                        value={form.businessRegistrationId}
+                        onChange={(e) => update({ businessRegistrationId: e.target.value })}
+                        placeholder="Company / fund registration number"
+                        className={inputClass}
+                        style={fieldStyle(!!form.businessRegistrationId)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Corporate Website</Label>
+                      <input
+                        type="url"
+                        value={form.websiteUrl}
+                        onChange={(e) => update({ websiteUrl: e.target.value })}
+                        placeholder="https://"
+                        className={inputClass}
+                        style={fieldStyle(!!form.websiteUrl)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!auth.isAuthenticated && (
               <p className="text-xs pt-2" style={{ color: "var(--color-text-muted)" }}>
                 Just want browsing access to the registry?{" "}
-                <Link href="/register" className="underline" style={{ color: "var(--color-gold)" }}>
-                  Register here →
+                <Link href="/auth/sign-up" className="underline" style={{ color: "var(--color-gold)" }}>
+                  Create a free account →
                 </Link>
               </p>
             )}
@@ -571,6 +745,10 @@ export function EngagementWizard() {
                       value={form.sectorIds.map((id) => sectors.find((s) => s.id === id)?.name).filter(Boolean).join(", ") || "—"}
                     />
                     <SummaryRow label="Ticket Size" value={form.ticketSizeRange} />
+                    <SummaryRow label="Phone" value={form.phone} />
+                    <SummaryRow label="HQ Address" value={form.hqAddress} />
+                    <SummaryRow label="Business Registration ID" value={form.businessRegistrationId} />
+                    <SummaryRow label="Corporate Website" value={form.websiteUrl} />
                   </>
                 )}
                 {!isProjectLinked && form.engagementType === "government_dfi" && (
@@ -593,6 +771,12 @@ export function EngagementWizard() {
           </div>
         )}
 
+        {submitError && (
+          <p className="text-xs mt-4" style={{ color: "#f87171" }}>
+            {submitError}
+          </p>
+        )}
+
         <div className="flex items-center justify-between mt-8 pt-6 border-t" style={{ borderColor: "var(--color-sovereign-border)" }}>
           <button
             type="button"
@@ -604,25 +788,35 @@ export function EngagementWizard() {
             <ArrowLeft className="w-4 h-4" /> Back
           </button>
 
-          {step < 3 ? (
-            <button
-              type="button"
-              disabled={!canAdvance}
-              onClick={() => setStep((s) => Math.min(3, s + 1))}
-              className="btn-sovereign disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Continue <ArrowRight className="h-4 w-4" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              disabled={!canAdvance}
-              onClick={handleSubmit}
-              className="btn-sovereign disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Submit Inquiry <ArrowRight className="h-4 w-4" />
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {draftEligible && draftLoaded && (
+              <span
+                className="hidden sm:inline-flex items-center gap-1.5 text-[11px]"
+                style={{ color: "var(--color-text-muted)" }}
+              >
+                <Save className="h-3 w-3" /> {savingDraft ? "Saving…" : "Progress saved"}
+              </span>
+            )}
+            {step < 3 ? (
+              <button
+                type="button"
+                disabled={!canAdvance}
+                onClick={goNext}
+                className="btn-sovereign disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Continue <ArrowRight className="h-4 w-4" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={!canAdvance}
+                onClick={handleSubmit}
+                className="btn-sovereign disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Submit {form.engagementType === "investor" ? "Application" : "Inquiry"} <ArrowRight className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CapitalBreakdown } from "@/components/projects/capital-breakdown";
 import { ValuationTeaserModal } from "@/components/projects/valuation-teaser-modal";
+import { WatchlistButton } from "@/components/projects/watchlist-button";
 import { SdgBadge } from "@/components/ui/sdg-badge";
 import { isAssessmentPending } from "@/lib/utils/capital";
 import { MapPin, Building2, Landmark, FileSearch } from "lucide-react";
@@ -65,11 +66,14 @@ export function ProjectCard({ project, dark = false }: ProjectCardProps) {
             )
           )}
         </div>
-        <CardTitle className={cn("text-lg leading-snug mt-2", dark ? "text-white" : "")}>
-          <Link href={`/projects/${project.slug}`} className={dark ? "hover:text-[var(--color-gold)]" : "hover:text-zim-green-700"}>
-            {project.title}
-          </Link>
-        </CardTitle>
+        <div className="flex items-start justify-between gap-2 mt-2">
+          <CardTitle className={cn("text-lg leading-snug", dark ? "text-white" : "")}>
+            <Link href={`/projects/${project.slug}`} className={dark ? "hover:text-[var(--color-gold)]" : "hover:text-zim-green-700"}>
+              {project.title}
+            </Link>
+          </CardTitle>
+          <WatchlistButton projectId={project.id} dark={dark} compact />
+        </div>
       </CardHeader>
       <CardContent className="flex-1 space-y-4">
         <p className={cn("text-sm line-clamp-3", dark ? "text-[var(--color-text-secondary)]" : "text-zim-muted")}>

@@ -6,8 +6,9 @@ import { Search, X, SlidersHorizontal, ChevronDown, ChevronUp, Bookmark, Bookmar
 import type { ProjectFilters, InvestmentProject, Ministry, SavedSearch, CapitalBracket, UpdatedWithin } from "@/lib/types";
 import { sectors, strategicPillars, sdgs } from "@/lib/data/taxonomies";
 import { useTaxonomyStore } from "@/context/taxonomy-store-context";
-import { useDemoPersona } from "@/context/demo-persona-context";
-import { getUniqueProvinces } from "@/lib/entitlements/visibility";
+import { useAuth } from "@/context/auth-context";
+import { useSiteSettings } from "@/context/site-settings-context";
+import { accessLevelForRole, canAccessEntitlementGroup, getUniqueProvinces } from "@/lib/entitlements/visibility";
 import { getFinancingBuckets } from "@/lib/utils/financing-type";
 import { formatMillions, CAPITAL_BRACKETS } from "@/lib/utils/capital";
 import { getSectorIcon } from "@/lib/data/sector-icons";
@@ -187,7 +188,14 @@ export function ProjectFiltersBar({
   variant = "public",
 }: ProjectFiltersBarProps) {
   const { ministries } = useTaxonomyStore();
-  const { isRegistered, isQualified } = useDemoPersona();
+  const { role } = useAuth();
+  const { fieldVisibility, costStructureHidden } = useSiteSettings();
+  const canSeeE1 = canAccessEntitlementGroup(
+    accessLevelForRole(role),
+    "financialsE1",
+    fieldVisibility,
+    costStructureHidden
+  );
   const [expanded, setExpanded] = useState(false);
 
   const provinces = getUniqueProvinces(projects);
@@ -399,7 +407,7 @@ export function ProjectFiltersBar({
                 >
                   All
                 </FilterPill>
-                {isQualified &&
+                {canSeeE1 &&
                   CAPITAL_BRACKETS.map((b) => (
                     <FilterPill
                       key={b.key}
@@ -422,7 +430,7 @@ export function ProjectFiltersBar({
                 </FilterPill>
               </div>
 
-              {isQualified && (
+              {canSeeE1 && (
                 <div className="mt-3 flex flex-wrap items-end gap-3">
                   <div className="w-28">
                     <Label className="text-xs">Min ($M)</Label>
@@ -454,7 +462,7 @@ export function ProjectFiltersBar({
               )}
             </div>
 
-            {isRegistered && financingBuckets.length > 0 && (
+            {canSeeE1 && financingBuckets.length > 0 && (
               <div>
                 <Label className="text-xs mb-1.5 block">Financing Type</Label>
                 <div className="flex flex-wrap gap-1.5">

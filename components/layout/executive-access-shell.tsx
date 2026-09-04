@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { platformName } from "@/content/zimbabwe-site";
 
-export type ExecutiveAccessVariant = "register" | "sign-in";
+export type ExecutiveAccessVariant = "register" | "sign-in" | "sign-up";
 
 interface ExecutiveAccessShellProps {
   variant: ExecutiveAccessVariant;
@@ -21,9 +21,16 @@ const signInBullets = [
   { label: "Institutional Consoles", sub: "ZIDA admin review and super-admin taxonomy control" },
 ];
 
+const signUpBullets = [
+  { label: "Instant Registry Access", sub: "No waiting — browse the full ZIDA 2025 catalogue immediately" },
+  { label: "Strategic Alignment Mapping", sub: "Pillars, SDGs, and sector intelligence" },
+  { label: "Qualify for the Deal Room", sub: "Unlock capital estimates via a Strategic Partnership inquiry" },
+];
+
 function LeftPanelContent({ variant }: { variant: ExecutiveAccessVariant }) {
   const isRegister = variant === "register";
-  const bullets = isRegister ? registerBullets : signInBullets;
+  const isSignUp = variant === "sign-up";
+  const bullets = isRegister ? registerBullets : isSignUp ? signUpBullets : signInBullets;
 
   return (
     <>
@@ -36,7 +43,7 @@ function LeftPanelContent({ variant }: { variant: ExecutiveAccessVariant }) {
         }}
       >
         <span className="w-1.5 h-1.5 rounded-full bg-[#FFD300] animate-pulse" />
-        {isRegister ? "Investor Registration Gateway" : "Secure Access Gateway"}
+        {isRegister ? "Investor Registration Gateway" : isSignUp ? "Self-Service Registry Access" : "Secure Access Gateway"}
       </div>
 
       <h1
@@ -49,7 +56,9 @@ function LeftPanelContent({ variant }: { variant: ExecutiveAccessVariant }) {
       >
         {isRegister
           ? "Unlock Governed ZIDA Investment Intelligence"
-          : "Sign In to Your Governed Profile"}
+          : isSignUp
+            ? "Create Your Governed Registry Profile"
+            : "Sign In to Your Governed Profile"}
       </h1>
 
       <p
@@ -58,7 +67,9 @@ function LeftPanelContent({ variant }: { variant: ExecutiveAccessVariant }) {
       >
         {isRegister
           ? "Submit your investor application to access expanded project details, capital estimates, and engagement tools across Zimbabwe's ZIDA 2025 catalogue — reviewed under Afronovation's governed platform infrastructure."
-          : "Returning investors, ministry stakeholders, and platform administrators sign in here for role-based access to registry entitlements, the Deal Room, and institutional consoles."}
+          : isSignUp
+            ? "Create a free account for immediate access to the ZIDA project registry. Submit a Strategic Partnership inquiry afterward to qualify for the full Deal Room and financial detail."
+            : "Returning investors, ministry stakeholders, and platform administrators sign in here for role-based access to registry entitlements, the Deal Room, and institutional consoles."}
       </p>
 
       <div className="space-y-5">
@@ -108,11 +119,18 @@ function LeftPanelContent({ variant }: { variant: ExecutiveAccessVariant }) {
                 are issued after qualification — this platform does not replace ZIDA or official
                 Government of Zimbabwe systems.
               </>
+            ) : isSignUp ? (
+              <>
+                Your account is created instantly at the &ldquo;Registered&rdquo; tier. Pilot testers:
+                use credentials from{" "}
+                <code className="text-[10px]">docs/PILOT_TEST_ACCOUNTS.md</code> after running{" "}
+                <code className="text-[10px]">npm run db:seed</code>.
+              </>
             ) : (
               <>
                 New to the platform?{" "}
-                <Link href="/register" className="underline" style={{ color: "var(--color-gold)" }}>
-                  Apply for access
+                <Link href="/auth/sign-up" className="underline" style={{ color: "var(--color-gold)" }}>
+                  Create an account
                 </Link>{" "}
                 first. Pilot testers: use credentials from{" "}
                 <code className="text-[10px]">docs/PILOT_TEST_ACCOUNTS.md</code> after running{" "}

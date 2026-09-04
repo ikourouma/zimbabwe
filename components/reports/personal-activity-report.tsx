@@ -66,29 +66,46 @@ function resolveTicketCell(engagement: InvestorEngagement, project: InvestmentPr
  * platform-wide report. Same window.print()-based pattern, no PDF dependency.
  *
  * "My" scope is deliberately role-aware rather than "everything the viewer's role can see": a
- * government official doesn't author engagements themselves, so ownership isn't the right lens —
- * their "My Engagements" is scoped to engagements against their own ministry's projects instead.
- * Everyone else (qualified/registered/staff) is scoped to engagements they personally initiated.
- * Previously this rendered every engagement on the platform under a "My Engagements" heading
- * regardless of who was signed in — a real correctness/privacy gap, not just a cosmetic one.
+ * government official (or ministry_admin — Platform Feedback Batch v3, Phase 1's /ministry/reports
+ * reuses this same component for console-admin-at-ministry-level parity) doesn't author engagements
+ * themselves, so ownership isn't the right lens — their "My Engagements" is scoped to engagements
+ * against their own ministry's projects instead. Everyone else (qualified/registered/staff) is
+ * scoped to engagements they personally initiated. Previously this rendered every engagement on the
+ * platform under a "My Engagements" heading regardless of who was signed in — a real
+ * correctness/privacy gap, not just a cosmetic one.
  */
 export function PersonalActivityReport() {
-  const { name, email, role, organization, ndaAcceptedAt, userId, ministryId, isAdmin, isGovernment, isSuperAdmin } = useAuth();
+  const {
+    name,
+    email,
+    role,
+    organization,
+    ndaAcceptedAt,
+    userId,
+    ministryId,
+    isAdmin,
+    isGovernment,
+    isMinistryAdmin,
+    isSuperAdmin,
+  } = useAuth();
   const { engagements, isLoading: engagementsLoading } = useDealRoomStore();
   const { projects, isLoading: projectsLoading } = useProjectStore();
 
   const isLoading = engagementsLoading || projectsLoading;
-  // Mirrors NdaGate's own exemption rule (components/deal-room/nda-gate.tsx) — staff/oversight
-  // roles are never prompted to sign the investor NDA, so showing them a perpetual "Not yet
-  // accepted" was misleading, not just unstyled.
-  const isNdaExempt = isAdmin || isGovernment || isSuperAdmin;
+  const isMinistryScoped = isGovernment || isMinistryAdmin;
+  // Mirrors NdaGate's own exemption rule (components/deal-room/nda-gate.tsx) — only true
+  // ZIDA-internal staff (admin/super_admin) are exempt from the NDA. Phase 3 broadened the gate to
+  // every non-staff role, so `government`/`ministry_admin` are deliberately NOT exempt here anymore
+  // (they were, incorrectly, before this batch) — they now go through the same clickwrap as any
+  // other non-staff console user before their first dashboard visit.
+  const isNdaExempt = isAdmin || isSuperAdmin;
 
-  const scopeNote = isGovernment
+  const scopeNote = isMinistryScoped
     ? "Engagements against projects under your ministry's portfolio."
     : "Engagements you have personally initiated.";
 
   const myEngagements = useMemo(() => {
-    if (isGovernment) {
+    if (isMinistryScoped) {
       if (!ministryId) return [];
       const ministryProjectIds = new Set(
         projects.filter((p) => p.primaryBeneficiaryMinistryId === ministryId).map((p) => p.id)
@@ -96,7 +113,7 @@ export function PersonalActivityReport() {
       return engagements.filter((e) => ministryProjectIds.has(e.projectId));
     }
     return engagements.filter((e) => e.userId === userId);
-  }, [engagements, projects, isGovernment, ministryId, userId]);
+  }, [engagements, projects, isMinistryScoped, ministryId, userId]);
 
   const engagementRows = useMemo(
     () =>
@@ -203,7 +220,7 @@ export function PersonalActivityReport() {
             ) : (
               <ReportEmptyState
                 message={
-                  isGovernment && !ministryId
+                  isMinistryScoped && !ministryId
                     ? "Your account isn't yet linked to a specific beneficiary ministry, so no engagements can be scoped to you personally — see the National Executive Briefing tab for the platform-wide view."
                     : "No engagements recorded yet."
                 }

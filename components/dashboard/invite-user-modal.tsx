@@ -20,10 +20,8 @@ interface InviteUserModalProps {
 const ALL_ROLES = Object.keys(ROLE_LABELS) as AccountRole[];
 
 /**
- * Invite User scaffold. Files a tracked, audited invitation record (POST /api/users/invite) with
- * role-specific intent metadata, but does NOT send email or provision credentials yet (no admin
- * auth plugin in the managed Better Auth setup). Temp-password + enforce-MFA are shown as disabled
- * "coming soon" toggles, matching the deferral pattern used across this upgrade.
+ * Invite User. Files a tracked, audited invitation (POST /api/users/invite) and sends a Resend
+ * email when configured. Temp-password + enforce-MFA remain disabled "coming soon" toggles.
  */
 export function InviteUserModal({ open, onOpenChange, onInvited, assignableRoles }: InviteUserModalProps) {
   const { ministries } = useTaxonomyStore();
@@ -72,20 +70,25 @@ export function InviteUserModal({ open, onOpenChange, onInvited, assignableRoles
           organization: organization.trim() || undefined,
           jobTitle: jobTitle.trim() || undefined,
           phone: phone.trim() || undefined,
-          ministryId: role === "government" ? ministryId || undefined : undefined,
+          ministryId: role === "government" || role === "ministry_admin" ? ministryId || undefined : undefined,
           firmType: role === "qualified" ? firmType.trim() || undefined : undefined,
           mandate: role === "qualified" ? mandate.trim() || undefined : undefined,
         }),
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? "Could not record the invitation.");
+        throw new Error(data.error ?? "Could not send the invitation.");
       }
-      toast.success("Invitation recorded — email delivery is pending, follow up directly for now.");
+      const data = (await res.json().catch(() => ({}))) as { emailDelivery?: string };
+      toast.success(
+        data.emailDelivery === "sent"
+          ? "Invitation sent. The recipient can create their account from the email."
+          : "Invitation recorded. Email is not configured here — follow up with the recipient directly."
+      );
       onInvited?.();
       onOpenChange(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not record the invitation.");
+      toast.error(err instanceof Error ? err.message : "Could not send the invitation.");
     } finally {
       setPending(false);
     }
@@ -96,7 +99,7 @@ export function InviteUserModal({ open, onOpenChange, onInvited, assignableRoles
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Invite user</DialogTitle>
-          <DialogDescription>Pre-assign a role and record the invitation in the audit trail.</DialogDescription>
+          <DialogDescription>Pre-assign a role and send an invitation email. The recipient creates their own account.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
@@ -158,10 +161,10 @@ export function InviteUserModal({ open, onOpenChange, onInvited, assignableRoles
           </div>
 
           {/* Role-dynamic invite-intent fields */}
-          {role === "government" && (
+          {(role === "government" || role === "ministry_admin") && (
             <div className="space-y-1.5">
               <label className="text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>
-                Beneficiary ministry
+                {role === "ministry_admin" ? "Designated ministry" : "Beneficiary ministry"}
               </label>
               <select value={ministryId} onChange={(e) => setMinistryId(e.target.value)} className="dashboard-input">
                 <option value="">Select ministry…</option>
@@ -218,8 +221,8 @@ export function InviteUserModal({ open, onOpenChange, onInvited, assignableRoles
             style={{ backgroundColor: "rgba(255,255,255,0.04)", color: "var(--color-text-muted)" }}
           >
             <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-            Email delivery is not yet enabled — this records the invitation for tracking. Share the sign-up link with the
-            invitee directly for now.
+            An invitation email is sent when Resend is configured with a verified sending domain. The invitee still
+            creates their own account at sign-up.
           </div>
         </div>
 
@@ -228,7 +231,7 @@ export function InviteUserModal({ open, onOpenChange, onInvited, assignableRoles
             Cancel
           </Button>
           <Button size="sm" onClick={submit} disabled={pending}>
-            {pending ? "Recording…" : "Record invitation"}
+            {pending ? "Sending…" : "Send invitation"}
           </Button>
         </DialogFooter>
       </DialogContent>

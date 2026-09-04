@@ -18,11 +18,13 @@ import {
   ShieldCheck,
   ShieldQuestion,
   Smartphone,
+  User,
   X,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { authClient } from "@/lib/auth/client";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { ElevatedTabsList, ElevatedTabsTrigger } from "@/components/ui/elevated-tabs";
 import { Switch } from "@/components/ui/switch";
 import { PasswordInput } from "@/components/auth/password-input";
 import {
@@ -36,6 +38,7 @@ const ROLE_LABELS: Record<AccountRole, string> = {
   registered: "Registered Investor",
   qualified: "Qualified Investor",
   government: "Government User",
+  ministry_admin: "Ministry Admin",
   admin: "ZIDA Admin",
   super_admin: "Platform Admin",
 };
@@ -47,6 +50,8 @@ const ROLE_SCOPE: Record<AccountRole, string> = {
     "Full Deal Room access: document data room, engagement pipeline, Communication Hub, and MOU workflow.",
   government:
     "Government portfolio oversight, sovereign engagement tooling, and inter-ministerial coordination.",
+  ministry_admin:
+    "Oversight of your designated ministry's project pipeline and ministry staff, scoped to your ministry only.",
   admin:
     "Manage projects, engagements, inquiries, users, and the Communication Hub across the platform.",
   super_admin:
@@ -88,20 +93,12 @@ export function AccountView() {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="bg-white/5 border-white/10 mb-5 flex-wrap h-auto">
-          <TabsTrigger value="profile" className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/60">
-            Profile
-          </TabsTrigger>
-          <TabsTrigger value="security" className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/60">
-            Security
-          </TabsTrigger>
-          <TabsTrigger value="sessions" className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/60">
-            Sessions
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/60">
-            Notifications
-          </TabsTrigger>
-        </TabsList>
+        <ElevatedTabsList className="mb-5">
+          <ElevatedTabsTrigger value="profile" icon={User}>Profile</ElevatedTabsTrigger>
+          <ElevatedTabsTrigger value="security" icon={KeyRound}>Security</ElevatedTabsTrigger>
+          <ElevatedTabsTrigger value="sessions" icon={Monitor}>Sessions</ElevatedTabsTrigger>
+          <ElevatedTabsTrigger value="notifications" icon={Bell}>Notifications</ElevatedTabsTrigger>
+        </ElevatedTabsList>
 
         <TabsContent value="profile">
           <ProfileTab />
@@ -374,7 +371,11 @@ function ReadOnlyRow({
 /* ------------------------------------------------------------- Entitlements ---- */
 
 function EntitlementsPanel({ role }: { role: AccountRole }) {
-  const canRequest = role !== "admin" && role !== "super_admin";
+  // Only a plain `registered` account has meaningfully more to ask for — `qualified`/`government`
+  // already hold full Deal Room entitlements for their tier, and `admin`/`super_admin` are already
+  // platform-wide. Showing this to an already-qualified investor read as a dangling, meaningless
+  // CTA (feedback item 15).
+  const canRequest = role === "registered";
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -633,30 +634,161 @@ function PasswordChangeCard() {
 }
 
 function MfaScaffoldCard() {
+  const [enabled, setEnabled] = useState(false);
+  const [secret, setSecret] = useState<string | null>(null);
+  const [uri, setUri] = useState<string | null>(null);
+  const [token, setToken] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/account/mfa")
+      .then((res) => (res.ok ? res.json() : { enabled: false }))
+      .then((data: { enabled?: boolean }) => setEnabled(Boolean(data.enabled)))
+      .catch(() => {});
+  }, []);
+
+  const start = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/account/mfa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "start" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Could not start MFA");
+      setSecret(data.secret);
+      setUri(data.uri);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not start MFA");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirm = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/account/mfa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "confirm", token }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Invalid code");
+      setEnabled(true);
+      setSecret(null);
+      setUri(null);
+      setToken("");
+      toast.success("Authenticator app enrolled");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not confirm MFA");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const disable = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/account/mfa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "disable", token }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Invalid code");
+      setEnabled(false);
+      setToken("");
+      toast.success("MFA disabled");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not disable MFA");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
-    <section className="dashboard-panel p-5 opacity-90">
+    <section className="dashboard-panel p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-white mb-1 flex items-center gap-2">
             <Lock className="h-4 w-4" /> Multi-Factor Authentication
           </h2>
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-            Add an authenticator app (TOTP) or passkey for a second layer of protection on sensitive
-            deal-room actions.
+            Add an authenticator app (TOTP) as a second factor on this account.
           </p>
         </div>
-        <span className="shrink-0 text-[10px] font-mono tracking-widest uppercase px-2 py-1 rounded bg-white/5 border border-white/10 text-white/50">
-          Coming soon
+        <span
+          className="shrink-0 text-[10px] font-mono tracking-widest uppercase px-2 py-1 rounded border"
+          style={{
+            backgroundColor: enabled ? "rgba(74,222,128,0.12)" : "rgba(255,255,255,0.05)",
+            borderColor: enabled ? "rgba(74,222,128,0.3)" : "rgba(255,255,255,0.1)",
+            color: enabled ? "#86efac" : "rgba(255,255,255,0.5)",
+          }}
+        >
+          {enabled ? "Enabled" : "Off"}
         </span>
       </div>
-      <button
-        type="button"
-        disabled
-        className="mt-4 px-4 py-2.5 rounded text-sm font-medium bg-white/5 text-white/40 cursor-not-allowed"
-        title="Enabled once MFA is turned on in the Neon Console"
-      >
-        Enable MFA
-      </button>
+      {!enabled && !secret && (
+        <button
+          type="button"
+          onClick={start}
+          disabled={busy}
+          className="mt-4 px-4 py-2.5 rounded text-sm font-medium bg-white/10 text-white hover:bg-white/15 disabled:opacity-40"
+        >
+          {busy ? "Starting…" : "Enable MFA"}
+        </button>
+      )}
+      {secret && (
+        <div className="mt-4 space-y-3">
+          <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+            Add this secret in your authenticator app, then enter a 6-digit code to confirm.
+          </p>
+          <code className="block text-sm text-white break-all">{secret}</code>
+          {uri && (
+            <p className="text-[11px] break-all" style={{ color: "var(--color-text-muted)" }}>
+              {uri}
+            </p>
+          )}
+          <input
+            className="dashboard-input max-w-xs"
+            inputMode="numeric"
+            maxLength={6}
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+            placeholder="123456"
+          />
+          <button
+            type="button"
+            onClick={confirm}
+            disabled={busy || token.length !== 6}
+            className="px-4 py-2.5 rounded text-sm font-medium bg-white/10 text-white hover:bg-white/15 disabled:opacity-40"
+          >
+            Confirm and enable
+          </button>
+        </div>
+      )}
+      {enabled && (
+        <div className="mt-4 space-y-3">
+          <input
+            className="dashboard-input max-w-xs"
+            inputMode="numeric"
+            maxLength={6}
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+            placeholder="Current code to disable"
+          />
+          <button
+            type="button"
+            onClick={disable}
+            disabled={busy || token.length !== 6}
+            className="px-4 py-2.5 rounded text-sm font-medium bg-white/10 text-white hover:bg-white/15 disabled:opacity-40"
+          >
+            Disable MFA
+          </button>
+        </div>
+      )}
     </section>
   );
 }
@@ -846,6 +978,7 @@ const PREF_LABELS: Record<keyof NotificationPreferences, string> = {
   engagementUpdates: "Engagement status changes",
   newMessages: "New Communication Hub messages",
   mouActivity: "MOU lifecycle activity",
+  teamActivity: "Team & assignment changes",
 };
 
 function NotificationsTab() {
@@ -899,8 +1032,8 @@ function NotificationsTab() {
         ))}
       </div>
       <p className="text-xs mt-4" style={{ color: "var(--color-text-muted)" }}>
-        Preferences are saved to your account and apply on every device. Email/in-app delivery
-        activates as those channels come online.
+        Preferences are saved to your account and apply on every device. Turning a category off
+        stops the matching email; in-app delivery is still coming online.
       </p>
     </section>
   );

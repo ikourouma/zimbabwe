@@ -19,10 +19,11 @@ export function AddTaxonomyTermModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { addSector, addMinistry, addProvince, addPillar, addContactReason } = useTaxonomyStore();
+  const { sectors, addSector, addSubsector, addMinistry, addProvince, addPillar, addContactReason } = useTaxonomyStore();
   const [name, setName] = useState("");
   const [shortName, setShortName] = useState("");
   const [routingCategory, setRoutingCategory] = useState("");
+  const [sectorId, setSectorId] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -30,9 +31,10 @@ export function AddTaxonomyTermModal({
       setName("");
       setShortName("");
       setRoutingCategory("");
+      setSectorId(sectors.find((s) => s.status === "active")?.id ?? "");
       setSaving(false);
     }
-  }, [open, category]);
+  }, [open, category, sectors]);
 
   const submit = async () => {
     if (!name.trim()) {
@@ -43,12 +45,19 @@ export function AddTaxonomyTermModal({
       toast.error("Short name is required");
       return;
     }
+    if (category === "subsectors" && !sectorId) {
+      toast.error("Parent sector is required");
+      return;
+    }
 
     setSaving(true);
     try {
       switch (category) {
         case "sectors":
           await addSector({ name: name.trim() });
+          break;
+        case "subsectors":
+          await addSubsector({ sectorId, name: name.trim() });
           break;
         case "ministries":
           await addMinistry({ name: name.trim(), shortName: shortName.trim(), type: "beneficiary", status: "pending_validation" });
@@ -79,13 +88,15 @@ export function AddTaxonomyTermModal({
   const namePlaceholder =
     category === "sectors"
       ? "e.g. Renewable Energy"
-      : category === "ministries"
-        ? "e.g. Ministry of Energy and Power Development"
-        : category === "provinces"
-          ? "e.g. Matabeleland North"
-          : category === "pillars"
-            ? "e.g. Infrastructure & Logistics"
-            : "e.g. Investment inquiry";
+      : category === "subsectors"
+        ? "e.g. Solar Power Generation"
+        : category === "ministries"
+          ? "e.g. Ministry of Energy and Power Development"
+          : category === "provinces"
+            ? "e.g. Matabeleland North"
+            : category === "pillars"
+              ? "e.g. Infrastructure & Logistics"
+              : "e.g. Investment inquiry";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -98,6 +109,21 @@ export function AddTaxonomyTermModal({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
+          {category === "subsectors" && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>
+                Parent sector
+              </label>
+              <select value={sectorId} onChange={(e) => setSectorId(e.target.value)} className="dashboard-input">
+                <option value="">Select sector</option>
+                {sectors.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="space-y-1.5">
             <label className="text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>
               {nameLabel}
