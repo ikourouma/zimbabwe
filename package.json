@@ -11,7 +11,9 @@
     "db:migrate": "tsx --env-file=.env.local node_modules/drizzle-kit/bin.cjs migrate",
     "db:push": "tsx --env-file=.env.local node_modules/drizzle-kit/bin.cjs push",
     "db:studio": "tsx --env-file=.env.local node_modules/drizzle-kit/bin.cjs studio",
-    "db:seed": "tsx --env-file=.env.local lib/db/seed/index.ts"
+    "db:seed": "tsx --env-file=.env.local lib/db/seed/index.ts",
+    "seed:demo": "tsx --env-file=.env.local scripts/seed-demo-states.ts",
+    "smoke": "tsx --env-file=.env.local scripts/smoke-all-roles.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1091.0",

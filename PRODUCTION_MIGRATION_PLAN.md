@@ -461,3 +461,20 @@ decision at Phase 8 hosting cutover.
 - [KNOWLEDGE_BASE.md](KNOWLEDGE_BASE.md) — living record of what's already been built and why; update this after each phase of the migration lands, same as every prior page redesign.
 - [BACKLOG.md](BACKLOG.md) — deferred items, including the original "Demo to SaaS migration map" this plan formalizes, and the platform-template documentation initiative that follows once this migration is complete.
 - [MVP-BUILD-INSTRUCTION-CURSOR-v1.0.md](MVP-BUILD-INSTRUCTION-CURSOR-v1.0.md) — the platform's original mission/ownership brief.
+
+## Pilot readiness status (2026-09-03)
+
+| Item | Status |
+| --- | --- |
+| Production build (`npm run build`) | Done |
+| Auth cutover (`useAuth`, Better Auth) | Done |
+| Route renames (`/admin`, `/deal-room`, `/ministry`, `/super-admin`) | Done — `-demo` routes removed |
+| API authorization hardening | Done |
+| Document R2 backfill | Done (99 placeholders) |
+| Demo lifecycle seed (`npm run seed:demo`) | Script ready — run per environment |
+| Six-role smoke script (`npm run smoke`) | Done |
+| UAT guide | [docs/UAT-Test-Guide.md](docs/UAT-Test-Guide.md) |
+| Hostinger deploy of current `main` | **Pending** — production still on July build as of last check |
+| Resend domain + `RESEND_FROM_EMAIL` | Verify in Hostinger env panel |
+| Neon Auth trusted origins | Must include `https://www.zidaproject.com` |
+| Test account cleanup | `scripts/cleanup-test-accounts.ts` (dry-run first) |

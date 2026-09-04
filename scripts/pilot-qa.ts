@@ -9,6 +9,7 @@ const PILOT_ACCOUNTS = [
   { email: "registered+pilot@zidaproject.com", role: "registered", expectedPath: "/projects" },
   { email: "qualified+pilot@zidaproject.com", role: "qualified", expectedPath: "/deal-room" },
   { email: "government+pilot@zidaproject.com", role: "government", expectedPath: "/deal-room" },
+  { email: "ministryadmin+pilot@zidaproject.com", role: "ministry_admin", expectedPath: "/ministry" },
   { email: "admin+pilot@zidaproject.com", role: "admin", expectedPath: "/admin" },
   { email: "superadmin+pilot@zidaproject.com", role: "super_admin", expectedPath: "/super-admin" },
 ] as const;
