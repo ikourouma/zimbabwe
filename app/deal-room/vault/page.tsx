@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { FileArchive, FileCheck, FileText, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { AccessGate } from "@/components/dashboard/access-gate";
@@ -31,7 +32,22 @@ export default function DocumentVaultPage() {
       .catch(() => setData(null));
   }, [isAuthenticated]);
 
-  if (!isLoading && !isAuthenticated) {
+  if (isLoading) {
+    return (
+      <div>
+        <div className="mb-6">
+          <div className="dashboard-skeleton h-8 w-48 mb-2" />
+          <div className="dashboard-skeleton h-4 w-96" />
+        </div>
+        <div className="dashboard-panel p-8">
+          <div className="dashboard-skeleton h-4 w-full mb-3" />
+          <div className="dashboard-skeleton h-4 w-2/3" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
     return <AccessGate title="Sign in required" description="Sign in to open your personal document vault." />;
   }
 
@@ -151,6 +167,10 @@ function AccreditationUpload({ onUploaded }: { onUploaded: () => void }) {
     form.set("file", file);
     const res = await fetch("/api/accreditation", { method: "POST", body: form });
     if (res.ok) onUploaded();
+    else {
+      const body = await res.json().catch(() => ({}));
+      toast.error((body as { error?: string }).error ?? "Upload failed. Please try again.");
+    }
   };
 
   return (

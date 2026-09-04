@@ -82,9 +82,6 @@ export const frMessages: SiteMessages = {
     "admin": "Admin",
     "super-admin": "Administrateur plateforme",
     "deal-room": "Salle de négociation",
-    "admin-demo": "Démo Admin",
-    "super-admin-demo": "Démo Administrateur plateforme",
-    "deal-room-demo": "Salle de négociation (démo)",
   },
   home: {
     heroCountryStats: [

@@ -2,7 +2,7 @@
 
 import type { AccessLevel } from "@/lib/entitlements/visibility";
 import { canAccessContent } from "@/lib/entitlements/visibility";
-import { useDemoPersona } from "@/context/demo-persona-context";
+import { useAuth } from "@/context/auth-context";
 import { cn } from "@/lib/utils";
 
 interface GatedSectionProps {
@@ -20,7 +20,7 @@ export function GatedSection({
   blur = true,
   className,
 }: GatedSectionProps) {
-  const { persona } = useDemoPersona();
+  const { persona } = useAuth();
   const allowed = canAccessContent(persona, requiredLevel);
 
   if (allowed) {

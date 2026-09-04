@@ -17,7 +17,7 @@ interface DashboardShellProps {
 }
 
 export function DashboardShell({ pathname, children }: DashboardShellProps) {
-  const { role, accountStatus } = useAuth();
+  const { role, accountStatus, isLoading } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const activeConsole = consoleFromPathname(pathname);
@@ -49,6 +49,7 @@ export function DashboardShell({ pathname, children }: DashboardShellProps) {
         <DashboardSidebar
           console={activeConsole}
           role={role}
+          authLoading={isLoading}
           collapsed={collapsed}
           onToggleCollapse={toggleCollapse}
         />
@@ -56,7 +57,7 @@ export function DashboardShell({ pathname, children }: DashboardShellProps) {
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent side="left" className="w-72 p-0 dashboard-sidebar">
-          <DashboardSidebar console={activeConsole} role={role} onNavigate={() => setMobileOpen(false)} />
+          <DashboardSidebar console={activeConsole} role={role} authLoading={isLoading} onNavigate={() => setMobileOpen(false)} />
         </SheetContent>
       </Sheet>
 

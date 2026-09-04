@@ -34,6 +34,7 @@ function isActive(pathname: string, href: string, exact?: boolean) {
 interface DashboardSidebarProps {
   console: DashboardConsole;
   role: AccountRole | null;
+  authLoading?: boolean;
   onNavigate?: () => void;
   /** Desktop icon-rail mode (~64px). Ignored on the mobile Sheet, which is always expanded. */
   collapsed?: boolean;
@@ -43,6 +44,7 @@ interface DashboardSidebarProps {
 export function DashboardSidebar({
   console: activeConsole,
   role,
+  authLoading = false,
   onNavigate,
   collapsed = false,
   onToggleCollapse,
@@ -116,7 +118,11 @@ export function DashboardSidebar({
         </div>
 
         <nav className={cn("flex-1 overflow-y-auto py-4 space-y-1", collapsed ? "px-2" : "px-3")}>
-          {meta.nav
+          {authLoading
+            ? Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className={cn("dashboard-skeleton h-9 rounded-md mb-1", collapsed ? "mx-1" : "")} />
+              ))
+            : meta.nav
             .filter((item) => !item.minRole || (role && item.minRole.includes(role)))
             .map((item) => {
             const active = isActive(pathname, item.href, item.exact);

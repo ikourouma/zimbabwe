@@ -3,7 +3,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { BellRing } from "lucide-react";
 import { useProjectStore } from "@/context/project-store-context";
-import { useDemoPersona } from "@/context/demo-persona-context";
 import { useAuth } from "@/context/auth-context";
 import { filterProjects } from "@/lib/entitlements/visibility";
 import { useSavedSearches } from "@/lib/hooks/use-saved-searches";
@@ -32,8 +31,7 @@ const breadcrumbJsonLd = {
 
 export default function ProjectsPage() {
   const { projects } = useProjectStore();
-  const { persona } = useDemoPersona();
-  const { userId } = useAuth();
+  const { persona, userId } = useAuth();
   const [filters, setFilters] = useState<ProjectFilters>({});
   const [showWelcome, setShowWelcome] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);

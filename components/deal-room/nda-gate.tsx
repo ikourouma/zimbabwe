@@ -44,6 +44,14 @@ export function NdaGate({ children }: { children: React.ReactNode }) {
   const showKyc = role === "qualified";
   const needsNda = !isLoading && role !== null && requiresNdaAcceptance(role) && !ndaAcceptedAt;
 
+  if (isLoading) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <div className="dashboard-skeleton h-8 w-48 rounded" />
+      </div>
+    );
+  }
+
   async function accept() {
     if (!agreed || !title.trim()) return;
     setBusy(true);

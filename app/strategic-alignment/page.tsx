@@ -10,7 +10,7 @@ import { EstInvestmentRange } from "@/components/projects/est-investment-range";
 import { WorkspaceAccessCta } from "@/components/deal-room/workspace-access-cta";
 import { useProjectStore } from "@/context/project-store-context";
 import { useTaxonomyStore } from "@/context/taxonomy-store-context";
-import { useDemoPersona } from "@/context/demo-persona-context";
+import { useAuth } from "@/context/auth-context";
 import { cn } from "@/lib/utils";
 import { useSiteStats } from "@/lib/hooks/use-site-stats";
 import { sdgs, getSdgById } from "@/lib/data/taxonomies";
@@ -47,7 +47,7 @@ const breadcrumbJsonLd = {
 export default function StrategicAlignmentPage() {
   const { pillars, ministries } = useTaxonomyStore();
   const { projects } = useProjectStore();
-  const { isQualified } = useDemoPersona();
+  const { isQualified } = useAuth();
   const stats = useSiteStats();
   const [activeId, setActiveId] = useState(pillars[0]?.id ?? "");
 

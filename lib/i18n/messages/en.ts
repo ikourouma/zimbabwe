@@ -81,9 +81,6 @@ export const enMessages = {
     "admin": "Admin",
     "super-admin": "Platform Admin",
     "deal-room": "Deal Room",
-    "admin-demo": "Admin Demo",
-    "super-admin-demo": "Platform Admin Demo",
-    "deal-room-demo": "Deal Room (Demo)",
   },
   home: {
     heroCountryStats: [

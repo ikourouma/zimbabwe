@@ -101,15 +101,7 @@ export function RoleChangeModal({ user, nextRole, onConfirm, onCancel }: RoleCha
           />
         </div>
 
-        {/* Scaffolded step-up authentication — deliberately disabled until Neon Auth MFA is enabled
-            (consistent with the Account & Security MFA deferral), so we never fake a security step. */}
-        <div
-          className="flex items-center gap-2 rounded-md px-2.5 py-2 text-xs opacity-60"
-          style={{ border: "1px dashed var(--color-sovereign-border)", color: "var(--color-text-muted)" }}
-        >
-          <Lock className="h-3.5 w-3.5 shrink-0" />
-          Step-up MFA re-authentication — available once platform MFA is enabled.
-        </div>
+        {/* Step-up MFA scaffold hidden for demo — restore when platform MFA is enabled. */}
 
         <DialogFooter>
           <Button variant="outline" size="sm" onClick={onCancel} disabled={pending}>

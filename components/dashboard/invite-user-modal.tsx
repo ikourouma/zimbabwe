@@ -206,15 +206,7 @@ export function InviteUserModal({ open, onOpenChange, onInvited, assignableRoles
             />
           </div>
 
-          {/* Onboarding scaffolds — deliberately disabled until credential provisioning exists. */}
-          <div className="space-y-2 rounded-md px-2.5 py-2" style={{ border: "1px dashed var(--color-sovereign-border)" }}>
-            {["Send a temporary password", "Require MFA enrollment on first sign-in"].map((label) => (
-              <label key={label} className="flex items-center gap-2 text-xs opacity-60" style={{ color: "var(--color-text-muted)" }}>
-                <input type="checkbox" disabled />
-                <Lock className="h-3 w-3" /> {label} <span className="ml-auto">Coming soon</span>
-              </label>
-            ))}
-          </div>
+          {/* Hidden until credential provisioning ships — disabled checkboxes read as broken UI in demos. */}
 
           <div
             className="flex items-start gap-2 rounded-md px-2.5 py-2 text-xs"

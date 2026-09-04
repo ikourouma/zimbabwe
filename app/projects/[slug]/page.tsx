@@ -21,7 +21,7 @@ import {
   Eye,
 } from "lucide-react";
 import { useProjectStore } from "@/context/project-store-context";
-import { useDemoPersona } from "@/context/demo-persona-context";
+import { useAuth } from "@/context/auth-context";
 import { useSiteSettings } from "@/context/site-settings-context";
 import {
   getSectorById,
@@ -32,7 +32,6 @@ import {
   getMinistryById,
 } from "@/lib/data/taxonomies";
 import { canViewProject, accessLevelForRole, canAccessVisibilityLevel } from "@/lib/entitlements/visibility";
-import { useAuth } from "@/context/auth-context";
 import { classifyFinancingType } from "@/lib/utils/financing-type";
 import { parseCapitalTotalMillions, parseCapitalBreakdown, formatMillions } from "@/lib/utils/capital";
 import { getRelevantGlossaryTerms } from "@/lib/data/glossary";
@@ -61,7 +60,7 @@ export default function ProjectDetailPage({
   const t = useTranslations();
   const pd = t.projectDetail;
   const { projects, getProjectBySlug } = useProjectStore();
-  const { persona, isRegistered, isQualified, isAdmin } = useDemoPersona();
+  const { persona, isRegistered, isQualified, isAdmin } = useAuth();
   // Real auth (not the demo toggle) for Deal Room entitlement — approved investors skip the
   // document-request funnel and go straight into the Deal Room.
   const {
@@ -70,9 +69,11 @@ export default function ProjectDetailPage({
     isSuperAdmin: isSuperAdminReal,
     role: realRole,
     ndaAcceptedAt,
+    isLoading: authLoading,
   } = useAuth();
   const hasDealRoomAccess = isQualifiedReal || isAdminReal || isSuperAdminReal;
   const realAccessLevel = accessLevelForRole(realRole);
+  const showQualifiedFinancials = !authLoading && isQualifiedReal;
   const { costStructureHidden } = useSiteSettings();
 
   const project = getProjectBySlug(slug);
@@ -269,7 +270,7 @@ export default function ProjectDetailPage({
                       </span>
                       <AmountOrLock
                         amount={item.amount}
-                        locked={!isQualified}
+                        locked={authLoading || !showQualifiedFinancials}
                         valueClassName="text-sm font-mono text-white"
                       />
                     </div>
@@ -281,13 +282,13 @@ export default function ProjectDetailPage({
                     <span className="text-sm font-semibold text-white">{pd.totalEstimatedProjectCost}</span>
                     <AmountOrLock
                       amount={totalCostItem.amount}
-                      locked={!isQualified}
+                      locked={authLoading || !showQualifiedFinancials}
                       valueClassName="text-base font-mono font-bold"
                       valueStyle={{ color: "var(--color-gold)" }}
                     />
                   </div>
                 </div>
-                {isQualified && project.financingType && (
+                {showQualifiedFinancials && project.financingType && (
                   <p className="mt-4 text-xs" style={{ color: "var(--color-text-muted)" }}>
                     {pd.financingStructure}: {project.financingType}
                   </p>
@@ -295,7 +296,7 @@ export default function ProjectDetailPage({
                 <p className="mt-2 text-[0.65rem] italic" style={{ color: "var(--color-text-muted)" }}>
                   {pd.estimatedFiguresDisclaimer}
                 </p>
-                {!isQualified && <UnlockNotice leadText={pd.unlockCostBreakdownLead} isRegistered={isRegistered} pd={pd} />}
+                {!authLoading && !showQualifiedFinancials && <UnlockNotice leadText={pd.unlockCostBreakdownLead} isRegistered={isRegistered} pd={pd} />}
               </ExecutiveCard>
             )}
 
@@ -305,19 +306,19 @@ export default function ProjectDetailPage({
             <ExecutiveCard>
               <ExecutiveCard.Header overline={pd.financialPerformance} title={pd.financialPerformanceData} />
               <dl className="grid gap-4 sm:grid-cols-2">
-                <FinRow label={pd.irr} value={project.irr} locked={!isQualified} notDisclosed={pd.notDisclosed} />
-                <FinRow label={pd.npv} value={project.npv} locked={!isQualified} notDisclosed={pd.notDisclosed} />
-                <FinRow label={pd.roi} value={project.roi} locked={!isQualified} notDisclosed={pd.notDisclosed} />
-                <FinRow label={pd.paybackPeriod} value={project.paybackPeriod} locked={!isQualified} notDisclosed={pd.notDisclosed} />
+                <FinRow label={pd.irr} value={project.irr} locked={authLoading || !showQualifiedFinancials} notDisclosed={pd.notDisclosed} />
+                <FinRow label={pd.npv} value={project.npv} locked={authLoading || !showQualifiedFinancials} notDisclosed={pd.notDisclosed} />
+                <FinRow label={pd.roi} value={project.roi} locked={authLoading || !showQualifiedFinancials} notDisclosed={pd.notDisclosed} />
+                <FinRow label={pd.paybackPeriod} value={project.paybackPeriod} locked={authLoading || !showQualifiedFinancials} notDisclosed={pd.notDisclosed} />
                 <FinRow
                   label={pd.projectedRevenue}
                   value={project.projectedRevenue}
-                  locked={!isQualified}
+                  locked={authLoading || !showQualifiedFinancials}
                   notDisclosed={pd.notDisclosed}
                   className="sm:col-span-2"
                 />
               </dl>
-              {!isQualified && (
+              {!authLoading && !showQualifiedFinancials && (
                 <UnlockNotice leadText={pd.unlockFinancialFiguresLead} isRegistered={isRegistered} pd={pd} />
               )}
             </ExecutiveCard>

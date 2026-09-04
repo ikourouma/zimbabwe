@@ -7,7 +7,17 @@ import { ProfileView } from "@/components/account/profile-view";
 export default function DealRoomProfilePage() {
   const { isAuthenticated, isLoading } = useAuth();
 
-  if (!isLoading && !isAuthenticated) {
+  if (isLoading) {
+    return (
+      <div className="dashboard-panel p-8">
+        <div className="dashboard-skeleton h-8 w-40 mb-4" />
+        <div className="dashboard-skeleton h-4 w-full mb-2" />
+        <div className="dashboard-skeleton h-4 w-2/3" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
     return <DealRoomAccessGate isAuthenticated={isAuthenticated} />;
   }
 

@@ -708,21 +708,7 @@ function SecurityTab({
             )}
           </Button>
         )}
-        <DeferredAction
-          icon={KeyRound}
-          label="Self-Service Identity Flow (Neon Auth)"
-          note="Neon Auth password resets are self-service today; direct admin-triggered resets are pending."
-        />
-        <DeferredAction
-          icon={Lock}
-          label="User-Managed Identity Session (Neon Auth)"
-          note="Cross-user session revocation isn't exposed by Neon Auth yet — users manage their own sessions in Account & Security."
-        />
-        <DeferredAction
-          icon={MailWarning}
-          label="Console Policy Enforced"
-          note="Available once platform MFA is enabled in the Neon Console."
-        />
+        {/* DeferredAction scaffolds hidden for demo — re-enable when Neon Auth admin flows land. */}
         <UserSessionTelemetry userId={user.userId} />
         {!isSelf && user.accountStatus !== "deactivated" && (
           <div className="pt-2 border-t border-white/10">

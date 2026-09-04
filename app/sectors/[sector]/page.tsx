@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, KeyRound } from "lucide-react";
 import { useProjectStore } from "@/context/project-store-context";
 import { useTaxonomyStore } from "@/context/taxonomy-store-context";
-import { useDemoPersona } from "@/context/demo-persona-context";
+import { useAuth } from "@/context/auth-context";
 import { getPillarById, getSdgById, getMinistryById } from "@/lib/data/taxonomies";
 import { getSectorStats } from "@/lib/data/site-stats";
 import { ProjectCard } from "@/components/projects/project-card";
@@ -25,7 +25,7 @@ export default function SectorDetailPage({
   const { sector: slug } = use(params);
   const { sectors } = useTaxonomyStore();
   const { projects } = useProjectStore();
-  const { isQualified } = useDemoPersona();
+  const { isQualified } = useAuth();
 
   const sector = sectors.find((s) => s.slug === slug);
   if (!sector) notFound();
