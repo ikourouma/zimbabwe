@@ -35,6 +35,7 @@ yarn-error.log*
 
 # pilot credentials (never commit)
 docs/PILOT_TEST_ACCOUNTS.md
+docs/API Keys_Neon_Resend_R2.txt
 
 # typescript
 *.tsbuildinfo
@@ -44,3 +45,6 @@ next-env.d.ts
 dev_out*.txt
 dev_err*.txt
 dev_smoke.txt
+
+# local API debug artifacts (curl cookie jars and JSON bodies)
+_p8_*
