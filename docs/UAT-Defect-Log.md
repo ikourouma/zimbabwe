@@ -38,7 +38,7 @@
 | ID | Title | Severity | Status |
 | --- | --- | --- | --- |
 | DEF-001 | Sign-in strands every role on the public homepage | High | Closed |
-| DEF-002 | Deployment does not invalidate the cached page shell | High | Open |
+| DEF-002 | Deployment does not invalidate the cached page shell | High | Closed |
 | DEF-003 | Apex and www both served as canonical | Medium | Closed |
 | DEF-004 | Test account cleanup leaves orphaned profile records | Medium | Open |
 | DEF-005 | UAT guide documented the wrong landing route | Low | Closed |
@@ -76,11 +76,9 @@ The guide instructed testers that a registered investor lands on the public proj
 
 A tester following the guide would have reported a genuine platform defect as expected behaviour, or the reverse. This is the failure mode the persona documents exist to prevent, which is why every route they describe is now asserted by automation before it is written down.
 
-## 4. Open Defects
-
 ### DEF-002 — Deployment does not invalidate the cached page shell
 
-**Severity:** High. **Status:** Open.
+**Severity:** High. **Status:** Closed in `1cac033`, verified.
 
 Statically prerendered pages are served with a one-year shared-cache lifetime, and deployment does not purge them. The cached page references the previous build's fingerprinted JavaScript, so visitors continue running old code after a release.
 
@@ -88,7 +86,11 @@ Statically prerendered pages are served with a one-year shared-cache lifetime, a
 
 **Why this is the most serious open item.** It undermines every other remediation. A defect can be found, fixed, deployed, and still be live for stakeholders. It also breaks the standard staleness check: the build endpoint is dynamic and correctly reported the new commit while the page shell was still old, so confirming the deployed commit is not sufficient evidence that users are running it.
 
-**Suggested remediation.** Purge the cache on deploy, or shorten the shared-cache lifetime for prerendered pages to something a release cycle can tolerate. Until then, `E2E_BYPASS_CDN=1` forces the suite to exercise deployed code, and stakeholders should hard-refresh before a walkthrough.
+**Remediation.** Page responses now carry a sixty-second shared-cache lifetime with a five-minute stale-while-revalidate window, replacing the one-year default. The edge still absorbs traffic bursts and still answers instantly while refreshing behind the request, but a deployment reaches users within about a minute instead of never. Console routes were excluded because they already carry a no-store directive, and the framework appends rather than replaces headers.
+
+Verified in production: the sign-in page now returns the capped directive. `E2E_BYPASS_CDN=1` is retained for diagnosis, since it is what distinguishes "the fix is wrong" from "the edge has not caught up yet".
+
+## 4. Open Defects
 
 ### DEF-004 — Test account cleanup leaves orphaned profile records
 
