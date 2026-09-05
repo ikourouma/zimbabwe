@@ -36,10 +36,12 @@ export default function SignInPage() {
 
     try {
       await runSignInTransition(async () => {
+        // No callbackURL: it makes the auth client navigate the browser itself, which tore down
+        // this context before the role-aware router.push() below could run — every role signed in
+        // successfully and then sat on the public homepage instead of their console.
         const result = await authClient.signIn.email({
           email: email.trim(),
           password,
-          callbackURL: "/",
         });
 
         if (result.error) {

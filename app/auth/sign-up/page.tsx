@@ -48,11 +48,12 @@ export default function SignUpPage() {
 
     try {
       await runSignUpTransition(async () => {
+        // No callbackURL, for the same reason as sign-in: it navigates the browser itself and
+        // pre-empts the role-aware router.push() below, stranding a new account on the homepage.
         const result = await authClient.signUp.email({
           email: email.trim(),
           name: name.trim(),
           password,
-          callbackURL: "/",
         });
 
         if (result.error) {

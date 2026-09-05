@@ -9,8 +9,8 @@ All seeded content is illustrative and marked *pending official validation*.
 
 ## 1. Registered investor — `registered+pilot@zidaproject.com`
 
-1. Sign in → lands on `/projects`.
-2. Browse registry — financial fields (IRR, NPV, ROI) are **hidden**.
+1. Sign in → lands on `/deal-room`. `lib/auth/post-login-destination.ts` sends every non-staff role there; the Investor Dashboard is tiered rather than qualified-only, so a registered user gets Overview, Pipeline, Saved Projects, Document Vault, My Activity Report, My Profile and Account. Engagements, MOU Registry, My Proposals, Team and Communication Hub stay hidden until qualification.
+2. Browse the registry at `/projects` — financial fields (IRR, NPV, ROI) are **hidden**.
 3. Open a published project detail — gated sections show registration prompts.
 4. Submit contact form at `/contact` — success only after server confirms (button disabled while submitting).
 5. Type `/admin` then `/super-admin` straight into the address bar — each shows "You do not have access to this console", then lands on `/deal-room`.

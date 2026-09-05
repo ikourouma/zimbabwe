@@ -51,3 +51,13 @@ _p8_*
 
 # smoke test response bodies (SMOKE_DUMP=1) — may contain session-rendered markup
 .smoke-dump/
+
+# Playwright: saved sessions are live credentials; results and traces carry rendered console markup
+e2e/.auth/
+e2e-results/
+e2e-report/
+
+# Screenshots captured for the stakeholder walkthrough guides, and the Word files built from them —
+# both are regenerated from source by the capture pass and the docs build.
+docs/screenshots/
+docs/build/
