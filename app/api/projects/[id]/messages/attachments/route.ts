@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { handleRouteError } from "@/lib/api/route-helpers";
 import { requireRole } from "@/lib/auth/session";
+import { projectMatchesMinistry } from "@/lib/entitlements/ministry-scope";
 import { fetchProjectByIdOrSlug } from "@/lib/db/queries/projects";
 import { isR2Configured, putObject } from "@/lib/storage/r2";
 
@@ -40,6 +41,17 @@ export async function POST(request: Request, { params }: RouteParams) {
     const { id } = await params;
     const project = await fetchProjectByIdOrSlug(id);
     if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    // Same ministry scoping the sibling routes apply (messages POST, documents POST/DELETE). This
+    // route was the one upload path missing it: the message POST that consumes the returned
+    // storageKey is scoped, so a foreign key could never be attached to a thread, but without this
+    // a ministry_admin could still write objects into another ministry's `messages/<projectId>/`
+    // prefix in R2 by POSTing here directly with a known project id.
+    if (actor.role === "ministry_admin") {
+      if (!actor.ministryId || !projectMatchesMinistry(project, actor.ministryId)) {
+        return NextResponse.json({ error: "You do not have permission to upload to this project." }, { status: 403 });
+      }
+    }
 
     if (!isR2Configured()) {
       return NextResponse.json({ error: "File storage is not configured" }, { status: 503 });

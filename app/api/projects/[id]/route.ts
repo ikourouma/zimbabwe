@@ -147,6 +147,14 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     // strip it here rather than adding a third CREATOR_STRIPPED_FIELDS-style list just for one field.
     if (user.role === "ministry_admin") {
       delete body.assignedStaffUserId;
+      // Beneficiary ministry is the field that decides which ministry_admin can touch this project
+      // at all (resolveProjectWorkflowRole → the workflowRole===null 403 above), so letting a
+      // ministry_admin PATCH it would let them rewrite their own scope check: hand their ministry's
+      // project to another ministry, or add/remove secondary beneficiaries, unilaterally and with no
+      // second party. Re-assignment stays admin/super_admin-only; ministries move projects between
+      // themselves through the association-request flow, which records both sides.
+      delete body.primaryBeneficiaryMinistryId;
+      delete body.secondaryBeneficiaryMinistryIds;
     }
 
     // Assigned Reviewing Officer (Phase 6) — settable by the project's own ministry_admin (already
