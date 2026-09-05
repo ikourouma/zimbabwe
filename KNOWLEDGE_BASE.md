@@ -109,12 +109,17 @@ be scanned, not read cover to cover.
   Cloudflare R2, and Resend are listed with descriptions in [README.md](README.md) and
   [PRODUCTION_MIGRATION_PLAN.md](PRODUCTION_MIGRATION_PLAN.md#production-tech-stack). All service
   credentials are configured in local `.env.local` only (never in `.env.example` or this repo).
-- **Resend domain DNS pending (deferred to Phase 5 gate)** — `zidaproject.com` is added in Resend
-  but DNS is not yet configured on Hostinger. Mandatory email verification is **deferred** until
-  Phase 5 / board-readiness; pilot auth uses seeded accounts with verification disabled. See
+- **Resend sending is live (2026-09-04)** — `zidaproject.com` is **Verified** in Resend and
+  `npm run email:test` sends the four inquiry-lifecycle templates successfully from
+  `notifications@zidaproject.com`. Mandatory *signup* email verification remains **deferred**;
+  pilot auth still uses seeded accounts with verification disabled. See
   [Email verification — deferred decision](PRODUCTION_MIGRATION_PLAN.md#email-verification--deferred-decision-2026-07-22)
-  and the [Resend DNS runbook](PRODUCTION_MIGRATION_PLAN.md#resend-dns-runbook--zidaprojectcom-execute-when-ready).
-  Until verified, pilot email tests use Resend's sandbox/onboarding rules.
+  and the [Resend DNS runbook](PRODUCTION_MIGRATION_PLAN.md#resend-dns-runbook--zidaprojectcom-completed-2026-09-04).
+  Two cautions carried forward: DNS values must be pasted from Resend's copy button (never retyped
+  or hand-transcribed) and corrections must **replace** the prior TXT rather than be added beside
+  it, since a DKIM name must resolve to exactly one record. Keep the apex SPF as
+  `v=spf1 include:_spf.mail.hostinger.com ~all` — it was overwritten with the SES value during this
+  work, which silently breaks outbound mail from the Hostinger mailboxes.
 - **Navigation centralized** — shared link arrays in `lib/config/navigation.ts`; Contact is in
   primary header nav (desktop + mobile), not only the utility bar.
 - **French (FR) i18n** — `LocaleProvider` + `lib/i18n/messages/{en,fr}.ts`; utility-bar language

@@ -15,7 +15,8 @@ validation, with public launch to follow their sign-off. Also folds in new sourc
 
 ## Progress log
 
-- **2026-09-04** — Phase 5 email wiring landed in code; Resend sending blocked only on DNS:
+- **2026-09-04** — Phase 5 email wiring landed and Resend sending is live (`zidaproject.com`
+  Verified):
   - **Inquiry lifecycle emails shipped** — `lib/email/inquiry-notifications.ts` (applicant
     approved / changes-requested / declined, plus a staff new-submission alert), wired into
     `PATCH /api/inquiries/[id]` and the wizard submit in `PATCH /api/inquiries/draft`. `replyTo`
@@ -26,15 +27,27 @@ validation, with public launch to follow their sign-off. Also folds in new sourc
   - **API key was invalid, now rotated** — the original `RESEND_API_KEY` returned
     `401 API key is invalid` on every send. Replaced; the new key authenticates. Worth noting the
     failure was invisible before this script existed.
-  - **Remaining blocker is DNS only** — sends now fail with
-    `403 The zidaproject.com domain is not verified`, which confirms key, client, and all four
-    templates are working. See the [Resend DNS runbook](#resend-dns-runbook--zidaprojectcom-execute-when-ready).
-  - **First DNS attempt published two bad values** (caught via `Resolve-DnsName`, records resolved
-    but held wrong content — a truncated DKIM key and pasted runbook prose in the SPF TXT). The
-    runbook now leads with the copy-button warning and a "read the values, not just their
-    existence" verification step. Apex `mx1/mx2.hostinger.com` and
-    `v=spf1 include:_spf.mail.hostinger.com ~all` were correctly left untouched, so the Hostinger
-    mailboxes were never at risk.
+  - **DNS was the last blocker** — before verification, sends failed with
+    `403 The zidaproject.com domain is not verified`, which confirmed key, client, and all four
+    templates were working. See the
+    [Resend DNS runbook](#resend-dns-runbook--zidaprojectcom-completed-2026-09-04).
+  - **Domain Verified at 19:36; `npm run email:test` now sends all four templates successfully.**
+    Final DNS state confirmed identical on both authoritative nameservers: one SPF TXT at `send`
+    (`v=spf1 include:amazonses.com ~all`), one 218-char DKIM TXT at `resend._domainkey`, and the
+    `feedback-smtp.us-east-1.amazonses.com` MX at priority 10.
+  - **Verification took three failed rounds, all from the same cause** — formatted documentation
+    lines pasted into DNS *value* fields rather than the values they described (an entire prose
+    bullet ended up as the SPF TXT; the DKIM TXT was prefixed `resend._domainkey / value `). Two
+    aggravating factors: corrections were *added* rather than replacing, leaving up to three TXT
+    records stacked at `resend._domainkey` (a DKIM name must return exactly one, so duplicates fail
+    on their own), and `8.8.8.8` served a stale value for a full TTL hour while the zone already
+    held different data, with Hostinger's two nameservers briefly disagreeing. The runbook now
+    mandates authoritative-nameserver queries with a record-count assertion.
+  - **Regression to watch: the apex SPF was overwritten** during that cleanup, from
+    `v=spf1 include:_spf.mail.hostinger.com ~all` to the SES value, de-authorizing Hostinger's mail
+    servers for outbound mail sent from the `admin@`/`notifications@` mailboxes. Inbound mail and
+    platform email were unaffected, which is why it was easy to miss. Restore the apex to the
+    Hostinger include; it is not one of the records Resend checks.
 - **2026-07-26** — First Hostinger Node.js-app deployment attempt of the real (Neon-backed) app
   surfaced two issues:
   1. **Red herring**: Hostinger's build log reported an `ERESOLVE` peer-dependency conflict
@@ -145,7 +158,7 @@ Same two-tier breakdown as [README.md](README.md); env var names listed here for
 | **Neon Managed Better Auth** | Authentication and sessions — email/password, `neon_auth` schema in the same DB. Beta; replaces persona switcher in Phase 3. | `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET` |
 | **Drizzle ORM** | Schema, migrations, queries — `lib/db/schema/`, `lib/db/migrations/`. | Used with Neon serverless driver in `lib/db/client.ts` |
 | **Cloudflare R2** | Private document storage via S3-compatible API. Bucket: `zimbabwe-investment-platform`. Portable to other S3 hosts or MinIO. | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME` |
-| **Resend** | Transactional email — registrations, inquiry alerts, approvals, Better Auth verification/reset. Domain `zidaproject.com` added; **DNS pending verification** (runbook below) — code path confirmed working 2026-09-04, sends fail only on the unverified domain. | `RESEND_API_KEY`, `RESEND_FROM_EMAIL` (after domain verified), `RESEND_REPLY_TO`, `INQUIRY_ALERT_EMAIL` |
+| **Resend** | Transactional email — registrations, inquiry alerts, approvals, Better Auth verification/reset. Domain `zidaproject.com` **Verified 2026-09-04**; sending live from `notifications@zidaproject.com` (runbook below). | `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `RESEND_REPLY_TO`, `INQUIRY_ALERT_EMAIL` |
 | **Vercel** (Phase 8) | Pilot/staging host for SSR + middleware + API (Hostinger static export cannot run Neon-backed app). | All env vars above + `NEXT_PUBLIC_SITE_URL` |
 
 ## Provisioned resources
@@ -166,9 +179,9 @@ Concrete IDs/URLs confirmed so far (no secrets recorded here — those live only
   (account token `zimbabwe-investment-platform`, scoped to bucket).
 - **Resend**: account created. API key (Sending access) **done** in `.env.local` — note the original
   key was invalid and was **rotated 2026-09-04**; the current one authenticates. Domain
-  **`zidaproject.com` added — DNS published but not yet Verified** (see runbook below). Sending
-  mailboxes `notifications@zidaproject.com` (From) and `admin@zidaproject.com` (Reply-To,
-  `INQUIRY_ALERT_EMAIL`) exist as real Hostinger inboxes.
+  **`zidaproject.com` Verified 2026-09-04** (see runbook below). Sending mailboxes
+  `notifications@zidaproject.com` (From) and `admin@zidaproject.com` (Reply-To,
+  `INQUIRY_ALERT_EMAIL`) exist as real Hostinger inboxes. Region: North Virginia (`us-east-1`).
 - **Branching**: only the default branch exists today — creating the `main` + dev/preview split is
   in-scope for Phase 1, not something to do manually beforehand.
 - **GitHub's role, clarified**: the repo isn't wired to Neon's per-PR preview-branch integration —
@@ -178,14 +191,17 @@ Concrete IDs/URLs confirmed so far (no secrets recorded here — those live only
   board approves the cutover — see Phase 8).
 - **Still outstanding (implementation, not credentials)**: Neon Auth trusted domains (add `localhost:3000` for local dev, and `zidaproject.com`/`www.zidaproject.com` for the Hostinger deployment, in Console if sign-in fails); R2 storage adapter code; Resend send integration (Phase 5); Vercel project (Phase 8). *Migration + seed + pilot auth accounts: done (Milestone 1).*
 
-## Resend DNS runbook — `zidaproject.com` (execute when ready)
+## Resend DNS runbook — `zidaproject.com` (completed 2026-09-04)
 
-Domain is added in Resend with status **Pending** until DNS records are published on Hostinger.
+**Status: Verified.** `zidaproject.com` shows Verified in Resend as of 2026-09-04 19:36, and
+`npm run email:test` sends successfully. Kept here as the reference procedure for re-verifying this
+domain, adding another sending domain, or migrating providers — the warnings below are all things
+that actually went wrong on this domain, not hypotheticals.
 
 **Prerequisites**
 
-- Domain `zidaproject.com` in [Resend → Domains](https://resend.com/domains) (status: Pending)
-- Access to **Hostinger DNS** for `zidaproject.com`
+- Domain added in [Resend → Domains](https://resend.com/domains) (a new domain starts as Pending)
+- Access to **Hostinger DNS** for the domain
 - Resend dashboard open showing the exact DNS records for your domain (values are unique per account)
 
 **Steps**
@@ -217,6 +233,21 @@ Domain is added in Resend with status **Pending** until DNS records are publishe
    types coexist on one name. Priority `10` goes in Hostinger's **separate Priority field**, not
    inside the MX value.
 
+   **The value field takes the value and nothing else.** Verifying this domain took three failed
+   rounds because formatted documentation lines were pasted into the content field instead of the
+   values they described — the published SPF TXT literally read
+   `feedback-smtp....amazonses.com / Priority 10 (Hostinger's separate Priority field, not inside the value) / TTL 3600.  TXT / Name send / value v=spf1 include:...nses.com ~all`,
+   and the DKIM TXT read `resend._domainkey / value p=MIGf…`. Both resolved perfectly in DNS and
+   both failed verification. Before saving, apply this test: the content must start with `v=spf1`
+   or `p=`, and must not contain a slash, the word `Priority`, the word `value`, the record's own
+   name, surrounding quotes, or a literal `...`.
+
+   **Replace records, never add alongside.** Delete the existing TXT before publishing a corrected
+   one. A DKIM name must resolve to **exactly one** TXT record — several answers at
+   `resend._domainkey` make the lookup ambiguous and fail verification even when one of them is
+   correct. This domain spent a round with three different TXT records stacked at that name because
+   each "fix" was added rather than replacing the last.
+
    **Do not put SPF at the apex `@`, and do not touch the apex MX records.** Resend scopes sending
    to the `send.` subdomain specifically so it never collides with the domain's own mail routing —
    this domain has real Hostinger mailboxes (`admin@zidaproject.com`,
@@ -234,20 +265,35 @@ Domain is added in Resend with status **Pending** until DNS records are publishe
    common failure mode. TTL: default is fine and does not affect whether verification succeeds. Do
    not add a second SPF TXT on the same name — one SPF TXT per name.
 
-4. **Save and wait for propagation** — often 15–60 minutes; up to 48 hours. Check against a public
-   resolver rather than the local one, so a stale local/ISP cache can't show you a false result.
-   Note each name is a **subdomain** — querying the apex `zidaproject.com` returns the Hostinger
-   mail records and tells you nothing about Resend:
+4. **Save, then check the authoritative nameservers** — not a public resolver. Google's `8.8.8.8`
+   served a stale value for a full TTL hour here while the zone already held different data, and
+   Hostinger's own two nameservers were briefly out of sync with each other, each returning a
+   different wrong record. Querying each authoritative server directly is the only check that can't
+   lie. Note every name is a **subdomain** — querying the apex `zidaproject.com` returns the
+   Hostinger mail records and tells you nothing about Resend.
 
    ```powershell
-   Resolve-DnsName -Name resend._domainkey.zidaproject.com -Type TXT -Server 8.8.8.8
-   Resolve-DnsName -Name send.zidaproject.com -Type TXT -Server 8.8.8.8
-   Resolve-DnsName -Name send.zidaproject.com -Type MX  -Server 8.8.8.8
+   # nameservers: Resolve-DnsName zidaproject.com -Type NS
+   foreach ($s in 'helios.dns-parking.com','aster.dns-parking.com') {
+     "########## $s"
+     $spf  = Resolve-DnsName send.zidaproject.com -Type TXT -Server $s
+     "  SPF  : $($spf.Strings.Count) record(s) -> $($spf.Strings -join ' | ')"
+     $dkim = Resolve-DnsName resend._domainkey.zidaproject.com -Type TXT -Server $s
+     "  DKIM : $($dkim.Strings.Count) record(s)"
+     $dkim.Strings | ForEach-Object { "    len=$($_.Length) starts=$($_.Substring(0,6)) ends=$($_.Substring($_.Length-6))" }
+     $mx = Resolve-DnsName send.zidaproject.com -Type MX -Server $s | ? {$_.QueryType -eq 'MX'}
+     "  MX   : $($mx.NameExchange) pref=$($mx.Preference)"
+   }
    ```
 
-   Read the returned values, don't just confirm the records exist — a record holding a truncated or
-   wrong-pasted value resolves perfectly and still fails verification (see step 1's copy-button
-   warning). The DKIM string must be the full `p=…IDAQAB` key, not a short fragment.
+   Pass criteria on **both** servers: SPF is exactly one record reading
+   `v=spf1 include:amazonses.com ~all`; DKIM is exactly one record of ~216–218 chars starting
+   `p=MIGf` and ending `IDAQAB`; MX is `feedback-smtp.<region>.amazonses.com` at priority 10.
+
+   Check the record **count**, not just the content, and read the values rather than merely
+   confirming the records exist. Every failure on this domain resolved cleanly in DNS while holding
+   wrong content — truncation, pasted prose, and duplicate records all look healthy to a query that
+   only asks "does it exist".
 
 5. **Verify in Resend** — Domains → `zidaproject.com` → **Verify**. Status should become **Verified**.
 
@@ -285,16 +331,47 @@ Domain is added in Resend with status **Pending** until DNS records are publishe
 
 **If verification fails**
 
-- **Compare the published value against the dashboard, character for character.** The failure seen
-  on 2026-09-04 was two records that resolved fine but held the wrong content: the DKIM TXT held the
-  elided on-screen fragment (`p=MIGfMA0GCSqG.Vs6TuawIDAQAB`, 27 chars instead of ~216), and the SPF
-  TXT held pasted prose from a runbook rather than the bare `v=spf1 …` string. Re-copy both with
-  Resend's copy button.
+- **Compare the published value against the dashboard, character for character.** Every failure on
+  2026-09-04 was a record that resolved fine while holding wrong content: the DKIM TXT held the
+  elided on-screen fragment (`p=MIGfMA0GCSqG.Vs6TuawIDAQAB`, 28 chars instead of ~216), then a
+  variant prefixed with `resend._domainkey / value `; the SPF TXT held a whole prose bullet copied
+  out of a chat message. Re-copy both with Resend's copy button — never retype from a screenshot,
+  and never hand-transcribe DKIM, whose base64 is full of capital-O/zero and capital-I/lowercase-l
+  pairs that are indistinguishable on screen.
+- **Count the records, don't just read one.** A DKIM name must return exactly one TXT. Duplicates
+  fail on their own even when one answer is correct, and a stale record left behind by an "edit"
+  that actually added a new one is easy to miss in the panel.
+- **Trust the banner over the row badge.** Resend showed a green `Verified` badge on the SPF TXT row
+  while the banner directly above it read `Invalid SPF TXT: The record value is incorrect`. The
+  badge was stale; the record had never been correct. The banner and the published DNS value are the
+  sources of truth.
 - Check Hostinger did not append the domain twice in the Name field
   (`resend._domainkey.zidaproject.com.zidaproject.com`).
-- Confirm records in public DNS with the `Resolve-DnsName` commands in step 4 — against the
-  `send.` / `resend._domainkey.` subdomains, not the apex.
+- Query the **authoritative** nameservers with the loop in step 4, not `8.8.8.8`, and against the
+  `send.` / `resend._domainkey.` subdomains rather than the apex.
 - Confirm no leading/trailing spaces or added surrounding quotes in the TXT values.
+
+**Do not let the cleanup damage the apex (regression seen 2026-09-04)**
+
+While correcting the `send` TXT, the **apex** SPF was overwritten from
+`v=spf1 include:_spf.mail.hostinger.com ~all` to the Resend/SES value. That silently de-authorizes
+Hostinger's mail servers, so mail sent *from* `admin@zidaproject.com` or
+`notifications@zidaproject.com` through Hostinger webmail or SMTP fails SPF at the receiving end and
+gets spam-foldered or rejected. Inbound mail is unaffected (apex MX untouched), and platform email is
+unaffected (Resend authenticates against `send.zidaproject.com`), which is exactly why this can go
+unnoticed.
+
+After any Resend DNS work, re-check the apex and restore it if needed:
+
+```powershell
+(Resolve-DnsName zidaproject.com -Type TXT -Server 8.8.8.8).Strings   # expect the hostinger include
+Resolve-DnsName zidaproject.com -Type MX -Server 8.8.8.8              # expect mx1/mx2.hostinger.com
+```
+
+The apex must hold exactly one SPF TXT: `v=spf1 include:_spf.mail.hostinger.com ~all`. Restoring it
+cannot break Resend — the apex is not among the three records Resend checks. If both senders ever
+genuinely need apex authorization, merge them into one record
+(`v=spf1 include:_spf.mail.hostinger.com include:amazonses.com ~all`), never two SPF TXTs.
 - Docs: [Resend — Add and verify domain](https://resend.com/docs/dashboard/domains/introduction)
 
 ## Email verification — deferred decision (2026-07-22)
@@ -317,7 +394,7 @@ during Phase 1/2 scaffolding.
 | Option | Approach | When to choose |
 | --- | --- | --- |
 | **A — Minimal** | Board uses **pre-provisioned accounts only** — no self-service signup requiring email delivery | Fastest path to demo; accounts handed on a test-accounts sheet |
-| **B — Full** | Execute the [Resend DNS runbook](#resend-dns-runbook--zidaprojectcom-execute-when-ready), verify domain, wire Better Auth verification/reset through Resend, smoke-test deliverability | Board needs to experience registration + email confirmation end-to-end |
+| **B — Full** | Execute the [Resend DNS runbook](#resend-dns-runbook--zidaprojectcom-completed-2026-09-04), verify domain, wire Better Auth verification/reset through Resend, smoke-test deliverability | Board needs to experience registration + email confirmation end-to-end |
 
 Either option is acceptable for the pilot; document the choice on the board-readiness checklist.
 
@@ -424,7 +501,7 @@ For each Context provider, replace its internal implementation (fetch/mutate aga
 
 ## Phase 5 — Notifications (Week 3)
 
-**Gate:** This phase includes executing the [Resend DNS runbook](#resend-dns-runbook--zidaprojectcom-execute-when-ready) if Option B (full email) is chosen for the board demo.
+**Gate:** This phase includes executing the [Resend DNS runbook](#resend-dns-runbook--zidaprojectcom-completed-2026-09-04) if Option B (full email) is chosen for the board demo.
 
 - Add [Resend](https://resend.com) for transactional email: registration confirmation, new-inquiry alert to ZIDA/Afronovation admins, qualified-investor approval notice to the investor, contact-form confirmation.
 - Better Auth's verification/password-reset emails route through this same Resend integration (one email vendor, not two). Enable `requireEmailVerification` here if the board demo requires self-service signup with email delivery.
