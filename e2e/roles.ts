@@ -83,3 +83,17 @@ export function personaByKey(key: string): PilotPersona {
 export function storageStatePath(key: string): string {
   return `e2e/.auth/${key}.json`;
 }
+
+/**
+ * Hostinger's CDN caches statically prerendered pages with `s-maxage=31536000` and does not purge
+ * them on deploy, so /auth/sign-in can serve HTML referencing a previous build's JS chunks for a
+ * long time after a release — observed 2026-09-05, where a run 33 minutes after deploy still loaded
+ * the old chunk with `x-hcdn-cache-status: HIT`.
+ *
+ * Default is no cache-buster, because the point of running against production is to exercise what
+ * real users are served. Set E2E_BYPASS_CDN=1 to test the code that is actually deployed instead,
+ * which is how you tell "the fix is wrong" apart from "the edge has not caught up yet".
+ */
+export function signInPath(): string {
+  return process.env.E2E_BYPASS_CDN ? `/auth/sign-in?cb=${Date.now()}` : "/auth/sign-in";
+}

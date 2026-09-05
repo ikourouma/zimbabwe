@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { PERSONAS, PILOT_PASSWORD } from "./roles";
+import { PERSONAS, PILOT_PASSWORD, signInPath } from "./roles";
 
 /**
  * Where each role comes to rest after signing in.
@@ -23,7 +23,7 @@ test.beforeAll(() => {
 
 for (const persona of PERSONAS) {
   test(`${persona.label} lands on ${persona.landing}`, async ({ page }) => {
-    await page.goto("/auth/sign-in");
+    await page.goto(signInPath());
 
     await page.fill("#email", persona.email);
     await page.fill("#password", PILOT_PASSWORD);

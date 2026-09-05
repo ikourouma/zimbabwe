@@ -7,6 +7,11 @@ import { defineConfig, devices } from "@playwright/test";
 /** Apex is canonical; www permanently redirects to it (see the redirects() block in next.config.ts). */
 export const BASE_URL = process.env.E2E_BASE_URL ?? "https://zidaproject.com";
 
+// Announce the target. E2E_BASE_URL is an exported shell variable that outlives the command that
+// set it, so a run meant for production can silently go to localhost against saved production
+// sessions — which fails every test in a way that looks like a platform-wide outage.
+console.log(`\nPlaywright target: ${BASE_URL}\n`);
+
 export default defineConfig({
   testDir: "./e2e",
   outputDir: "./e2e-results",
