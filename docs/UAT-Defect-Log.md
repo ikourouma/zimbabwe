@@ -29,6 +29,7 @@
 
 | Severity | Meaning |
 | --- | --- |
+| Critical | Production is unusable for real users, right now |
 | High | Blocks a documented user journey, or allows a corrected defect to persist in production |
 | Medium | Degrades a journey or weakens an operational safeguard, with a workaround available |
 | Low | Cosmetic, documentation-only, or confined to non-production environments |
@@ -45,6 +46,7 @@
 | DEF-006 | Qualified pilot account has incomplete verification data | Low | Open |
 | DEF-007 | Home page requests a content block that does not exist | Low | Open |
 | DEF-008 | Local development server cannot complete sign-in | Low | Open |
+| DEF-009 | Sign-in page down for real browsers on a pre-fix cached shell | Critical | Awaiting CDN purge |
 
 ## 3. Closed Defects
 
@@ -91,6 +93,35 @@ Statically prerendered pages are served with a one-year shared-cache lifetime, a
 Verified in production: the sign-in page now returns the capped directive. `E2E_BYPASS_CDN=1` is retained for diagnosis, since it is what distinguishes "the fix is wrong" from "the edge has not caught up yet".
 
 ## 4. Open Defects
+
+### DEF-009 — Sign-in page down for real browsers on a pre-fix cached shell
+
+**Severity:** Critical. **Status:** Code fix committed; **the live outage clears only when the CDN cache is purged.**
+
+`https://zidaproject.com/auth/sign-in` renders nothing but *"Application error: a client-side exception has occurred"* in a real browser. No user can sign in. Every other route tested — the home page, the project registry, registration, contact — renders normally.
+
+**What is happening.** The browser loads the page shell, then requests `app/auth/sign-in/page-c442d13d47bb4c40.js` and receives a 404, which throws a `ChunkLoadError` before the form mounts. That chunk belongs to a previous build. The current build's equivalent, `page-446fdc9efdb34a8f.js`, is present and returns normally — so the file is not missing, the shell asking for it is simply out of date.
+
+**Why it was invisible to an ordinary check.** The same URL returns the current, correct shell when requested without compression, and the stale one when requested the way a browser requests it. The CDN keeps a separate entry per content encoding, and only the compressed entry is poisoned:
+
+| Request | Cache status | Age | Cache-Control on the response |
+| --- | --- | --- | --- |
+| Plain, no `Accept-Encoding` | HIT | 25 seconds | `s-maxage=60, stale-while-revalidate=300` — the current header |
+| Browser-like, `gzip, deflate, br, zstd` | HIT | 12,738 seconds | `s-maxage=31536000` — the header from before DEF-002 was fixed |
+
+Three and a half hours of age, carrying a one-year lifetime, on the variant every real visitor receives.
+
+**Root cause: the residue of DEF-002.** That fix capped how long a page shell *may* be cached going forward. It could not evict entries already stored under the previous one-year lifetime, and a header cannot reach backwards into a cache. Those entries stayed valid, one per encoding, and the next deployment replaced the chunks they point at. The fix was correct and it was verified; what was missed is that verification used an uncompressed request and therefore read the healthy variant.
+
+**This is the general lesson from both defects.** Confirming the deployed commit is not evidence that users are running it, and now: confirming one variant of a URL is not evidence about the variant users receive. Any check of production delivery must send the headers a browser sends.
+
+**Remediation, in two parts.**
+
+*Committed.* `/auth/:path*` is excluded from page caching and served `no-store`. Sign-in is cheap to render, and a stale marketing page is cosmetic where a stale sign-in page locks everyone out. This prevents recurrence but does not clear what is already cached.
+
+*Required, and outside the codebase.* The Hostinger CDN cache must be purged. Until it is, the poisoned entry remains servable for up to a year and the outage continues regardless of what is deployed.
+
+**Verification once purged.** Request `/auth/sign-in` with `Accept-Encoding: gzip, deflate, br` and confirm the response carries `no-store` rather than an age in the thousands, then run `npm run e2e`, whose sign-in setup fails outright against this defect.
 
 ### DEF-004 — Test account cleanup leaves orphaned profile records
 
