@@ -212,6 +212,22 @@ Nothing was ever wrong with the endpoint; the screenshot simply arrived first. B
 
 This is the third instance in this log of the same shape of fault, after DEF-010 and DEF-017: a failure or a delay absorbed into an interface that continued to look authoritative. It is worth naming as a pattern rather than a coincidence.
 
+### DEF-021 — Three public pages advertised three different catalogue sizes
+
+**Severity:** Medium. **Status:** Closed.
+
+The National Profile page announced 32 catalogue projects. The Opportunity and Platform pages announced 37. All three credited the same ZIDA 2025 deck, and any visitor who opened two of them in adjacent tabs would have seen the platform contradict itself about the size of the thing it exists to present.
+
+This is the same fallback described in DEF-020, seen from the public side. Two ways of reading the counts exist in the codebase: a reactive one that reads the live registry, and a static wrapper over the dataset compiled into the client. Opportunity and Platform used the reactive one; National Profile used the static one. The gap had been invisible while the two datasets happened to agree, and became visible the moment two junk records were deleted — the live figure moved to 37 and the static one stayed at 32, because it cannot move without a rebuild.
+
+All three now read the live registry. The screenshot capture also waits for the registry to answer before photographing a public page, since the pages deliberately render their bundled figures first for speed and a capture could otherwise photograph either number.
+
+### DEF-022 — No card on the pipeline board showed a complete project name
+
+**Severity:** Low. **Status:** Closed.
+
+Adding the archived column took the board from six lanes to seven, and at two lines of clamped text every card became an abbreviation: *Goromonzi Agro…*, *Mossfield Crop…*, *CICADA Macadamia…*, *Misty Mountains…*. Not one card on the board displayed a full project title, which is the single thing a card exists to communicate. Titles now run to three lines and carry the full text on hover.
+
 ## 4. Open Defects
 
 ### DEF-009 — Sign-in page down for real browsers on a pre-fix cached shell

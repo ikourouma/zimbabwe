@@ -121,7 +121,13 @@ export function DealRoomKanban({ projects, role, onStatusChange, onCardClick, on
                         onCardClick && "hover:ring-2 hover:ring-[var(--color-gold)]/60 transition-shadow"
                       )}
                     >
-                      <p className="font-medium leading-snug text-white line-clamp-2">{project.title}</p>
+                      {/* Three lines rather than two, and the full title on hover. At two lines in a
+                       *  seven-column grid every card read "Goromonzi Agro…", "Mossfield Crop…",
+                       *  "CICADA Macadamia…" — no card on the board showed a complete project name,
+                       *  which is the one thing a card exists to communicate. */}
+                      <p className="font-medium leading-snug text-white line-clamp-3" title={project.title}>
+                        {project.title}
+                      </p>
                       <p className="mt-1 text-xs truncate" style={{ color: "var(--color-text-muted)" }}>
                         {(() => {
                           const ministry = getMinistryById(project.primaryBeneficiaryMinistryId);

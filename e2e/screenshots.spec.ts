@@ -62,7 +62,18 @@ test.describe("@capture public", () => {
 
   for (const entry of PUBLIC_PAGES) {
     test(`public — ${entry.title}`, async ({ page }) => {
+      // The marketing pages render their headline counts from a dataset compiled into the client
+      // so they appear instantly, then re-render once the registry answers. That is the right
+      // trade-off for a public page, but it means a capture can photograph either number: the
+      // National Profile, Opportunity and Platform pages shipped advertising 32, 37 and 37
+      // catalogue projects respectively, all three crediting the same ZIDA deck. Waiting on the
+      // response makes the capture deterministic without slowing the page down for real visitors.
+      const registryAnswered = page
+        .waitForResponse((r) => r.url().includes("/api/projects") && r.ok(), { timeout: 20_000 })
+        .catch(() => null);
+
       await page.goto(entry.path);
+      await registryAnswered;
 
       // The announcement bar remembers dismissal per announcement id, which is not known here, so
       // it stays a click. It is a slim bar rather than an overlay, so losing this race costs

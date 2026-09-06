@@ -6,18 +6,9 @@ import { ArrowRight, MapPin } from "lucide-react";
 import { DeepDiveShell } from "@/components/layout/deep-dive-shell";
 import { FadeUp, FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/cinematic-reveal";
 import { ExecutiveCard } from "@/components/system/executive-card";
-import { getSiteStats } from "@/lib/data/site-stats";
+import { useSiteStats } from "@/lib/hooks/use-site-stats";
 import { platformName } from "@/content/zimbabwe-site";
 import { SITE_URL } from "@/lib/config/site";
-
-const stats = getSiteStats();
-
-const profileStats = [
-  { value: String(stats.totalProjects), label: "Catalogue Projects", desc: "ZIDA seed pipeline" },
-  { value: String(stats.sectorCount), label: "Economic Sectors", desc: "Priority domains" },
-  { value: String(stats.publishedProjects), label: "Published", desc: "Investor-facing entries" },
-  { value: String(stats.pillarCount), label: "Strategic Pillars", desc: "Transformation themes" },
-];
 
 const breadcrumbJsonLd = {
   "@context": "https://schema.org",
@@ -29,6 +20,20 @@ const breadcrumbJsonLd = {
 };
 
 export default function ZimbabwePage() {
+  // Reads the live registry, as the Opportunity and Platform pages already did. This page used the
+  // static wrapper over the dataset compiled into the client, so it advertised 32 catalogue projects
+  // while the other two advertised 37 — three public pages, all crediting the same ZIDA deck, all
+  // disagreeing. The static count also could not move: deleting two junk records changed the live
+  // figure and left this one where it was.
+  const stats = useSiteStats();
+
+  const profileStats = [
+    { value: String(stats.totalProjects), label: "Catalogue Projects", desc: "ZIDA seed pipeline" },
+    { value: String(stats.sectorCount), label: "Economic Sectors", desc: "Priority domains" },
+    { value: String(stats.publishedProjects), label: "Published", desc: "Investor-facing entries" },
+    { value: String(stats.pillarCount), label: "Strategic Pillars", desc: "Transformation themes" },
+  ];
+
   return (
     <DeepDiveShell overline="National Profile" title="The Republic of Zimbabwe" backLabel="Back to Gateway">
       <script
