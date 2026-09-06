@@ -1,6 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { expect, test as setup } from "@playwright/test";
-import { PERSONAS, PILOT_PASSWORD, storageStatePath } from "./roles";
+import { PERSONAS, PERSONA_PASSWORD, storageStatePath } from "./roles";
 
 /**
  * Signs in each pilot persona through the real form and saves the session, so no later spec pays
@@ -19,9 +19,9 @@ import { PERSONAS, PILOT_PASSWORD, storageStatePath } from "./roles";
 setup.describe.configure({ mode: "serial" });
 
 setup.beforeAll(() => {
-  if (!PILOT_PASSWORD) {
+  if (!PERSONA_PASSWORD) {
     throw new Error(
-      "PILOT_ACCOUNT_PASSWORD is not set. Run this suite with `npm run e2e`, which supplies it " +
+      "DEMO_ACCOUNT_PASSWORD is not set. Run this suite with `npm run e2e`, which supplies it " +
         "from .env.local; `npx playwright test` bypasses that and will always fail here."
     );
   }
@@ -50,7 +50,7 @@ for (const persona of PERSONAS) {
     await page.goto("/auth/sign-in");
 
     await page.fill("#email", persona.email);
-    await page.fill("#password", PILOT_PASSWORD);
+    await page.fill("#password", PERSONA_PASSWORD);
     await page.click('button[type="submit"]');
 
     // The account menu only renders for an authenticated session, so it is the signal that

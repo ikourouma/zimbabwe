@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { PERSONAS, PILOT_PASSWORD, signInPath } from "./roles";
+import { PERSONAS, PERSONA_PASSWORD, signInPath } from "./roles";
 
 /**
  * Where each role comes to rest after signing in.
@@ -18,7 +18,7 @@ test.use({ storageState: { cookies: [], origins: [] } });
 test.describe.configure({ mode: "serial" });
 
 test.beforeAll(() => {
-  if (!PILOT_PASSWORD) throw new Error("PILOT_ACCOUNT_PASSWORD is not set. Use `npm run e2e`.");
+  if (!PERSONA_PASSWORD) throw new Error("DEMO_ACCOUNT_PASSWORD is not set. Use `npm run e2e`.");
 });
 
 for (const persona of PERSONAS) {
@@ -26,7 +26,7 @@ for (const persona of PERSONAS) {
     await page.goto(signInPath());
 
     await page.fill("#email", persona.email);
-    await page.fill("#password", PILOT_PASSWORD);
+    await page.fill("#password", PERSONA_PASSWORD);
     await page.click('button[type="submit"]');
 
     await expect(page.getByRole("button", { name: "Open account menu" })).toBeVisible({

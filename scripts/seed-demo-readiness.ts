@@ -31,6 +31,7 @@ import { findAuthUserId, setAccountPassword, signUpViaAuthApi } from "../lib/db/
 import {
   DEMO_ACCOUNTS,
   DEMO_APPLICANTS,
+  DEMO_QUEUE_PROJECTS,
   DEMO_TEAM_LINKS,
   demoPassword,
   type DemoAccount,
@@ -418,99 +419,10 @@ async function seedEngagementsAndMous() {
 // 5. Review queue depth
 // ---------------------------------------------------------------------------------------------
 
-/** New projects rather than demotions of published ones: stakeholders browse the public registry
- *  in the same session, and pulling eight live projects off it to fill a queue would trade one
- *  empty screen for another. */
-type QueueProject = {
-  ministryId: string;
-  status: "submitted_for_review" | "under_review";
-  title: string;
-  slug: string;
-  sectorId: string;
-  owner: string;
-  location: string;
-  readiness: string;
-  summary: string;
-  description: string;
-};
-
-const QUEUE_PROJECTS: QueueProject[] = [
-  {
-    ministryId: "min-agriculture",
-    status: "submitted_for_review",
-    title: "Mazowe Valley Irrigation Revitalisation",
-    slug: "mazowe-valley-irrigation-revitalisation",
-    sectorId: "sec-agriculture",
-    owner: "Agricultural Rural Development Authority",
-    location: "Mazowe District, Mashonaland Central",
-    readiness: "Feasibility study completed; awaiting ministry review",
-    summary:
-      "Rehabilitation of 4,200 hectares of gravity-fed irrigation infrastructure to restore year-round production for smallholder and commercial outgrowers.",
-    description:
-      "The scheme covers canal rehabilitation, pump station replacement and on-farm distribution across the Mazowe valley. The opportunity is structured for a blended-finance partner willing to combine concessional and commercial capital alongside an outgrower aggregation model.",
-  },
-  {
-    ministryId: "min-energy",
-    status: "submitted_for_review",
-    title: "Gwanda Solar Park Phase II",
-    slug: "gwanda-solar-park-phase-ii",
-    sectorId: "sec-renewable-energy",
-    owner: "Zimbabwe Power Company",
-    location: "Gwanda District, Matabeleland South",
-    readiness: "Greenfield; grid connection study completed",
-    summary:
-      "A 100 MW extension to the Gwanda solar site, with grid interconnection already studied and land secured.",
-    description:
-      "Phase II builds on the existing Gwanda footprint and targets a power purchase agreement with the national utility. The project is offered on an independent power producer basis with an option for a local equity partner.",
-  },
-  {
-    ministryId: "min-energy",
-    status: "under_review",
-    title: "Kariba South Pumped Storage Feasibility",
-    slug: "kariba-south-pumped-storage-feasibility",
-    sectorId: "sec-renewable-energy",
-    owner: "Zimbabwe Electricity Transmission and Distribution Company",
-    location: "Kariba, Mashonaland West",
-    readiness: "Concept stage; pre-feasibility scoping under way",
-    summary:
-      "Pre-feasibility for a pumped-storage facility to firm intermittent renewable capacity on the northern grid.",
-    description:
-      "The study will establish head, reservoir siting and interconnection options for a storage facility intended to complement the solar capacity coming onto the network. Technical assistance financing is sought ahead of a full feasibility study.",
-  },
-  {
-    ministryId: "min-industry",
-    status: "submitted_for_review",
-    title: "Bulawayo Light Manufacturing Cluster",
-    slug: "bulawayo-light-manufacturing-cluster",
-    sectorId: "sec-manufacturing",
-    owner: "Industrial Development Corporation of Zimbabwe",
-    location: "Belmont Industrial Area, Bulawayo",
-    readiness: "Brownfield; serviced land available within a declared special economic zone",
-    summary:
-      "Redevelopment of serviced industrial land into a shared-services cluster for light manufacturing and assembly tenants.",
-    description:
-      "The cluster offers pre-serviced plots, shared warehousing and a common effluent facility within a declared special economic zone. The sponsor is seeking a development partner to build and operate the shared infrastructure.",
-  },
-  {
-    ministryId: "min-industry",
-    status: "under_review",
-    title: "Redcliff Steel Beneficiation Restart",
-    slug: "redcliff-steel-beneficiation-restart",
-    sectorId: "sec-manufacturing",
-    owner: "Ministry of Industry and Commerce",
-    location: "Redcliff, Midlands Province",
-    readiness: "Brownfield; plant audit completed, refurbishment scope defined",
-    summary:
-      "Phased restart of integrated steel-making and downstream beneficiation capacity at the Redcliff complex.",
-    description:
-      "The opportunity covers refurbishment of the existing plant, captive power arrangements and offtake into regional construction markets. A technical partner with integrated steel operating experience is sought alongside capital.",
-  },
-];
-
 async function seedReviewQueue() {
   console.log("\n[5/6] Review queue depth");
 
-  for (const spec of QUEUE_PROJECTS) {
+  for (const spec of DEMO_QUEUE_PROJECTS) {
     const [existing] = await seedDb
       .select({ id: projects.id })
       .from(projects)

@@ -1,6 +1,12 @@
 /**
  * Shared persona definitions for the browser suite and the screenshot capture pass.
  *
+ * These are the `+demo` accounts, not the `+pilot` ones. The guides tell stakeholders to sign in
+ * as these addresses, so the screenshots in those guides have to come from the same accounts —
+ * otherwise a reader follows the instructions and lands on a page that does not match the picture
+ * above it. The `+pilot` set stays untouched for anything that needs a cohort no stakeholder is
+ * simultaneously clicking around in.
+ *
  * `landing` is what lib/auth/post-login-destination.ts actually returns, which is not what the UAT
  * guide claimed for `registered` — the Investor Dashboard is tiered rather than qualified-only, so
  * every non-staff role lands on /deal-room.
@@ -10,7 +16,8 @@
  * Ministry Desk, and admin is.
  */
 
-export const PILOT_PASSWORD = process.env.PILOT_ACCOUNT_PASSWORD ?? "";
+export const PERSONA_PASSWORD =
+  process.env.DEMO_ACCOUNT_PASSWORD ?? process.env.PILOT_ACCOUNT_PASSWORD ?? "";
 
 export interface PilotPersona {
   /** Stable slug used for storage-state filenames and screenshot directories. */
@@ -21,12 +28,14 @@ export interface PilotPersona {
   label: string;
   landing: string;
   forbidden: string[];
+  /** Ministry this account is bound to, where that scoping is the point of the test. */
+  ministryId?: string;
 }
 
 export const PERSONAS: PilotPersona[] = [
   {
     key: "registered",
-    email: "registered+pilot@zidaproject.com",
+    email: "registered+demo@zidaproject.com",
     role: "registered",
     label: "Registered Investor",
     landing: "/deal-room",
@@ -34,15 +43,17 @@ export const PERSONAS: PilotPersona[] = [
   },
   {
     key: "qualified",
-    email: "qualified+pilot@zidaproject.com",
+    email: "qualified+demo@zidaproject.com",
     role: "qualified",
     label: "Qualified Investor",
     landing: "/deal-room",
     forbidden: ["/admin", "/super-admin", "/ministry"],
   },
   {
+    // ZIDA's own desk reviewer, carrying no ministry — the account that demonstrates national
+    // scope. The ministry-affiliated reviewers are min-*.team+demo.
     key: "government",
-    email: "government+pilot@zidaproject.com",
+    email: "zida.team+demo@zidaproject.com",
     role: "government",
     label: "Government Reviewer",
     landing: "/deal-room",
@@ -50,15 +61,16 @@ export const PERSONAS: PilotPersona[] = [
   },
   {
     key: "ministry",
-    email: "ministryadmin+pilot@zidaproject.com",
+    email: "min-ict.admin+demo@zidaproject.com",
     role: "ministry_admin",
     label: "Ministry Official",
     landing: "/ministry",
     forbidden: ["/admin", "/super-admin", "/deal-room"],
+    ministryId: "min-ict",
   },
   {
     key: "admin",
-    email: "admin+pilot@zidaproject.com",
+    email: "zida.admin+demo@zidaproject.com",
     role: "admin",
     label: "ZIDA Admin",
     landing: "/admin",
@@ -66,11 +78,22 @@ export const PERSONAS: PilotPersona[] = [
   },
   {
     key: "superadmin",
-    email: "superadmin+pilot@zidaproject.com",
+    email: "super.admin+demo@zidaproject.com",
     role: "super_admin",
     label: "Platform Admin",
     landing: "/super-admin",
     forbidden: ["/ministry"],
+  },
+  {
+    // Second ministry, present so cross-ministry isolation can be asserted rather than assumed.
+    // Carries no page inventory, so the screenshot pass skips it.
+    key: "ministry-agriculture",
+    email: "min-agriculture.admin+demo@zidaproject.com",
+    role: "ministry_admin",
+    label: "Ministry Official (Agriculture)",
+    landing: "/ministry",
+    forbidden: ["/admin", "/super-admin", "/deal-room"],
+    ministryId: "min-agriculture",
   },
 ];
 
