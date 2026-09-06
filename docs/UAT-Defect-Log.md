@@ -198,7 +198,19 @@ The ZIDA Admin project registry offered to *execute administrative overrides*. O
 
 The activity report told a national ZIDA reviewer that it covered *engagements against projects under your ministry's portfolio*. ZIDA's own reviewing officers carry no ministry, by design — their remit is national. Worse, the report treated the absent ministry as a filter matching nothing, so it was permanently empty. It now covers the national pipeline and says that it does.
 
-The capital requirement on each pipeline card shared a line with the ministry name and was the half that fell off the end of the truncation, giving *Agriculture · US$36…*. It is the wrong half to lose: that figure is the one number released to every tier, and the entire reason an investor can size an opportunity before deciding whether to pursue qualification for it. It now has a line of its own.
+The capital requirement on each pipeline card shared a line with the ministry name and was the half that fell off the end of the truncation, giving *Agriculture · US$36…*. It is the wrong half to lose: that figure is the one number released to every tier, and the entire reason an investor can size an opportunity before deciding whether to pursue qualification for it. It now has a line of its own, clamped to two lines because a handful of records carry a validation note in that field rather than a figure.
+
+### DEF-020 — The pipeline could present a months-old bundled snapshot as current
+
+**Severity:** High. **Status:** Closed.
+
+Recapturing the screenshots after the data cleanup produced a pipeline board that disagreed with the database in ways the cleanup could not explain. It counted thirty-two projects against a live thirty-seven. It showed Powertel Fibre Internet as *approved* when the record said *under review*. Five projects with ordinary public visibility were missing altogether. The overview page for the same account, captured moments earlier, had every figure right.
+
+The cause is a fallback that had never been examined for what it implies on this particular screen. The project store initialises itself from a dataset compiled into the client, so the public marketing pages can render an opportunity catalogue instantly rather than waiting on a request. It replaces that dataset once the projects endpoint answers. On the marketing pages this is sound. On the pipeline board it is not, because the board's entire claim is that it states where each proposal currently stands — and until the request resolved it was stating that from a snapshot several months old, with no skeleton, no spinner and no error to mark any of it provisional. Thirty-two is exactly the size of the bundled dataset.
+
+Nothing was ever wrong with the endpoint; the screenshot simply arrived first. But a user on a slow connection sees the same thing, and unlike the screenshot they have no second source to check it against. The board and the three registry consoles now wait for the real answer before drawing anything, which is what turned an invisible race into a visible one during this pass — the counts finally reconciling against the database is how it was caught.
+
+This is the third instance in this log of the same shape of fault, after DEF-010 and DEF-017: a failure or a delay absorbed into an interface that continued to look authoritative. It is worth naming as a pattern rather than a coincidence.
 
 ## 4. Open Defects
 

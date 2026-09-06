@@ -26,7 +26,7 @@ const VIEW_KEY = "zimbabwe.dealRoom.pipelineView";
 
 export default function DealRoomPipelinePage() {
   const { isAuthenticated, isQualified, isAdmin, isSuperAdmin, role, userId, ministryId, isLoading: authLoading } = useAuth();
-  const { projects, updateProject } = useProjectStore();
+  const { projects, updateProject, isLoading: projectsLoading } = useProjectStore();
   const [filters, setFilters] = useState<ProjectFilters>({});
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("all");
   // Government Reviewer ministry-scoping (Platform Feedback Batch v4, Phase 6) — a `government`
@@ -155,6 +155,30 @@ export default function DealRoomPipelinePage() {
 
   if (!authLoading && !isAuthenticated) {
     return <DealRoomAccessGate isAuthenticated={isAuthenticated} />;
+  }
+
+  // The project store seeds itself from a dataset bundled into the client so the public marketing
+  // pages can render instantly, and only replaces it once /api/projects answers. On this board that
+  // fallback is actively misleading rather than merely early: it is a months-old snapshot, so the
+  // pills sat at a confident All (32) against a live 37, one project showed a governance status it
+  // had since moved on from, and five projects were missing outright — with no skeleton and no
+  // error to suggest any of it was provisional. Wait for the real answer before drawing a board
+  // whose entire purpose is to state where each proposal currently stands.
+  if (projectsLoading) {
+    return (
+      <div>
+        <div className="mb-6">
+          <div className="dashboard-skeleton h-8 w-48 mb-2" />
+          <div className="dashboard-skeleton h-4 w-96" />
+        </div>
+        <div className="dashboard-skeleton h-12 w-full mb-4 rounded-md" />
+        <div className="grid grid-cols-2 lg:grid-cols-7 gap-3">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div key={i} className="dashboard-skeleton h-64 rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (

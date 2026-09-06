@@ -137,7 +137,17 @@ export function DealRoomKanban({ projects, role, onStatusChange, onCardClick, on
                        *  the one number released to every tier, and the whole reason an investor
                        *  can size an opportunity before pursuing it. */}
                       {project.capitalRequired && (
-                        <p className="mt-0.5 text-xs font-medium" style={{ color: "var(--color-gold)" }}>
+                        // Clamped to two lines, and titled with the full value. A handful of
+                        // records carry a whole validation note in this field rather than a figure
+                        // ("Multiple estimated project costs listed in source deck: US$81.6m, …;
+                        // components require validation"), which unclamped turned one card into a
+                        // column of prose. Truncating a paragraph is right; truncating a figure was
+                        // not, which is why it no longer shares a line with the ministry name.
+                        <p
+                          className="mt-0.5 text-xs font-medium line-clamp-2"
+                          style={{ color: "var(--color-gold)" }}
+                          title={project.capitalRequired}
+                        >
                           {project.capitalRequired}
                         </p>
                       )}

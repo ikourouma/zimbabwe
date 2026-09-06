@@ -278,6 +278,24 @@ export function ProjectRegistryView({ basePath }: ProjectRegistryViewProps) {
     return taxonomyFilteredProjects.filter((p) => p.projectStatus === value).length;
   };
 
+  // The table below already shows a loading state, but the status pills and the Kanban board did
+  // not — they counted and drew from the store's bundled fallback dataset, which is a months-old
+  // snapshot the client ships so public pages can render instantly. A registry whose whole job is
+  // to state where each proposal currently stands should not answer confidently from it.
+  if (isLoading || authLoading) {
+    return (
+      <div>
+        <div className="dashboard-skeleton h-12 w-full mb-4 rounded-md" />
+        <div className="flex flex-wrap gap-2 mb-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="dashboard-skeleton h-8 w-24 rounded-full" />
+          ))}
+        </div>
+        <div className="dashboard-skeleton h-96 w-full rounded-lg" />
+      </div>
+    );
+  }
+
   return (
     <div>
       {/* No page-level "New Project" CTA here — the dashboard topbar's persistent gold "Create
