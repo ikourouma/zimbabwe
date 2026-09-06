@@ -615,18 +615,22 @@ async function seedInvestorActivity() {
  * published, so it can no longer be edited directly, and something in it has since turned out to
  * be wrong. Three guides walk a reader through that workflow, and until now every card on the
  * platform demonstrating it had been filed by a test harness — bodies reading "p8 selftest other
- * ministry" and "phase8 selftest decline path", with raw field names and an unformatted 2500000
- * where a currency figure belongs. Purging those left the Review Queue's Pending Requests tab
- * empty and the workflow with nothing to show.
+ * ministry" and "phase8 selftest decline path", with raw field names where a currency figure
+ * belongs. Purging those left the Review Queue's Pending Requests tab empty and the workflow with
+ * nothing to show.
  *
  * The card is filed by a ministry's own reviewing officer against that ministry's own project,
  * which is the eligibility rule the route enforces, and left at `open` so a ministry admin has a
  * live decision to take during a walkthrough rather than a settled one to read about.
+ *
+ * It goes to ICT specifically because that is the ministry the walkthrough visits (see the
+ * `ministry` persona in e2e/roles.ts). Filed anywhere else it is correctly scoped and completely
+ * invisible — which is what happened the first time.
  */
 async function seedAmendmentRequest() {
   console.log("\n[7/8] Pending amendment request");
 
-  const officerEmail = "min-energy.team+demo@zidaproject.com";
+  const officerEmail = "min-ict.team+demo@zidaproject.com";
   const officerId = userIds.get(officerEmail);
   const officer = DEMO_ACCOUNTS.find((a) => a.email === officerEmail);
   if (!officerId || !officer) {
@@ -638,16 +642,13 @@ async function seedAmendmentRequest() {
     .select({ id: projects.id, title: projects.title })
     .from(projects)
     .where(
-      and(
-        eq(projects.primaryBeneficiaryMinistryId, "min-energy"),
-        eq(projects.projectStatus, "published")
-      )
+      and(eq(projects.primaryBeneficiaryMinistryId, "min-ict"), eq(projects.projectStatus, "published"))
     )
     .orderBy(projects.title)
     .limit(1);
 
   if (!project) {
-    record("amendment", "no published min-energy project", "skipped");
+    record("amendment", "no published min-ict project", "skipped");
     return;
   }
 
@@ -666,8 +667,9 @@ async function seedAmendmentRequest() {
     return;
   }
 
+  const ministryName = "Ministry of Information Communication Technology, Postal and Courier Services";
   const reason =
-    "The sponsor has revised the capital requirement following completion of the grid connection " +
+    "The sponsor has revised the capital requirement following completion of the backhaul capacity " +
     "study, and the direct employment figure has been restated on the same basis. Requesting an " +
     "amendment so the published record matches the current feasibility position.";
 
@@ -683,12 +685,12 @@ async function seedAmendmentRequest() {
       reason,
       proposedChanges: { capitalRequired: "US$62 million", jobsDirect: 340 },
       status: "open",
-      requestingMinistryId: "min-energy",
-      requestingMinistryName: "Ministry of Energy and Power Development",
+      requestingMinistryId: "min-ict",
+      requestingMinistryName: ministryName,
     },
     body:
       `Amendment requested — proposed changes to: capitalRequired, jobsDirect. ${reason} ` +
-      `Routed to Ministry of Energy and Power Development's Ministry Admin for first review.`,
+      `Routed to ${ministryName}'s Ministry Admin for first review.`,
   });
   record("amendment", project.title, "created");
 }
