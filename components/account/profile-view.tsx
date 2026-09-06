@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";
@@ -94,6 +94,19 @@ export function ProfileView() {
   };
   const [form, setForm] = useState<CompanyForm>(initialForm);
   const [saving, setSaving] = useState(false);
+
+  // The auth context resolves after the first render, so `useState(initialForm)` alone captured an
+  // all-empty snapshot and kept it: every field rendered blank on a fully completed profile, the
+  // page announced "Unsaved changes." before anyone had touched it, and pressing Save would have
+  // written those blanks over the stored record. Re-sync whenever the server's own values change,
+  // keyed on their serialized form so an unrelated re-render cannot discard work in progress.
+  const serverSnapshot = JSON.stringify(initialForm);
+  const lastSyncedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (lastSyncedRef.current === serverSnapshot) return;
+    lastSyncedRef.current = serverSnapshot;
+    setForm(JSON.parse(serverSnapshot) as CompanyForm);
+  }, [serverSnapshot]);
 
   const dirty = (
     [...KYC_FIELD_KEYS, "jobTitle", "executiveRepresentativeName", "executiveRepresentativeTitle"] as (keyof CompanyForm)[]

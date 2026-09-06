@@ -28,6 +28,8 @@ import {
   strategicInquiries,
 } from "@/lib/db/schema";
 import { NDA_VERSION } from "@/lib/governance/nda";
+import { MOU_STATUS_ORDER } from "@/lib/governance/mou-workflow";
+import type { MouStatus } from "@/lib/types";
 import { seedDb, seedPool } from "../lib/db/seed/db";
 import { findAuthUserId, setAccountPassword, signUpViaAuthApi } from "../lib/db/seed/accounts";
 import {
@@ -102,7 +104,7 @@ async function signUpWithBackoff(email: string, password: string, name: string) 
 // ---------------------------------------------------------------------------------------------
 
 async function seedAccounts() {
-  console.log(`\n[1/7] Accounts (${ALL_ACCOUNTS.length})`);
+  console.log(`\n[1/8] Accounts (${ALL_ACCOUNTS.length})`);
   const password = demoPassword();
 
   for (const account of ALL_ACCOUNTS) {
@@ -175,7 +177,7 @@ async function seedAccounts() {
 // ---------------------------------------------------------------------------------------------
 
 async function seedTeamLinks() {
-  console.log("\n[2/7] Investor team membership");
+  console.log("\n[2/8] Investor team membership");
 
   for (const link of DEMO_TEAM_LINKS) {
     const ownerId = userIds.get(link.ownerEmail);
@@ -234,7 +236,7 @@ async function seedTeamLinks() {
  *  keys the role upgrade off engagementType and the decline/changes emails key off type. A row
  *  missing either is invisible to the workflow the ZIDA Admin guide documents. */
 async function seedApplications() {
-  console.log("\n[3/7] Pending investor applications");
+  console.log("\n[3/8] Pending investor applications");
 
   for (const { account, application } of DEMO_APPLICANTS) {
     const userId = userIds.get(account.email);
@@ -283,12 +285,22 @@ async function seedApplications() {
 // 4. Engagements and memoranda mid-negotiation
 // ---------------------------------------------------------------------------------------------
 
-/** Two approved engagements for the demo investor, carrying memoranda in `drafting` and
- *  `in_review`. The in_review one has the investor side approved and ZIDA's still pending, which
- *  is the only state where a reviewer actually has something to approve — without it the
- *  memorandum step in three guides describes a button nobody can press. */
+/**
+ * Approved engagements for the demo investor, carrying memoranda across the lifecycle.
+ *
+ * The `in_review` one has the investor side approved and ZIDA's still pending, which is the only
+ * state where a reviewer actually has something to approve — without it the memorandum step in
+ * three guides describes a button nobody can press.
+ *
+ * The later three stages exist because the registry could not otherwise exhibit them. Before the
+ * test residue was purged, the only executed memorandum on the platform belonged to an engagement
+ * named "MOU Smoke Investor", and Both Parties Approved and Finalized had no example at all — so
+ * the MOU guide walked a reader through six stages the screen could only show three of. One fund
+ * holding five concurrent memoranda at five different stages is an ordinary picture for an active
+ * investor, and it lets the registry demonstrate the whole workflow on one screen.
+ */
 async function seedEngagementsAndMous() {
-  console.log("\n[4/7] Engagements and memoranda");
+  console.log("\n[4/8] Engagements and memoranda");
 
   const investorId = userIds.get("qualified+demo@zidaproject.com");
   const investor = DEMO_ACCOUNTS.find((a) => a.email === "qualified+demo@zidaproject.com");
@@ -297,9 +309,12 @@ async function seedEngagementsAndMous() {
     return;
   }
 
-  const targets: { ministryId: string; mouStatus: "drafting" | "in_review"; ticket: string }[] = [
+  const targets: { ministryId: string; mouStatus: MouStatus; ticket: string }[] = [
     { ministryId: "min-energy", mouStatus: "drafting", ticket: "$5M–$25M" },
     { ministryId: "min-agriculture", mouStatus: "in_review", ticket: "$1M–$5M" },
+    { ministryId: "min-ict", mouStatus: "both_approved", ticket: "$25M–$100M" },
+    { ministryId: "min-industry", mouStatus: "finalized", ticket: "$5M–$25M" },
+    { ministryId: "min-housing", mouStatus: "executed", ticket: "$25M–$100M" },
   ];
 
   for (const target of targets) {
@@ -364,9 +379,11 @@ async function seedEngagementsAndMous() {
 
     // Status alone is not enough to call this done: an earlier run wrote a user id into
     // `investorApprovedBy`, which the panel renders verbatim, so a row can be in the right state
-    // and still show a UUID where a name belongs.
+    // and still show a UUID where a name belongs. Every stage from in_review onward carries the
+    // investor's approval, so the same check covers all of them.
     const approvalIsWellFormed =
-      target.mouStatus !== "in_review" || existingMou?.investorApprovedBy === investor.name;
+      MOU_STATUS_ORDER.indexOf(target.mouStatus) < MOU_STATUS_ORDER.indexOf("in_review") ||
+      existingMou?.investorApprovedBy === investor.name;
 
     if (existingMou && existingMou.status === target.mouStatus && approvalIsWellFormed) {
       record("mou", `${project.title} (${target.mouStatus})`, "skipped");
@@ -390,18 +407,50 @@ async function seedEngagementsAndMous() {
         "This Memorandum is governed by, and construed in accordance with, the laws of the Republic of Zimbabwe. Any dispute arising from it shall first be referred to good-faith negotiation between the parties.",
     };
 
-    // `investorApprovedBy` holds a display name, not an id — the actions route writes `actor.name`
-    // and MouPanel's ApprovalCard renders the value straight to screen, so an id here would put a
-    // raw UUID on the memorandum in front of stakeholders.
-    const investorApproval =
-      target.mouStatus === "in_review"
-        ? { investorApprovedAt: new Date(), investorApprovedBy: investor.name }
-        : { investorApprovedAt: null, investorApprovedBy: null };
+    // Every one of these fields is rendered verbatim by MouPanel, so each holds a display name
+    // rather than a user id — an id here would put a raw UUID on a memorandum in front of
+    // stakeholders, which is how the earlier `investorApprovedBy` defect reached the guides.
+    //
+    // The stamps accumulate rather than replace: a memorandum at `executed` must also carry the
+    // approvals and the finalisation that got it there, because the panel reads its progress
+    // stepper from these timestamps and not from the status alone. Dates are walked backwards from
+    // today so the sequence reads as a negotiation that took weeks rather than one that happened
+    // in a single instant.
+    const stageIndex = MOU_STATUS_ORDER.indexOf(target.mouStatus);
+    const reached = (stage: MouStatus) => stageIndex >= MOU_STATUS_ORDER.indexOf(stage);
+    const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
+    const zidaApprover = DEMO_ACCOUNTS.find((a) => a.email === "zida.admin+demo@zidaproject.com");
+
+    const stamps = {
+      investorApprovedAt: reached("in_review") ? daysAgo(21) : null,
+      investorApprovedBy: reached("in_review") ? investor.name : null,
+      zidaApprovedAt: reached("both_approved") ? daysAgo(17) : null,
+      zidaApprovedBy: reached("both_approved") ? (zidaApprover?.name ?? null) : null,
+      finalizedAt: reached("finalized") ? daysAgo(12) : null,
+      finalizedBy: reached("finalized") ? (zidaApprover?.name ?? null) : null,
+      readyForSignatureAt: reached("ready_for_signature") ? daysAgo(8) : null,
+      readyForSignatureBy: reached("ready_for_signature") ? (zidaApprover?.name ?? null) : null,
+      executedAt: reached("executed") ? daysAgo(4) : null,
+      executedBy: reached("executed") ? (zidaApprover?.name ?? null) : null,
+      // Signature metadata only. There is no e-signature capture in this build, and recording one
+      // as though there were would misrepresent what the platform does.
+      signatureMetadata: reached("executed")
+        ? {
+            signedLocation: "Harare, Zimbabwe",
+            investorSignatory: `${investor.name}, ${investor.jobTitle ?? "Authorised Representative"}`,
+            zidaSignatory: `${zidaApprover?.name ?? "ZIDA"}, ${zidaApprover?.jobTitle ?? "Authorised Representative"}`,
+          }
+        : null,
+      // Content freezes at finalisation — the snapshot is what the export renders from that point
+      // on, and its absence at earlier stages is what makes the freeze demonstrable.
+      contentSnapshot: reached("finalized") ? content : null,
+      formattingLocked: reached("ready_for_signature"),
+    };
 
     if (existingMou) {
       await seedDb
         .update(engagementMous)
-        .set({ status: target.mouStatus, ...investorApproval, zidaApprovedAt: null, zidaApprovedBy: null, updatedAt: new Date() })
+        .set({ status: target.mouStatus, ...stamps, updatedAt: new Date() })
         .where(eq(engagementMous.id, existingMou.id));
       record("mou", `${project.title} -> ${target.mouStatus}`, "updated");
     } else {
@@ -410,7 +459,7 @@ async function seedEngagementsAndMous() {
         status: target.mouStatus,
         content,
         formatting: {},
-        ...investorApproval,
+        ...stamps,
       });
       record("mou", `${project.title} -> ${target.mouStatus}`, "created");
     }
@@ -422,7 +471,7 @@ async function seedEngagementsAndMous() {
 // ---------------------------------------------------------------------------------------------
 
 async function seedReviewQueue() {
-  console.log("\n[5/7] Review queue depth");
+  console.log("\n[5/8] Review queue depth");
 
   for (const spec of DEMO_QUEUE_PROJECTS) {
     const [existing] = await seedDb
@@ -486,7 +535,7 @@ async function seedReviewQueue() {
  * record. They stay at zero, and the guides say why.
  */
 async function seedInvestorActivity() {
-  console.log("\n[6/7] Investor activity");
+  console.log("\n[6/8] Investor activity");
 
   const investorId = userIds.get("qualified+demo@zidaproject.com");
   const investor = DEMO_ACCOUNTS.find((a) => a.email === "qualified+demo@zidaproject.com");
@@ -556,11 +605,100 @@ async function seedInvestorActivity() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// 7. Roster document
+// 7. A pending amendment request
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * One amendment request, open and awaiting a ministry decision.
+ *
+ * Amendments are the mechanism the platform offers for the awkward case: a project is approved or
+ * published, so it can no longer be edited directly, and something in it has since turned out to
+ * be wrong. Three guides walk a reader through that workflow, and until now every card on the
+ * platform demonstrating it had been filed by a test harness — bodies reading "p8 selftest other
+ * ministry" and "phase8 selftest decline path", with raw field names and an unformatted 2500000
+ * where a currency figure belongs. Purging those left the Review Queue's Pending Requests tab
+ * empty and the workflow with nothing to show.
+ *
+ * The card is filed by a ministry's own reviewing officer against that ministry's own project,
+ * which is the eligibility rule the route enforces, and left at `open` so a ministry admin has a
+ * live decision to take during a walkthrough rather than a settled one to read about.
+ */
+async function seedAmendmentRequest() {
+  console.log("\n[7/8] Pending amendment request");
+
+  const officerEmail = "min-energy.team+demo@zidaproject.com";
+  const officerId = userIds.get(officerEmail);
+  const officer = DEMO_ACCOUNTS.find((a) => a.email === officerEmail);
+  if (!officerId || !officer) {
+    missingPrerequisite("amendment", officerEmail);
+    return;
+  }
+
+  const [project] = await seedDb
+    .select({ id: projects.id, title: projects.title })
+    .from(projects)
+    .where(
+      and(
+        eq(projects.primaryBeneficiaryMinistryId, "min-energy"),
+        eq(projects.projectStatus, "published")
+      )
+    )
+    .orderBy(projects.title)
+    .limit(1);
+
+  if (!project) {
+    record("amendment", "no published min-energy project", "skipped");
+    return;
+  }
+
+  const [existing] = await seedDb
+    .select({ id: projectMessages.id })
+    .from(projectMessages)
+    .where(and(eq(projectMessages.projectId, project.id), eq(projectMessages.kind, "action")))
+    .limit(1);
+
+  if (existing) {
+    record("amendment", project.title, "skipped");
+    return;
+  }
+  if (!COMMIT) {
+    record("amendment", project.title, "created");
+    return;
+  }
+
+  const reason =
+    "The sponsor has revised the capital requirement following completion of the grid connection " +
+    "study, and the direct employment figure has been restated on the same basis. Requesting an " +
+    "amendment so the published record matches the current feasibility position.";
+
+  await seedDb.insert(projectMessages).values({
+    projectId: project.id,
+    authorUserId: officerId,
+    authorName: officer.name,
+    authorRole: "government",
+    visibility: "investor_visible",
+    kind: "action",
+    payload: {
+      type: "project_amendment_request",
+      reason,
+      proposedChanges: { capitalRequired: "US$62 million", jobsDirect: 340 },
+      status: "open",
+      requestingMinistryId: "min-energy",
+      requestingMinistryName: "Ministry of Energy and Power Development",
+    },
+    body:
+      `Amendment requested — proposed changes to: capitalRequired, jobsDirect. ${reason} ` +
+      `Routed to Ministry of Energy and Power Development's Ministry Admin for first review.`,
+  });
+  record("amendment", project.title, "created");
+}
+
+// ---------------------------------------------------------------------------------------------
+// 8. Roster document
 // ---------------------------------------------------------------------------------------------
 
 async function writeRoster() {
-  console.log("\n[7/7] Roster document");
+  console.log("\n[8/8] Roster document");
   if (!COMMIT) {
     record("roster", "docs/DEMO_ACCOUNTS.md", "created");
     return;
@@ -623,6 +761,7 @@ async function main() {
   await seedEngagementsAndMous();
   await seedReviewQueue();
   await seedInvestorActivity();
+  await seedAmendmentRequest();
   await writeRoster();
 
   const created = changes.filter((c) => c.action === "created").length;

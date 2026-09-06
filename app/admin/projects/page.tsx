@@ -21,7 +21,11 @@ export default function AdminProjectsPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-white">Projects</h1>
         <p className="text-sm mt-1" style={{ color: "var(--color-text-secondary)" }}>
-          Master Sovereign Project Registry. Filter by governance status, review data rooms, or execute administrative overrides.
+          {/* Overrides are a Platform Admin capability, exercised at /super-admin/override — a ZIDA
+              Admin advances projects through the workflow rather than overriding it, and promising
+              otherwise describes authority this console does not hold. */}
+          Master Sovereign Project Registry. Filter by governance status, review data rooms, and advance
+          proposals through the national review workflow.
         </p>
       </div>
 

@@ -20,42 +20,54 @@ type PilotAccount = {
   organization?: string | null;
 };
 
+// Display names are ordinary people's names rather than "Pilot Qualified Investor" and the like.
+// These accounts predate the +demo roster but are woven through months of audit history, and the
+// audit log reads the name by join (see fetchAuditLogs, `u.name AS actor_name`), so every entry
+// they authored surfaced the word "Pilot" in the one view whose whole claim is that it is an
+// institutional record. Renaming the account rewrites the label, not the history — the actor id,
+// the action and the timestamp on every row are untouched.
 export const PILOT_ACCOUNTS: PilotAccount[] = [
-  { email: "registered+pilot@zidaproject.com", role: "registered", name: "Pilot Registered Investor" },
-  { email: "qualified+pilot@zidaproject.com", role: "qualified", name: "Pilot Qualified Investor" },
+  { email: "registered+pilot@zidaproject.com", role: "registered", name: "Kudakwashe Zimuto" },
+  { email: "qualified+pilot@zidaproject.com", role: "qualified", name: "Lindiwe Ncube" },
   {
     email: "government+pilot@zidaproject.com",
     role: "government",
-    name: "Pilot Government User",
+    name: "Tendai Mapfumo",
     // Full-Persona Communication Parity plan — moved from "min-industry" to "min-finance" so this
     // pilot actually resolves to a real ministry_admin (both ministry_admin pilots are on
     // min-finance); "min-industry" had no ministry_admin at all, so the gov<->ministry_admin<->
     // admin escalation chain was untestable.
     ministryId: "min-finance",
   },
-  { email: "admin+pilot@zidaproject.com", role: "admin", name: "Pilot ZIDA Admin" },
-  { email: "superadmin+pilot@zidaproject.com", role: "super_admin", name: "Pilot Super Admin" },
+  { email: "admin+pilot@zidaproject.com", role: "admin", name: "Nyasha Chirwa" },
+  { email: "superadmin+pilot@zidaproject.com", role: "super_admin", name: "Simbarashe Moyo" },
   {
     email: "ministryadmin+pilot@zidaproject.com",
     role: "ministry_admin",
-    name: "Pilot Ministry Admin — Finance",
+    name: "Patience Sibanda",
     ministryId: "min-finance",
     organization: null,
   },
   {
     email: "ministryadmin2+pilot@zidaproject.com",
     role: "ministry_admin",
-    name: "Pilot Ministry Admin — Finance (Backup)",
+    name: "Blessing Mhlanga",
     ministryId: "min-finance",
     organization: null,
   },
 ];
 
-function defaultOrganization(account: PilotAccount): string | null {
+export function defaultOrganization(account: PilotAccount): string | null {
   if (account.organization !== undefined) return account.organization;
   if (account.role === "super_admin") return "Afronovation, Inc.";
   if (account.role === "ministry_admin") return null;
-  return "ZIDA Pilot";
+  // "ZIDA Pilot" used to stand in for every remaining role, which put the word Pilot into the
+  // organisation column of the user directory and onto the project owner line of anything these
+  // accounts created. Staff belong to the agency; investors need a firm of their own.
+  if (account.role === "government" || account.role === "admin") {
+    return "Zimbabwe Investment and Development Agency";
+  }
+  return "Highveld Capital Partners";
 }
 
 // One-line "what's this for" blurb per pilot email — shared by the generated

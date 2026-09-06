@@ -10,7 +10,12 @@ import { useTaxonomyStore } from "@/context/taxonomy-store-context";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-/** Archived projects are intentionally excluded from the board to keep it focused on active deals. */
+/** Every status the workflow can hold, archived included. Archived used to be left off to keep the
+ *  board focused on active deals, but the status pills above it count archived projects in their
+ *  All total, so the board displayed one fewer card than the row above it claimed — and selecting
+ *  the Archived pill on the registry views produced an empty board rather than the closed records
+ *  it named. A column that is usually empty costs less than a board that cannot show what the
+ *  filter above it selects. */
 const BOARD_COLUMNS: ProjectStatus[] = [
   "draft",
   "submitted_for_review",
@@ -18,6 +23,7 @@ const BOARD_COLUMNS: ProjectStatus[] = [
   "changes_requested",
   "approved",
   "published",
+  "archived",
 ];
 
 interface DealRoomKanbanProps {
@@ -60,11 +66,11 @@ export function DealRoomKanban({ projects, role, onStatusChange, onCardClick, on
 
   return (
     <div>
-      {/* Fluid 6-up grid at lg+ so every stage is visible without scrolling (see the Phase 6
+      {/* Fluid 7-up grid at lg+ so every stage is visible without scrolling (see the Phase 6
        *  "columns cut off" fix) — falls back to a horizontally-scrollable fixed-width row below
-       *  that breakpoint, where 6 comfortably-readable columns can't fit regardless of layout. */}
+       *  that breakpoint, where 7 comfortably-readable columns can't fit regardless of layout. */}
       <div className="overflow-x-auto pb-2 lg:overflow-visible">
-        <div className="grid grid-cols-6 gap-3 min-w-[900px] lg:min-w-0">
+        <div className="grid grid-cols-7 gap-3 min-w-[1050px] lg:min-w-0">
           {BOARD_COLUMNS.map((column) => {
             const columnProjects = projects.filter((p) => p.projectStatus === column);
             return (
@@ -124,8 +130,17 @@ export function DealRoomKanban({ projects, role, onStatusChange, onCardClick, on
                             ? `${ministry.shortName} · ${ministry.representativeTitle}`
                             : ministry.shortName;
                         })()}
-                        {project.capitalRequired ? ` · ${project.capitalRequired}` : ""}
                       </p>
+                      {/* The capital requirement gets a line of its own. Appended to the ministry
+                       *  line it was always the part that fell off the end of the truncation
+                       *  ("Agriculture · US$36…"), which is the wrong half to lose: the figure is
+                       *  the one number released to every tier, and the whole reason an investor
+                       *  can size an opportunity before pursuing it. */}
+                      {project.capitalRequired && (
+                        <p className="mt-0.5 text-xs font-medium" style={{ color: "var(--color-gold)" }}>
+                          {project.capitalRequired}
+                        </p>
+                      )}
                       <div className="mt-2 flex items-center justify-between gap-2">
                         <StatusBadge status={project.projectStatus} />
                         {onMessageClick && (

@@ -76,17 +76,17 @@ Your navigation contains twelve sections:
 
 ### Pipeline
 
-![The Pipeline at the qualified tier. Financial indicators are now present.](docs/screenshots/qualified/pipeline.png)
+![The Pipeline at the qualified tier. The cards carry capital figures; the return metrics sit on each project's record.](docs/screenshots/qualified/pipeline.png)
 
-At the qualified tier the registry opens as a Kanban board of six columns — 1 draft, 3 submitted for review, 4 under review, 1 changes requested, 2 approved and 26 published, 38 records in all. The cards now carry money on their face: Powertel Fibre Internet (GPON) at US$26.9 million under ICT, Solgas Energy 10MW Solar at US$7.54 million under Energy. Above the board sit search by title, location or project owner, a filter control, a save-search control, and switches to List, Table or Matrix.
+At the qualified tier the registry opens as a Kanban board of six columns — 1 draft, 3 submitted for review, 4 under review, 1 changes requested, 2 approved and 26 published, with the All filter above them reading 38. The cards now carry money on their face: Powertel Fibre Internet (GPON) at US$26.9 million under ICT, Solgas Energy 10MW Solar at US$7.54 million under Energy. Above the board sit search by title, location or project owner, a filter control, a save-search control, and switches to List, Table or Matrix.
 
-The capital figure printed on the card is the whole difference between browsing a catalogue and screening a market. Below this tier those numbers are withheld, so a project is a name and a sector. Here an investor can size an opportunity before opening it and set aside what falls outside mandate in moments. Showing the draft and review columns alongside published matters as much: it tells an investor what is coming, which is what makes a pipeline worth monitoring rather than merely reading once.
+The capital figure printed on the card is what makes a board screenable rather than merely readable: an investor can size an opportunity before opening it and set aside what falls outside mandate in moments. That figure is released to the registered tier as well, so what this tier adds on a project is the return metrics behind it rather than the headline number itself. Showing the draft and review columns alongside published matters as much: it tells an investor what is coming, which is what makes a pipeline worth monitoring rather than merely reading once.
 
-The registry itself has not changed — what has changed is what each project discloses. Capital requirements, projected returns and payback periods are now visible, and gated documents are downloadable.
+The registry itself has not changed — what has changed is what each project discloses. Projected returns, payback periods and capital structure join the capital requirement every tier can already see, and gated documents are downloadable.
 
 ### My Proposals
 
-![My Proposals. Projects you originate and their position in the national review workflow.](docs/screenshots/qualified/proposals.png)
+![My Proposals, empty on this account. It is where projects you originate take their position in the national review workflow.](docs/screenshots/qualified/proposals.png)
 
 My Proposals opens on an empty state for this account: a document icon, the line *No proposals yet*, and the prompt asking whether you have a bankable project idea to submit directly into ZIDA's review pipeline. Two routes lead to the same act — a *Propose a Project* button in the page header and a second beneath the prompt. The subtitle records what the section holds once it is in use: projects you have originated and submitted into the national investment pipeline.
 
@@ -130,7 +130,7 @@ Delegation is how an institution actually works, and this page treats it as a go
 
 ### Communication Hub
 
-![The Communication Hub. Threads are attached to engagements and projects, not free-floating.](docs/screenshots/qualified/communication.png)
+![The Communication Hub. A general channel to the ZIDA deal team sits alongside threads attached to deals and engagements.](docs/screenshots/qualified/communication.png)
 
 One thread exists on this account: a *General Concierge* channel, described as your general channel with the ZIDA deal team and carrying a stated expectation of a response within one business day. The filters beside it count the categories separately — general, active deals and engagements — so correspondence sorts by what it concerns. The composer is addressed to the ZIDA deal team, with a subject selector, a message field, and Send and Attach controls. No messages have yet been exchanged.
 
@@ -166,7 +166,7 @@ Two labels on this page carry the whole governance model. What an investor may c
 
 | Capability | Where | Notes |
 | --- | --- | --- |
-| See capital requirements, projected returns and payback periods | Pipeline, any project | Withheld below this tier |
+| See capital requirements, projected returns and payback periods | Pipeline, any project | The return metrics are withheld below this tier; the headline capital requirement is not |
 | Download gated documents | Any project, Document Vault | Requires non-disclosure acceptance; downloads are logged |
 | Propose a new project | My Proposals | Enters the national review workflow |
 | Edit your proposal before submission | My Proposals | While in draft or changes-requested |
@@ -177,7 +177,7 @@ Two labels on this page carry the whole governance model. What an investor may c
 | Co-draft memorandum content | MOU Registry | While the memorandum is in drafting |
 | Approve a memorandum on the investor side | MOU Registry | One half of a two-sided approval gate |
 | Request changes to a memorandum | MOU Registry | Returns it to drafting |
-| Exchange messages with government | Communication Hub | Threaded against engagements and projects |
+| Exchange messages with government | Communication Hub | A general channel to the deal team, plus threads against engagements and projects |
 | Invite colleagues to your organisation | Team | They join at qualified tier under your organisation |
 | Request an amendment after submission lock | My Proposals | Decided by ZIDA |
 
@@ -292,10 +292,10 @@ Both approvals are required, and either party can send it back. Once it is final
 ### Process F — Communicate with government
 
 1. Open **Communication Hub** at `https://zidaproject.com/deal-room/communication`.
-2. Select the thread attached to your engagement or project.
+2. Select the General Concierge channel, or the thread attached to your engagement or project.
 3. Post your message. Attachments are permitted.
 
-Threads are anchored to a project or engagement rather than being free-standing correspondence, so a conversation stays attached to the thing it is about and survives changes of personnel on either side.
+Beyond the general channel to the deal team, threads are anchored to a project or engagement rather than being free-standing correspondence, so a conversation stays attached to the thing it is about and survives changes of personnel on either side.
 
 ### Process G — Bring a colleague onto your team
 

@@ -156,6 +156,50 @@ The second concerned ministries. The Ministry Official guide asserted that other
 
 Neither was a platform fault. Both would have been read as one by a stakeholder holding the guide beside the screen.
 
+### DEF-016 — Developer test records were visible in the consoles that carry the strongest arguments
+
+**Severity:** High. **Status:** Closed.
+
+Reconciling every guide against its recaptured screenshots turned up the same finding from six independent readings: months of automated test runs had left their working records in the demonstration database, and those records had surfaced in exactly the places a stakeholder looks hardest.
+
+The Communication Hub — the screen three guides use to demonstrate the amendment workflow — contained no genuine amendment at all. Every card on the platform had been filed by a test harness, with bodies reading *p8 selftest other ministry* and *phase8 selftest decline path*. The national pipeline carried a project called *Smoke Ministry Project 1785559386915*, sitting at *approved* among real proposals. The MOU Registry's only executed memorandum belonged to a counterparty named *MOU Smoke Investor*, alongside *Draft-Lock Investor* and *Smoke Delegate Test Investor*. Twelve messages read *Smoke test message from qualified @ 2026-07-23T01:44:23.899Z*. And every one of the older pilot accounts appeared under its function rather than a name, so the audit log — the view whose entire claim is that it is an institutional record — attributed decisions to *Pilot Government User* and *Pilot Ministry Admin — Finance*.
+
+Two different remedies were required, because the two problems are not the same kind of thing.
+
+The harness records were deleted: eighteen in total, comprising two projects, five engagements and eleven messages. `npm run demo:purge` reports what it would remove and removes it only when passed `--commit`. It identifies harness output by vocabulary no person would use to name a project — *smoke*, *selftest*, *phase8* — deliberately rather than by the word *test* alone, which would match a legitimate *Testing Laboratory Expansion*. It also removes duplicate approaches by the same investor to the same project, which are double-submits from testing rather than two separate propositions.
+
+The pilot accounts were renamed rather than deleted, because they are woven through months of audit history that is worth keeping. The audit log resolves an actor's name by join, so renaming the account relabelled every entry without touching a single actor identifier, action or timestamp. Where a name had been denormalized onto a message or an engagement — thirty-three such rows — the copy was brought back into line with its source. The seven accounts now read as people, and their organisation reads as an institution rather than *ZIDA Pilot*.
+
+Deleting the harness records took three exhibits with them, so those were rebuilt from the seeder rather than left as gaps. The memorandum registry now runs the full lifecycle on real counterparties — drafting, in review, both parties approved, finalized, ready for signature and executed — with approval and signature stamps dated backwards across several weeks so the sequence reads as a negotiation rather than an instant. A genuine amendment request replaces the harness cards, filed by a ministry's own reviewing officer against that ministry's own project, worded as a person would word it, and left open so a walkthrough has a live decision to take rather than a settled one to read about.
+
+### DEF-017 — A completed profile displayed as blank and announced unsaved changes
+
+**Severity:** High. **Status:** Closed.
+
+The *My Profile* page initialised its form on first render, before the authentication context had resolved. It never re-read the values once they arrived. The consequence was that a fully completed company record rendered as eight empty fields, and because the form's contents no longer matched the values it was comparing itself against, the page announced *Unsaved changes.* beside an active Save button on a page nobody had touched.
+
+The display problem was the visible one, and it appeared in the walkthrough screenshots of three consoles. The more serious problem was latent: pressing that Save button would have written the blanks over the stored record, including the fields that qualification depends on. The form now re-synchronises whenever the server's values change, keyed on their content so an unrelated re-render cannot discard work in progress.
+
+### DEF-018 — Pipeline counts did not add up
+
+**Severity:** Medium. **Status:** Closed.
+
+The status filters above the pipeline read *All 38* while the six stage filters beneath them summed to thirty-seven. The missing record was an archived project: it was counted in the total, but there was no archived filter to select it and no archived column on the board to show it.
+
+Both ends are now closed. Archived has its own filter and its own column, so the filters partition the total exactly and selecting one shows what it names. Dropping archived from the count instead would have been the smaller change, but a government reviewer has only this console — no registry view to fall back on — and it would have made closed records unreachable for the one role that cannot reach them any other way.
+
+### DEF-019 — Three consoles described authority they do not hold
+
+**Severity:** Low. **Status:** Closed.
+
+Three pieces of interface copy claimed more, or less, than the platform does.
+
+The ZIDA Admin project registry offered to *execute administrative overrides*. Overrides are a Platform Admin capability exercised elsewhere; a ZIDA Admin advances proposals through the workflow rather than overriding it. The subtitle now says so.
+
+The activity report told a national ZIDA reviewer that it covered *engagements against projects under your ministry's portfolio*. ZIDA's own reviewing officers carry no ministry, by design — their remit is national. Worse, the report treated the absent ministry as a filter matching nothing, so it was permanently empty. It now covers the national pipeline and says that it does.
+
+The capital requirement on each pipeline card shared a line with the ministry name and was the half that fell off the end of the truncation, giving *Agriculture · US$36…*. It is the wrong half to lose: that figure is the one number released to every tier, and the entire reason an investor can size an opportunity before deciding whether to pursue qualification for it. It now has a line of its own.
+
 ## 4. Open Defects
 
 ### DEF-009 — Sign-in page down for real browsers on a pre-fix cached shell

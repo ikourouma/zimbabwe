@@ -56,9 +56,9 @@ Before documents are released to you, the platform asks you to accept a confiden
 
 ![The Government Reviewer console overview.](docs/screenshots/government/overview.png)
 
-The console opens on Deal Room Overview, and the left rail is badged Government Reviewer Console rather than as an investor workspace. Four figures carry the national position: forty projects in pipeline, twenty-six published, nine in review and ten engagements. Below them the Engagement Funnel plots investor approaches by stage — submitted, under compliance review, approved, rejected. The Platform Snapshot records twenty-six published projects, US$2.21 billion of capital and four investors, with published projects broken out by sector.
+The console opens on Deal Room Overview, and the left rail is badged Government Reviewer Console rather than as an investor workspace. Four figures carry the national position: thirty-nine projects in pipeline, twenty-six published, eight in review and ten engagements. Below them the Engagement Funnel plots investor approaches by stage — submitted, under compliance review, approved, rejected. The Platform Snapshot records twenty-six published projects, US$2.21 billion of capital and four investors, with published projects broken out by sector.
 
-Nine projects in review is the reviewer's own workload, and it sits beside the twenty-six already published, so the ratio of what is being assessed to what has reached the registry is legible immediately. The sector breakdown answers the question a minister asks first: where the pipeline is concentrated. My Analytics is kept separate and personal — saved projects, documents previewed, messages sent — so an officer's footprint is measured on its own terms rather than folded into the national aggregate.
+Eight projects in review is the reviewer's own workload, and it sits beside the twenty-six already published, so the ratio of what is being assessed to what has reached the registry is legible immediately. The sector breakdown answers the question a minister asks first: where the pipeline is concentrated. My Analytics is kept separate and personal — saved projects, documents previewed, messages sent — so an officer's footprint is measured on its own terms rather than folded into the national aggregate.
 
 Your navigation contains eleven sections:
 
@@ -72,21 +72,21 @@ Your navigation contains eleven sections:
 | MOU Registry | `/deal-room/mou` | Memoranda awaiting government approval |
 | Document Vault | `/deal-room/vault` | Your non-disclosure certificate and records |
 | Communication Hub | `/deal-room/communication` | Threads on projects and engagements |
-| Reports | `/deal-room/reports` | Includes the National Executive Report |
-| My Profile | `/deal-room/profile` | Your profile and ministry assignment |
+| My Activity Report | `/deal-room/reports` | Includes the National Executive Briefing |
+| My Profile | `/deal-room/profile` | Your account and the entity of record held against it |
 | Account | `/deal-room/settings` | Security settings |
 
 ### Pipeline
 
-![The Pipeline. Unlike an investor's view, this shows drafts, submissions and archived records as well as published projects.](docs/screenshots/government/pipeline.png)
+![The Pipeline. Unlike an investor's view, this shows drafts, submissions and projects in review as well as published projects.](docs/screenshots/government/pipeline.png)
 
-Here the national portfolio is laid out as a board, one column per stage: draft, submitted for review, under review, changes requested, approved and published. Counts appear on each column and again as filter chips above them — thirty-two records in all, twenty-six of them published, with a single item each in draft, under review and changes requested. Cards name sector and indicative capital, from Powertel Fibre Internet (GPON) at US$26.9 million to Solgas Energy's 10MW solar project. The same records can be read as a list, a table or a matrix.
+Here the national portfolio is laid out as a board, one column per stage: draft, submitted for review, under review, changes requested, approved and published. Counts appear on each column and again as filter chips above them — thirty-nine records in all, twenty-six of them published, with two in draft, three submitted for review, four under review, one returned for changes and two approved. Cards name sector and indicative capital, from Powertel Fibre Internet (GPON) at US$26.9 million to Solgas Energy's 10MW solar project. The same records can be read as a list, a table or a matrix.
 
-Congestion cannot hide on a view like this. An empty submitted-for-review column and two projects sitting at approved tell a reviewer, and anyone looking over their shoulder, exactly where the pipeline has stalled and where it has not. The approved column is the more consequential of the two: those projects have cleared substantive assessment and are waiting on ZIDA to publish them. That gap between approved and published is not a delay in the workflow — it is the workflow, made visible.
+Congestion cannot hide on a view like this. Three submissions waiting to be picked up and two projects sitting at approved tell a reviewer, and anyone looking over their shoulder, exactly where the pipeline has stalled and where it has not. The approved column is the more consequential of the two: those projects have cleared substantive assessment and are waiting on ZIDA to publish them. That gap between approved and published is not a delay in the workflow — it is the workflow, made visible.
 
-This is your working surface. Two things distinguish it from the investor view. First, **status**: you see draft, submitted, under review, changes requested, approved, published and archived records, not only what is live. Second, **authority**: you can move projects between statuses directly from this view.
+This is your working surface. Two things distinguish it from the investor view. First, **status**: you see draft, submitted, under review, changes requested, approved and published records, not only what is live. Second, **authority**: you can move projects between statuses directly from this view.
 
-There are optional filters for *my ministry only* and *assigned to me*. Both are **off by default** — the national view is the default view, which is the correct default for a national reviewer but is worth confirming against how your team actually works.
+A *My Assigned Projects* chip sits at the end of the status filters and further criteria are held behind the Filters control. The chip is **off by default**, and no ministry restriction is applied — the national view is the default view, which is the correct default for a national reviewer but is worth confirming against how your team actually works.
 
 ### Engagements
 
@@ -100,13 +100,13 @@ What this establishes is that an approach to the Zimbabwean state is a recorded 
 
 ![The MOU Registry. Your role here is approval, not drafting.](docs/screenshots/government/mou.png)
 
-Ten memoranda are grouped by stage, and the stages are kept deliberately distinct: no MOU yet, drafting, in review, both parties approved, finalized, ready for signature and executed. Six records sit at no MOU yet, one is drafting, one in review, one ready for signature and one executed. Each row sets the engagement's status against the memorandum's stage, alongside ticket sizes where the investor has stated them — USD 10–15M, $5M–$25M, $1M–$5M. The register exports to CSV.
+Ten records are grouped by stage, and the stages are kept deliberately distinct: no MOU yet, drafting, in review, both parties approved, finalized, ready for signature and executed. Six records sit at no MOU yet, one is drafting, one in review, one ready for signature and one executed. Each row sets the engagement's status against the memorandum's stage, alongside ticket sizes where the investor has stated them — USD 10–15M, $5M–$25M, $1M–$5M. The register exports to CSV.
 
 Putting engagement status beside memorandum stage in the same row is what makes the dependency checkable rather than merely stated: nothing reaches drafting while its engagement is still submitted. Separating both-parties-approved from finalized and from executed matters as much again, because it means agreement, settlement of text and signature are three events with three records. A reviewer supplies one of those approvals, and the register shows the remainder of the chain proceeding without them.
 
 ### Reports
 
-![Reports, including the National Executive Report available to government roles.](docs/screenshots/government/reports.png)
+![Reports, including the National Executive Briefing available to government roles.](docs/screenshots/government/reports.png)
 
 Two tabs sit under Reports — My Activity Summary, open here, and National Executive Briefing. The activity report renders as a formal document rather than a dashboard: headed Republic of Zimbabwe · Investment Platform, carrying its own reference number, generated by Tafadzwa Mutasa (Government), with a snapshot timestamp to the second and its source recorded as live platform data. The account summary states name, email, organisation and role, marks the Confidentiality Framework accepted, and totals engagements, pending review and approved. A print or save-as-PDF control sits above it.
 
@@ -116,7 +116,7 @@ A report that names its author, its moment and its source can be circulated outs
 
 ![The Communication Hub.](docs/screenshots/government/communication.png)
 
-One inbox holds ten threads, filtered as general enquiries, active deals and engagements. Threads on the left are titled by project and show message counts and the last contributor. The open thread concerns Goromonzi Agro Processing Industrial Park (Special Economic Zone), with the project's own strip above it — published, US$36.9 million total cost, Mashonaland East. Within the thread, a project amendment request is recorded as a card: the requesting ministry, the proposed change to location, its routing for first review, and its decline by that ministry's administrator.
+One inbox holds nine threads, filtered as general enquiries, active deals and engagements. Threads on the left are titled by project and show message counts and the last contributor. The open thread concerns Goromonzi Agro Processing Industrial Park (Special Economic Zone), with the project's own strip above it — published, US$36.9 million total cost, Mashonaland East. Within the thread, a project amendment request is recorded as a card: the requesting ministry, the proposed change to location, its routing for first review, and its decline by that ministry's administrator.
 
 Correspondence and governance action occupy the same thread here, so the reasoning behind a decision is stored next to the decision rather than in somebody's mailbox. The composer's visible-to-investor setting keeps internal deliberation and investor-facing reply in one record without confusing the two. Threads export to CSV or PDF, and the stated response expectation of one business day sits on the page, which means an investor's sense of how the state communicates rests on something measurable.
 
@@ -130,7 +130,7 @@ Recording the confidentiality undertaking with a version number as well as a tim
 
 Saved Projects is a personal watchlist, described on the page as somewhere to track opportunities saved from a project's detail page or card. On this account it is empty, showing a single prompt to browse the pipeline and save projects to build the list, with a Browse Pipeline button beneath it.
 
-The distinction worth noting is that saving carries no authority. A reviewer following a project has not been assigned it, has not claimed it and has altered nothing about its status, which is why the pipeline keeps a separate assigned-to-me filter. Across a national portfolio of forty records, an officer needs a way to keep sight of a handful of files without that interest being read as ownership of them. This page is that, and nothing beyond it.
+The distinction worth noting is that saving carries no authority. A reviewer following a project has not been assigned it, has not claimed it and has altered nothing about its status, which is why the pipeline keeps a separate assigned-to-me filter. Across a national portfolio of thirty-nine records, an officer needs a way to keep sight of a handful of files without that interest being read as ownership of them. This page is that, and nothing beyond it.
 
 ![My Proposals, read-only on a reviewer's account.](docs/screenshots/government/proposals.png)
 
@@ -169,8 +169,8 @@ That two of these fields cannot be edited by the person they describe is the poi
 | File an amendment request on a project | Any project | Scoped to your ministry |
 | File an association request to add a beneficiary ministry | Any project | Requires a ministry assignment on your profile |
 | Message investors and colleagues | Communication Hub | |
-| Open the National Executive Report | Reports | Not available to investors |
-| See qualified-investor application counts | Overview | Counts only — see section 5 |
+| Open the National Executive Briefing | Reports | Not available to investors |
+| Read the national position at a glance | Overview | Projects in pipeline, published, in review and engagements |
 
 ## 5. What You Cannot Do, and Why
 
@@ -182,7 +182,7 @@ That two of these fields cannot be edited by the person they describe is the poi
 | Create an engagement | An engagement is an investor's approach; government does not raise one on its own behalf | Qualified Investor |
 | Draft or finalize memorandum content | You approve government's position; drafting and execution sit with ZIDA | Qualified Investor and ZIDA Admin |
 | Decide qualified-investor applications | Accreditation is a ZIDA function | ZIDA Admin, Platform Manager |
-| Open the inquiries queue | You see application counts, not the queue itself | ZIDA Admin, Platform Manager |
+| Open the inquiries queue | The queue is the working surface of accreditation, which is not a review function | ZIDA Admin, Platform Manager |
 | Create accounts or change roles | Entitlement management is an administrative function | Ministry Official (own ministry), ZIDA Admin, Platform Manager |
 | Edit sectors, ministries or strategic pillars | The classification scheme is national infrastructure | Platform Manager |
 | Assign a case manager | Workload allocation is an administrative function | ZIDA Admin, Platform Manager |
@@ -246,10 +246,10 @@ Use this when a project's benefit clearly spans more than the ministry it was fi
 
 You cannot reassign a project's ministry directly, and neither can a Ministry Official. Both must request it, and ZIDA decides — so a project cannot be moved between ministries on one party's authority.
 
-### Process E — Read the National Executive Report
+### Process E — Read the National Executive Briefing
 
-1. Open **Reports** at `https://zidaproject.com/deal-room/reports`.
-2. Select the **National Executive Report** tab.
+1. Open **Reports** at `https://zidaproject.com/deal-room/reports`, reached from **My Activity Report** in the left rail.
+2. Select the **National Executive Briefing** tab. The page opens on **My Activity Summary**.
 
 This is the national-level view of pipeline health, sector distribution and engagement volume, and it is not available to investor accounts.
 

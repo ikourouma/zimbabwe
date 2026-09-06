@@ -60,7 +60,7 @@ You can switch into the ZIDA Admin console at `https://zidaproject.com/admin` an
 
 ![Platform-wide analytics across sectors, enquiries and governance activity.](docs/screenshots/superadmin/overview.png)
 
-Analytics opens on five counters: forty projects in total, twenty-six published and marked *Live deals*, nine in review carrying *Needs action*, two drafts *not yet submitted*, and seven pending enquiries. Beneath them, Projects by Sector ranks the portfolio from Agriculture down through ICT, Manufacturing, Energy, Infrastructure, Mining, Health and Tourism and Financial Services, while Inquiries by Status resolves to a single pending band of seven. Recent Governance Activity names Farai Chigumba approving a memorandum draft with Grace Mutindi and upgrading an investor from registered to qualified.
+Analytics opens on five counters: thirty-nine projects in total, twenty-six published and marked *Live deals*, eight in review carrying *Needs action*, two drafts *not yet submitted*, and seven pending enquiries. Beneath them, Projects by Sector ranks the portfolio from Agriculture down through Manufacturing, Energy, ICT, Infrastructure, Mining, Health and Tourism and Finance, while Inquiries by Status resolves to a single pending band of seven. Recent Governance Activity names Farai Chigumba approving a memorandum draft with Grace Mutindi and upgrading an investor from registered to qualified.
 
 What matters here is what the platform owner does not get, which is a separate and more flattering set of numbers. These are the same live figures ZIDA staff work from, so the owner tier can confirm the agency's position without maintaining a parallel account of it. The difference sits in the left navigation, where Taxonomies, Site Settings, Audit Log and Publishing Override appear below the operational sections — and every act taken through them is attributed by name in the same activity feed shown here.
 
@@ -85,13 +85,13 @@ Your navigation contains fourteen sections. Four of them exist at no other tier.
 
 ### Taxonomies
 
-![Taxonomies: sectors, ministries, strategic pillars and development goals — the scheme every project is classified against.](docs/screenshots/superadmin/taxonomies.png)
+![Taxonomies: sectors, ministries, strategic pillars and UN SDGs — the scheme every project is classified against.](docs/screenshots/superadmin/taxonomies.png)
 
 Seven tabs carry the whole national scheme and its size: sectors (8), subsectors (27), ministries (12), provinces (10), strategic pillars (11), UN SDGs (17) and contact reasons (11). The sectors table is open, listing Agriculture, Health, ICT, Infrastructure, Manufacturing, Mining, Renewable Energy and Tourism and Financial Services, each with the description shown on its public sector page, a status of active, and a linked-project count — Agriculture nine projects, six of them live. The page states its own rule beneath the title: Platform Admin edits are authoritative, standard Admins see these read-only.
 
 The linked-project column is what makes this page governable rather than merely editable. Before renaming or archiving a term, the officer can see how many national records depend on it and how many of those are publicly visible, so the consequence of a change is on screen at the moment of the change. Holding these values read-only for every other tier keeps the classification scheme a national asset rather than an operational convenience, and the export produces the scheme in a form ministries and statistical offices can reconcile against their own.
 
-This is the platform's classification infrastructure: sectors and subsectors, ministries, strategic pillars, development goals, provinces, and the contact reasons that route public enquiries.
+This is the platform's classification infrastructure: sectors and subsectors, ministries, strategic pillars, UN SDGs, provinces, and the contact reasons that route public enquiries.
 
 Every project on the platform is filed against these values. Editing one retroactively changes the meaning of records already filed, which is why the capability sits here and nowhere else.
 
@@ -137,17 +137,17 @@ Those chip counts are the governance picture in a single line: two accounts hold
 
 ![The full project registry.](docs/screenshots/superadmin/projects.png)
 
-Every governance status is filterable from one row of chips, and the counts reconcile: forty in total, made up of two drafts, four submitted, four in review, one with changes requested, two approved, twenty-six published and one archived, with two investor proposals identified separately. The table view shows title, sector, status, capital and last update — Goromonzi Agro Processing Industrial Park at US$36.9 million, TelOne Fibre to the Home at US$50 million, CICADA Macadamia and Avocado carrying a phased figure — and can be swapped for kanban, list or matrix.
+Every governance status is filterable from one row of chips, and the counts reconcile: thirty-nine in total, made up of two drafts, three submitted, four in review, one with changes requested, two approved, twenty-six published and one archived, with one investor proposal identified separately. The table view shows title, sector, status, capital and last update — Goromonzi Agro Processing Industrial Park at US$36.9 million, TelOne Fibre to the Home at US$50 million, CICADA Macadamia and Avocado carrying a phased figure — and can be swapped for kanban, list or matrix.
 
 No other console shows archived records, unsubmitted drafts and investor-originated proposals in the same list as the published registry. That completeness is what allows the owner tier to answer a question about the national pipeline without asking anyone to compile it. The capital column is equally instructive: one project records a narrative breakdown across phases and another shows no figure at all, because the registry displays what has been submitted rather than a tidied estimate. That is what pending validation looks like in practice, and it is the honest position for a pilot.
 
 ![The platform-wide review queue.](docs/screenshots/superadmin/review.png)
 
-Eleven new submissions are stacked as cards, with a second tab for pending amendment and ministry association requests. Each card names the project and the ministry it is filed against — the xyz test record under Information Communication Technology, Postal and Courier Services; Mazowe Valley Irrigation Revitalisation under Lands, Agriculture, Fisheries, Water and Rural Resettlement, described as 4,200 hectares of gravity-fed irrigation — and offers expanders for full project detail and action history, a reviewer notes box, and a row of actions: request changes, approve, publish and reject, with send back to draft and start review greyed until applicable.
+Ten new submissions are stacked as cards, with a second tab for pending amendment and ministry association requests. Each card names the project and the ministry it is filed against — Mazowe Valley Irrigation Revitalisation under Lands, Agriculture, Fisheries, Water and Rural Resettlement, described as 4,200 hectares of gravity-fed irrigation; Powertel Fibre Internet (GPON) under Information Communication Technology, Postal and Courier Services — and offers expanders for full project detail and action history, a reviewer notes box, and a row of actions: request changes, approve, publish and reject, with send back to draft and start review greyed until applicable.
 
 Look at that action row again, because it is the clearest picture of this tier in the whole console. Approve and publish sit side by side on one card. At every other tier they are held by different people, and the separation between clearing a project and placing it on the national registry is the core of the governance model. The page states the mechanism in its own subtitle: buttons render from the signed-in role's entitlements rather than from a fixed layout, so what an officer can see is exactly what they are authorised to do.
 
-![All enquiries platform-wide, filterable by category and status.](docs/screenshots/superadmin/inquiries.png)
+![Platform Admin Inquiries: the executive escalation channel, with all enquiries platform-wide on the adjacent tab.](docs/screenshots/superadmin/inquiries.png)
 
 The page opens on executive escalations rather than the general queue, and it is empty: no enquiries have yet been submitted under the platform or executive escalation category, so every status filter reads nought and the message confirms that none has been addressed to the Platform Admin. The subtitle draws the distinction explicitly — these are addressed directly to the platform owner and held separate from the shared ZIDA admin queue. The platform-wide list of seven sits behind the adjacent all enquiries tab, with the usual kanban, list, table and matrix views and a CSV export.
 
@@ -157,11 +157,11 @@ An escalation channel that exists and stands empty is a better result than a bus
 
 Ten records are grouped by stage: six with no memorandum yet, one in drafting, one in review, one ready for signature and one executed, with none currently at both parties approved or finalised. The table pairs each investor and their organisation with the project, so Nomsa Dube of Kestrel Capital Partners appears against Masuwe International Medical Center and Grace Mutindi of Zambezi Growth Partners against Kumusha Power Project. Two columns run alongside each other — engagement status and memorandum stage — with ticket sizes where an investor has stated one, from US$5–25 million down to a dash.
 
-Reading those two columns together is the point of this view. Every row where the memorandum stage is blank has an engagement still submitted or under compliance review, and the single executed memorandum sits against an approved engagement. The gate holds in both directions, and it holds visibly, without anyone having to trust that it does. For an investor assessing Zimbabwe, that means an executed memorandum has a traceable lineage back through approval to the original approach, and for ZIDA it means the commercial pipeline can be reported on by stage rather than by anecdote.
+Reading those two columns together is the point of this view. Every row where the memorandum stage is blank has an engagement still in draft, submitted or under compliance review, and the single executed memorandum sits against an approved engagement. The gate holds in both directions, and it holds visibly, without anyone having to trust that it does. For an investor assessing Zimbabwe, that means an executed memorandum has a traceable lineage back through approval to the original approach, and for ZIDA it means the commercial pipeline can be reported on by stage rather than by anecdote.
 
 ![Executive reporting.](docs/screenshots/superadmin/reports.png)
 
-The Government Executive Report is generated on demand and stamped: named to Amara Sesay as Platform Admin, timed to the second, referenced REP-20260905-FC01, sourced to live platform data and marked for government use. Its command strip carries four measures — total pipeline value of US$2.34 billion across forty projects, investor capital coverage of 0.3 per cent representing US$6 million committed against US$2.21 billion published, average review turnaround of ten days across thirty-four submissions, and a funnel conversion rate of 44.4 per cent. Below sit the counts and an economic impact block giving average project size of US$77.99 million and a publication rate of 65 per cent.
+The Government Executive Report is generated on demand and stamped: named to Amara Sesay as Platform Admin, timed to the second, referenced REP-20260906-F05D, sourced to live platform data and marked for government use. Its command strip carries four measures — total pipeline value of US$2.34 billion across thirty-nine projects, investor capital coverage of 0.3 per cent representing US$6 million committed against US$2.21 billion published, average review turnaround of 10.3 days across thirty-three submissions, and a funnel conversion rate of 44.4 per cent. Below sit the counts and an economic impact block giving average project size of US$77.99 million and a publication rate of 66.7 per cent.
 
 Provenance is what makes this printable and defensible. A briefing tabled at a ministry can be checked back against the platform by reference, timestamp and generating officer, so the figures in the room and the figures in the system are the same figures. Just as important is what the strip refuses to smooth: capital coverage of 0.3 per cent is displayed as prominently as the pipeline total, with the action it implies attached to it. A report that surfaces its own weak measure is the only kind worth reading the strong ones from.
 
@@ -169,7 +169,7 @@ Provenance is what makes this printable and defensible. A briefing tabled at a m
 
 ![Staff messaging.](docs/screenshots/superadmin/communication.png)
 
-Ten threads sit in a single inbox, sorted into general enquiries, active deals and engagements. The open thread concerns Goromonzi Agro Processing Industrial Park, with a context strip showing it published, valued at US$36.9 million and located in Mashonaland East, and a stated response expectation of one business day. Inside the thread, a Government user records an amendment request routed to the Ministry of Finance, Economic Development and Investment Promotion for first review; the request appears as a structured card marked declined, with the reply from the Finance ministry admin beneath it. The composer carries a visibility selector currently set to visible to investor.
+Nine threads sit in a single inbox, sorted into general enquiries, active deals and engagements. The open thread concerns Goromonzi Agro Processing Industrial Park, with a context strip showing it published, valued at US$36.9 million and located in Mashonaland East, and a stated response expectation of one business day. Inside the thread, a Government user records an amendment request routed to the Ministry of Finance, Economic Development and Investment Promotion for first review; the request appears as a structured card marked declined, with the reply from the Finance ministry admin beneath it. The composer carries a visibility selector currently set to visible to investor.
 
 Correspondence and formal acts are not held in separate systems here, which is the difference that matters in a dispute. The amendment request, its routing, its decision and the conversation around it occupy one sequence, so the reasoning behind an outcome survives alongside the outcome itself. The visibility selector makes the audience of every message explicit rather than assumed, and the CSV and PDF exports let a thread be filed with a ministry's own records in a form that leaves the platform intact.
 
@@ -195,7 +195,7 @@ Everything in the ZIDA Admin guide applies to you as well. This section covers o
 | Reverse any workflow transition | Any project | Including moves the workflow does not normally permit |
 | Force a status or visibility with the override | Publishing Override | The escape hatch from governance |
 | Revert an override | Publishing Override | So an override is itself reversible |
-| Create or archive a sector, subsector, ministry, pillar, goal, province or contact reason | Taxonomies | Retroactively changes the meaning of filed records |
+| Create or archive a sector, subsector, ministry, pillar, UN SDG, province or contact reason | Taxonomies | Retroactively changes the meaning of filed records |
 | Approve an investor-proposed subsector | Taxonomies | Investors can propose a classification; only you can adopt it |
 | Create an administrator or another platform manager | Users & Roles | An administrator cannot expand the administrator set |
 | Change any account's role, at any tier | Users & Roles | Including demoting an administrator |
@@ -212,7 +212,7 @@ Everything in the ZIDA Admin guide applies to you as well. This section covers o
 ### Process A — Maintain the classification scheme
 
 1. Open **Taxonomies** at `https://zidaproject.com/super-admin/taxonomies`.
-2. Select the taxonomy: sectors, subsectors, ministries, strategic pillars, development goals, provinces, or contact reasons.
+2. Select the taxonomy: sectors, subsectors, ministries, strategic pillars, UN SDGs, provinces, or contact reasons.
 3. Add, edit or archive entries.
 
 Two cautions. Editing an entry changes how every project already filed against it is described. Archiving one affects projects that reference it. Prefer adding a new entry over redefining an existing one, and archive rather than delete where the choice exists.

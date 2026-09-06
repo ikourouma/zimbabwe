@@ -153,4 +153,10 @@ export const STATUS_FILTER_CHIPS: { value: StatusFilterValue; label: string }[] 
   { value: "changes_requested", label: STATUS_LABELS.changes_requested },
   { value: "approved", label: STATUS_LABELS.approved },
   { value: "published", label: STATUS_LABELS.published },
+  // Archived closes the partition. Without it the pills summed to one less than the All count,
+  // because an archived project was counted in the total while no pill and no board column could
+  // reach it — arithmetic a reader can do on a screenshot, and did. A government reviewer has only
+  // this console, so dropping archived from the total instead would have made closed records
+  // unreachable for the one role with no registry view to fall back on.
+  { value: "archived", label: STATUS_LABELS.archived },
 ];

@@ -83,13 +83,13 @@ Your navigation contains seven sections:
 
 ### Pipeline
 
-The Pipeline is the working view of the national registry. You can filter by sector, strategic pillar, province, beneficiary ministry, readiness level and financing type, and switch between board, list, table and matrix layouts.
+The Pipeline is the working view of the national registry. You can filter by sector, strategic pillar, province, beneficiary ministry, readiness level and financing type, and switch between Kanban, list, table and matrix layouts.
 
-![The Pipeline. The same registry a qualified investor sees, with financial columns withheld.](docs/screenshots/registered/pipeline.png)
+![The Pipeline. The same registry a qualified investor sees, with capital requirements shown and return metrics withheld.](docs/screenshots/registered/pipeline.png)
 
-The Pipeline opens in Kanban layout, with List, Table and Matrix beside it, a search field that accepts a title, a location or a project owner, and a Filters control holding the screening dimensions. Six stage columns run from Draft through Submitted for Review, Under Review, Changes Requested and Approved to Published. The first five read zero; Published holds all 26 records. The cards name real opportunities — Goromonzi Agro Processing, Mossfield Crop Production, CICADA Macadamia, Misty Mountains Coffee Production, TelOne Fibre to the Home — each tagged with its sector and a Published status.
+The Pipeline opens in Kanban layout, with List, Table and Matrix beside it, a search field that accepts a title, a location or a project owner, and a Filters control holding the screening dimensions. Six stage columns run from Draft through Submitted for Review, Under Review, Changes Requested and Approved to Published. The first five read zero; Published holds all 26 records. The cards name real opportunities — Goromonzi Agro Processing, Mossfield Crop Production, CICADA Macadamia, Misty Mountains Coffee Production, TelOne Fibre to the Home — each tagged with its sector, its capital requirement in United States dollars and a Published status.
 
-That column structure is the governance record made visible. Publication is the final stage of a review sequence rather than a listing decision, so every project an investor can reach has already passed ministry submission and reviewer assessment; the earlier columns stand empty because nothing unapproved is exposed to this tier. The stage vocabulary is the same one government staff work in, which means an investor and a ZIDA officer discussing a project are describing the same record at the same stage rather than approximating each other.
+That column structure is the governance record made visible. Publication is the final stage of a review sequence rather than a listing decision, so every project an investor can reach has already passed ministry submission and reviewer assessment; the earlier columns stand empty because nothing unapproved is exposed to this tier. The stage vocabulary is the same one government staff work in, which means an investor and a ZIDA officer discussing a project are describing the same record at the same stage rather than approximating each other. The capital requirement printed on each card is released to this tier deliberately, because an investor cannot judge whether qualification is worth seeking without knowing the size of what is being sought; what the server withholds until then are the return metrics behind that figure — internal rate of return, net present value, return on investment, payback period, projected revenue and capital structure — together with the gated documents.
 
 ### Saved Projects
 
@@ -117,7 +117,7 @@ A record of your own activity on the platform — useful when reporting internal
 
 ![My Activity Report.](docs/screenshots/registered/reports.png)
 
-The activity report renders as a document rather than a screen, headed Republic of Zimbabwe · Investment Platform and carrying the reference REP-20260905-7944. A provenance line states who generated it, the exact snapshot time and that the source is live platform data. Account Summary sets out name, email, organisation — Sable Ridge Ventures — and role, with the confidentiality framework marked Accepted. Engagement Summary reads zero across total, pending review and approved, and a Print / Save as PDF control sits at the top.
+The activity report renders as a document rather than a screen, headed Republic of Zimbabwe · Investment Platform and carrying the reference REP-20260906-E88F. A provenance line states who generated it, the exact snapshot time and that the source is live platform data. Account Summary sets out name, email, organisation — Sable Ridge Ventures — and role, with the confidentiality framework marked Accepted. Engagement Summary reads zero across total, pending review and approved, and a Print / Save as PDF control sits at the top.
 
 The footer is the part to read twice: it states that this is a live snapshot taken at the moment of generation rather than a bounded reporting period, and that it is not a substitute for audited financial statements. A platform that qualifies its own output that carefully is one whose figures can be quoted with confidence. For an investment committee, a referenced and timestamped extract of what an institution has actually done on the registry is considerably easier to submit than a screenshot.
 
@@ -125,9 +125,9 @@ The footer is the part to read twice: it states that this is a live snapshot tak
 
 Where you enter the company details that qualification depends on.
 
-![My Profile. The five fields listed here are the ones qualification requires.](docs/screenshots/registered/profile.png)
+![My Profile. Eight fields make up the company record; five of them are the ones qualification requires.](docs/screenshots/registered/profile.png)
 
-My Profile describes itself as the account's full compliance record and, in the same line, as the view ZIDA staff see on the Institutional Compliance Dossier. The Company & Representative panel holds eight fields: company or entity name, corporate phone, authorised representative, representative title, job title, corporate website, business registration identifier and HQ address. Two are populated — Sable Ridge Ventures and Investment Manager — and the remainder carry guidance text, including a note that the address prefills a proposal's project location.
+My Profile describes itself as the account's full compliance record and, in the same line, as the view ZIDA staff see on the Institutional Compliance Dossier. The Company & Representative panel holds eight fields: company or entity name, corporate phone, authorised representative, representative title, job title, corporate website, business registration identifier and HQ address. Two are populated — Sable Ridge Ventures and Investment Manager — and the remainder stand empty, several of them carrying guidance text, including a note that the address prefills a proposal's project location.
 
 One record, read by both sides, is the discipline that matters here. The investor maintains their corporate identity once, and that same entry is what a ZIDA officer assesses when the application reaches review, so there is no parallel file to reconcile and no divergence to account for. Because these fields also prepopulate proposals and applications as read-only entries, the entity named on any submission to government is necessarily the entity the platform holds on record.
 
@@ -147,7 +147,7 @@ Two labels do a great deal of work on this page. Marking the entity as managed b
 | --- | --- |
 | Browse every published project | Pipeline |
 | Filter by sector, pillar, province, ministry, readiness and financing type | Pipeline |
-| Open a project's full non-financial detail | Pipeline, then any project |
+| Open a project's full detail, including its headline capital requirement | Pipeline, then any project |
 | See strategic pillar, development goal and beneficiary ministry alignment | Any project |
 | Save projects to a shortlist | Pipeline and project pages |
 | Complete your company and representative profile | My Profile |
@@ -165,7 +165,7 @@ This section matters as much as the previous one. These are deliberate entitleme
 | Projected returns, payback periods, capital structure | Commercially sensitive; released only to verified investors. The headline capital requirement is not withheld — it is what lets you size a project before deciding whether to pursue qualification — but the return metrics behind it are | Qualified Investor |
 | Gated documents such as feasibility summaries and investor packs | Same reason, and download activity is recorded against a verified identity | Qualified Investor |
 | Raising an engagement on a project | An engagement is a formal approach to government and presumes a verified counterparty | Qualified Investor |
-| Messaging the investment authority in-platform | Message threads are attached to engagements | Qualified Investor |
+| Messaging the investment authority in-platform | Correspondence with the deal team presumes a verified counterparty | Qualified Investor |
 | Proposing your own project | Investor proposals enter the national review workflow and require a verified originator | Qualified Investor |
 | Inviting colleagues to a shared team | Delegated access presumes a verified organisation | Qualified Investor |
 | Any review, approval or publishing action | Reserved to government and platform staff | Ministry Official, Government Reviewer, ZIDA Admin |
@@ -180,7 +180,7 @@ The pattern is consistent: **you can look, and you can prepare, but you cannot f
 2. Apply a **sector** filter for the sectors you invest in.
 3. Add a **province** filter if your mandate is geographically constrained.
 4. Add a **readiness** filter. Concept-stage and shovel-ready projects need very different conversations, and this is the fastest way to separate them.
-5. Switch layout using the view controls. The table view compares many projects at once; the board view groups them by stage.
+5. Switch layout using the view controls. The table view compares many projects at once; the Kanban view groups them by stage.
 6. Open any project to read its full description, strategic alignment, development goals and beneficiary ministry.
 
 > **What to check**

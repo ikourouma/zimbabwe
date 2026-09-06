@@ -97,7 +97,7 @@ You can browse and filter freely. What you will not find is a single capital fig
 
 ### Investor Journey
 
-![The four-step pathway from browsing the registry to strategic engagement.](docs/screenshots/public/investor-journey.png)
+![The opening of the investor journey, introducing a governed pathway from registry browsing to strategic partnership.](docs/screenshots/public/investor-journey.png)
 
 *From Discovery to Strategic Partnership* describes the route an institution takes through the platform. The opening text sets out a governed four-step pathway connecting a browse of the ZIDA project registry to a qualified investment conversation, with entitlements that expand as the visitor registers and then qualifies. An Engagement Pathway section below restates the same framing for institutional investors approaching the ZIDA pipeline. The four steps themselves sit further down the page, beyond this view.
 
@@ -105,7 +105,7 @@ Stating the pathway before anyone walks it removes the sense that access is arbi
 
 ### Strategic Partnerships
 
-![The gateway where an institutional investor or partner submits a qualification application.](docs/screenshots/public/strategic-partnerships.png)
+![The first step of the executive gateway, where a counterparty states its engagement type.](docs/screenshots/public/strategic-partnerships.png)
 
 Labelled an executive gateway, *Strategic Partnerships & Inquiries* is a three-step form for counterparties with a specific mandate. The introduction names its intended users — investors, government and DFI counterparts, strategic or technical partners — and directs anyone with a general or press question to the standard contact form instead. A numbered indicator marks step one of three, *who you are and why*, which opens on engagement type: Investor, covering institutional, private capital and diaspora mandates, and Government / DFI, covering ministries, agencies and development finance institutions.
 
@@ -115,7 +115,7 @@ Segmenting at the first field rather than the last is what stops a serious appro
 
 ![Country overview and macroeconomic context.](docs/screenshots/public/zimbabwe.png)
 
-The national profile opens with the coat of arms and a short statement of position: diversified investment opportunity across ten provinces and eight priority economic sectors, curated from the ZIDA 2025 Projects deck and presented as a governed, investor-facing registry. Four figures follow — 32 catalogue projects described as the ZIDA seed pipeline, 8 economic sectors, 26 published investor-facing entries and 11 strategic pillars. A Back to Gateway link sits above the title.
+The national profile opens with the coat of arms and a short statement of position: diversified investment opportunity across ten provinces and eight priority economic sectors, curated from the ZIDA 2025 Projects deck and presented as a governed, investor-facing registry. Four figures follow — 32 catalogue projects described as the ZIDA seed pipeline, 8 economic sectors, 26 published investor-facing entries and 11 strategic pillars. The catalogue figure is lower than the 38 carried on National Opportunity and Platform Concept because the two counts are labelled differently: this page reports the seed pipeline drawn from the 2025 deck, while those pages report every ZIDA catalogue entry the platform holds. The published figure of 26 is identical on all three. A Back to Gateway link sits above the title.
 
 A country page that leads with sovereign identity and then immediately quantifies itself does more useful work than a promotional overview. It gives a first-time reader the shape of the offer — how wide the sector spread is, how much of the pipeline has cleared review, how many provinces are represented — in four figures that can each be tested elsewhere on the site. For an investor forming a first view of Zimbabwe, that is a faster and more candid orientation than narrative alone provides.
 
@@ -129,7 +129,7 @@ Placing the routing field above the visitor's own name reveals what the page is 
 
 ### Frequently Asked Questions
 
-![Common questions about access tiers, qualification and the platform's governance model.](docs/screenshots/public/faq.png)
+![The opening section of the FAQ, on what the platform is and whose authority it carries.](docs/screenshots/public/faq.png)
 
 The FAQ opens on *About the Platform* with its first two answers already expanded. The first defines the platform as a governed digital investment intelligence system that strengthens investment visibility, project discovery, investor engagement and institutional coordination, transforming ZIDA's static 2025 catalogue into a searchable, filterable registry. The second asks whether this is an official ZIDA or Government of Zimbabwe platform, and answers no: it is a proprietary Afronovation system configured for Zimbabwe, with a link through to the Governance & Legal page for the full disclaimer.
 
@@ -145,7 +145,7 @@ Naming the operator in public is a diligence requirement rather than a courtesy.
 
 ### Legal
 
-![Privacy policy, terms of service and cookie policy.](docs/screenshots/public/legal.png)
+![The ZIDA and Government disclaimer, set above the opening of the terms of service.](docs/screenshots/public/legal.png)
 
 *Platform Policies & Disclaimers* gathers the governing terms in one place. The lead item, given its own highlighted panel, is the ZIDA & Government Disclaimer: the platform is a proprietary Afronovation system, project data derives from the ZIDA 2025 Projects deck for executive review and investor discovery, and all catalogue entries, ministry mappings and capital estimates are pending official validation by designated Zimbabwean authorities. The terms of service begin immediately beneath, opening with acceptance of terms.
 
@@ -155,13 +155,13 @@ Disclosure of this kind is usually written to be found only by those who go look
 
 ![Where every persona begins. Where you land afterwards depends on your account's role.](docs/screenshots/public/sign-in.png)
 
-Sign in is a split screen, with the credential panel on the right and the explanation on the left. Under a secure access gateway label, the heading reads *Sign In to Your Governed Profile*, and the text names who uses this door: returning investors, ministry stakeholders and platform administrators. Three notes beneath cover role-based entitlements across the registered, qualified, government and admin tiers, the governed Deal Room, and institutional consoles for ZIDA review and super-admin taxonomy control. The form asks only for an email address and a password.
+Sign in is a split screen, with the credential panel on the right and the explanation on the left. Under a secure access gateway label, the heading reads *Sign In to Your Governed Profile*, and the text names who uses this door: returning investors, ministry stakeholders and platform administrators. Three notes beneath cover role-based entitlements across the registered, qualified, government and admin tiers, the governed Deal Room, and institutional consoles for ZIDA review and super-admin taxonomy control. The form asks only for an email address and a password, with a Create an account link beneath the Sign In button. A footnote at the foot of the left-hand panel addresses anyone new to the platform, inviting them to create an account and browse the national project registry.
 
 One entrance serves every persona on the platform, from a diaspora investor to a super administrator, and the account's role decides what appears next. For a system with this many tiers that is a meaningful simplification: no separate government portal to locate, no second address to circulate, and no prospect of a minister or an investor arriving at the wrong front door. The left-hand panel also sets expectations before credentials are entered, so a first-time user knows which tier they are joining.
 
 ![Self-registration, which creates a Registered Investor account.](docs/screenshots/public/sign-up.png)
 
-Registration asks four things: full name, email, password and confirmation. The panel alongside explains what the account provides — immediate access to the ZIDA project registry, strategic alignment mapping across pillars, SDGs and sector intelligence, and a route to the Deal Room and capital estimates by way of a Strategic Partnership enquiry submitted afterwards. A footnote confirms the account is created instantly at the registered tier. Two exits close the panel: sign in for those already holding an account, and a direct link to begin a Strategic Partnership enquiry.
+Registration asks four things: full name, email, password and confirmation. The panel alongside explains what the account provides — immediate access to the ZIDA project registry, strategic alignment mapping across pillars, SDGs and sector intelligence, and a route to the Deal Room and capital estimates by way of a Strategic Partnership enquiry submitted afterwards. A footnote confirms the account is created instantly at the Registered tier, and states that financial indicators and project documents are released once ZIDA has verified the applicant's organisation. Two exits close the panel: sign in for those already holding an account, and a direct link to begin a Strategic Partnership enquiry.
 
 This is the conversion step, and it is deliberately inexpensive. Nothing is requested here that a genuine prospect would hesitate over, and because the tier is granted immediately the visitor browses rather than waits on an approval. Verification is deferred to the point where it earns its cost, which is the request for financial detail. The second exit matters as much, since an institution that ought to apply as an organisation is offered that route rather than funnelled through a personal registration.
 

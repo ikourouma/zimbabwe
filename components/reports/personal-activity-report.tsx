@@ -100,13 +100,21 @@ export function PersonalActivityReport() {
   // other non-staff console user before their first dashboard visit.
   const isNdaExempt = isAdmin || isSuperAdmin;
 
+  // ZIDA's own reviewing officers are `government` too, but carry no ministryId — their remit is
+  // national. Telling one of them their report covers "your ministry's portfolio" names an
+  // affiliation they do not have, and the list below it (which returns empty without a ministryId)
+  // then appears to contradict itself.
   const scopeNote = isMinistryScoped
-    ? "Engagements against projects under your ministry's portfolio."
+    ? ministryId
+      ? "Engagements against projects under your ministry's portfolio."
+      : "Engagements against projects across the national pipeline."
     : "Engagements you have personally initiated.";
 
   const myEngagements = useMemo(() => {
     if (isMinistryScoped) {
-      if (!ministryId) return [];
+      // A national reviewer has no ministryId, and returning nothing gave them an activity report
+      // that was permanently empty. Their remit is the whole pipeline, so that is what they get.
+      if (!ministryId) return engagements;
       const ministryProjectIds = new Set(
         projects.filter((p) => p.primaryBeneficiaryMinistryId === ministryId).map((p) => p.id)
       );
