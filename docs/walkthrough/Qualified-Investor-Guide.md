@@ -53,6 +53,10 @@ The console is the same one you used as a registered investor, with five additio
 
 ![The Qualified Investor overview. The engagement funnel replaces the onboarding checklist.](docs/screenshots/qualified/overview.png)
 
+Four figures run across the top of the Deal Room Overview: 38 projects in the pipeline, 26 published, 8 in review, and 2 engagements of your own. Below them the Engagement Funnel plots your cases against the four stages government moves them through — submitted, under compliance review, approved, rejected — with the single bar standing at approved. The lower band carries a Platform Snapshot of 26 published projects, capital of $2.21B and four investors, sector counts beneath it, and your own analytics counters beside an activity feed.
+
+Two different things sit on one screen here, and the combination is deliberate. The national position tells an investment committee how deep the market is — capital under promotion, how many projects have cleared publication, how the sectors are weighted. Your own funnel tells you where your money stands in the queue. Because both are drawn from the records government itself works in, an approved bar means approved at ZIDA, not approved according to a status report someone compiled by hand.
+
 Your navigation contains twelve sections:
 
 | Section | Address | What it is for |
@@ -74,11 +78,19 @@ Your navigation contains twelve sections:
 
 ![The Pipeline at the qualified tier. Financial indicators are now present.](docs/screenshots/qualified/pipeline.png)
 
+At the qualified tier the registry opens as a Kanban board of six columns — 1 draft, 3 submitted for review, 4 under review, 1 changes requested, 2 approved and 26 published, 38 records in all. The cards now carry money on their face: Powertel Fibre Internet (GPON) at US$26.9 million under ICT, Solgas Energy 10MW Solar at US$7.54 million under Energy. Above the board sit search by title, location or project owner, a filter control, a save-search control, and switches to List, Table or Matrix.
+
+The capital figure printed on the card is the whole difference between browsing a catalogue and screening a market. Below this tier those numbers are withheld, so a project is a name and a sector. Here an investor can size an opportunity before opening it and set aside what falls outside mandate in moments. Showing the draft and review columns alongside published matters as much: it tells an investor what is coming, which is what makes a pipeline worth monitoring rather than merely reading once.
+
 The registry itself has not changed — what has changed is what each project discloses. Capital requirements, projected returns and payback periods are now visible, and gated documents are downloadable.
 
 ### My Proposals
 
 ![My Proposals. Projects you originate and their position in the national review workflow.](docs/screenshots/qualified/proposals.png)
+
+My Proposals opens on an empty state for this account: a document icon, the line *No proposals yet*, and the prompt asking whether you have a bankable project idea to submit directly into ZIDA's review pipeline. Two routes lead to the same act — a *Propose a Project* button in the page header and a second beneath the prompt. The subtitle records what the section holds once it is in use: projects you have originated and submitted into the national investment pipeline.
+
+An empty page is still worth showing, because the button on it is the part that matters. Origination normally depends on introductions, with an investor holding a proposition for Zimbabwe having first to find the right official. Here the route is a form, open to every accredited account, feeding the same review workflow that governs ZIDA's own projects. Proposals stay private to the investor and ZIDA throughout review, so a competitor cannot see a thesis before it reaches the registry.
 
 A qualified investor can originate a project rather than only respond to one. Proposals you create are private to you and ZIDA until published — no other investor can see them at any point in review.
 
@@ -86,33 +98,69 @@ A qualified investor can originate a project rather than only respond to one. Pr
 
 ![Engagements. Each is a formal, recorded approach to government on a specific project.](docs/screenshots/qualified/engagements.png)
 
+Two engagements are listed, both raised by Grace Mutindi of Zambezi Growth Partners and both marked *Approved* — one against the Kumusha Power Project, one against the Goromonzi Agro Processing Industrial Park. The table gives the investor and their organisation, the project, the status, a notes column and the date of last update. Status filters run above it with live counts for draft, submitted, under compliance review, approved and rejected, next to a *New Engagement* control and the Kanban, List, Table and Matrix views.
+
+The word *approved* is doing real work in these rows. An engagement is a case government has opened, assessed and cleared, carrying the date it last moved — not correspondence an investor hopes has been read. The counts on the filters leave the position unambiguous: nothing sitting in review, nothing rejected. For an investor, that is a defensible answer to the question a board will ask about how far an approach to Zimbabwe has actually progressed, and for ZIDA it is a queue that cannot quietly lengthen unnoticed.
+
 An engagement is the formal instrument by which you approach government about a project. It is not a message or an expression of interest — it is a tracked case with a status, an owner on the government side, and an audit trail.
 
 ### MOU Registry
 
 ![The MOU Registry. Memoranda become available once an engagement is approved.](docs/screenshots/qualified/mou.png)
 
+Both memoranda arising from the approved engagements are listed, and the stage column is where the detail sits: the Kumusha Power Project memorandum is in *Drafting*, while the Goromonzi Agro Processing Industrial Park memorandum has reached *In Review*. Beside each is the approved engagement status that made it available, and a ticket size of $5M–$25M and $1M–$5M respectively. Stage filters count the entire path from *No MOU Yet* through drafting, in review, both parties approved, finalized, ready for signature and executed, with a CSV export alongside.
+
+Set out this way, a negotiation has a location. Both sides can see which memorandum is being written and which is awaiting the two approvals that release it, and neither can claim a stage it has not reached. Seven named stages make the sequence a matter of record rather than recollection, which is what allows an investor's counsel to advise on where an agreement stands. The export puts the same register in the hands of an investment committee that the Government is working from.
+
 ### Document Vault
 
 ![The Document Vault, now holding your non-disclosure certificate and memorandum snapshots.](docs/screenshots/qualified/vault.png)
+
+Everything the platform holds on your behalf sits in four cards here. The first is the non-disclosure certificate, accepted on 5 September 2026 and timed to the second against agreement version 1.0. The second covers company and accreditation material, showing business registration not yet uploaded and offering upload controls for a commitment letter and a guarantee letter. The third lists memorandum snapshots taken at *in_review* and at *drafting*. The fourth would show recent document downloads, of which none are yet recorded.
+
+This is the evidence file, and the platform assembles it rather than the investor. The version number beside the confidentiality acceptance is the point: should a question ever arise about what was disclosed and on what terms, the answer is a dated acceptance of a specific agreement text rather than a recollection. Memorandum snapshots serve the same purpose for negotiation, preserving content as it stood at each stage, so a later amendment cannot overwrite what either party actually agreed at the time.
 
 ### Team
 
 ![Team. Colleagues you invite act on your organisation's behalf.](docs/screenshots/qualified/teams.png)
 
+Three counters head the Team page — two active members, none pending ZIDA review, two invited in total. Beneath them an invitation form takes a colleague's full name, email and phone, with optional office address and a reason applying to the batch; *Add another* extends the batch and *Send invite* submits it. The roster below lists Aisha Bello and Peter Lindqvist, both active, each noted as not yet assigned to any proposal or engagement, with an *Assign* control on the row.
+
+Delegation is how an institution actually works, and this page treats it as a governed act rather than an administrative one. The page states plainly that ZIDA reviews every invitation before it goes live, described on screen as a four-eyes control, so an organisation cannot enlarge its own commercially privileged access. Assignment then narrows exposure a second time: a colleague joins the organisation, but sees a particular proposal or engagement only once someone deliberately places them on it.
+
 ### Communication Hub
 
 ![The Communication Hub. Threads are attached to engagements and projects, not free-floating.](docs/screenshots/qualified/communication.png)
+
+One thread exists on this account: a *General Concierge* channel, described as your general channel with the ZIDA deal team and carrying a stated expectation of a response within one business day. The filters beside it count the categories separately — general, active deals and engagements — so correspondence sorts by what it concerns. The composer is addressed to the ZIDA deal team, with a subject selector, a message field, and Send and Attach controls. No messages have yet been exchanged.
+
+A published response time changes the character of an enquiry. Investors assessing a jurisdiction routinely describe the silence after first contact as the moment interest lapses, and the commitment printed here is visible before a message is even sent. Sorting threads by deal and by engagement then keeps a conversation attached to the transaction it belongs to, so a change of officer on the government side does not carry the history of the discussion away with it.
 
 ### Saved Projects, Activity Report, Profile and Account
 
 ![Saved Projects.](docs/screenshots/qualified/saved.png)
 
+Saved Projects is a watchlist, and on this account it is empty: a bookmark icon, the line *No saved projects yet*, and an instruction that a project is saved from its detail page or its card. A *Browse Pipeline* button returns you to the registry to begin building one. The subtitle describes the section as a personal watchlist of investment opportunities, held separately from the proposals you originate and the engagements you raise.
+
+Shortlisting is the quiet middle of an investment decision — the interval between noticing an opportunity and committing to pursue it. Keeping that list on the platform rather than in an analyst's private notes means the projects an investor is weighing stay attached to their live records, so a change in readiness or in supporting documentation reaches them where they are already looking. The saved-projects counter on the Overview reads from this same list.
+
 ![My Activity Report.](docs/screenshots/qualified/reports.png)
+
+My Activity Report renders as a document rather than a dashboard, headed *Republic of Zimbabwe · Investment Platform* with a reference number, the account that generated it, a snapshot timestamp, and *Live platform data* named as the source. The account summary shows organisation, role, and the confidentiality framework marked accepted. Engagement figures follow: two in total, $6M of tracked indicative capital, none pending review, two approved. The table beneath names each project, its ticket range, its start date and its next step — both reading *proceed to MOU drafting*.
+
+An investor's own file, produced on demand and printable to PDF from the control in the header, is more useful than it first appears. Investment committees, lenders and auditors ask for a record of what an institution has actually done in a market, and this one states a reference, a timestamp and its source, so it can be dated, cited and re-run later against the same account. The next-step column is what carries the document forward, naming what the platform expects to happen rather than only what has.
 
 ![My Profile.](docs/screenshots/qualified/profile.png)
 
+The profile begins with the account itself — name, email and a *Qualified Investor* badge — and states that this is the same view ZIDA staff see on your Institutional Compliance Dossier, with a link across to credentials and security. The company section then holds the entity of record: Zambezi Growth Partners, its corporate telephone and website, the authorised representative and their title, a business registration ID, and a headquarters address. A compliance and documents section begins below it.
+
+The note above those fields explains why this is more than an account form: these details prepopulate read-only fields whenever the organisation proposes a project or files an application. A single verified record of who the counterparty is therefore travels into every submission, which is what allows government to assess a proposition without re-establishing the identity behind it each time. Telling the investor that ZIDA reads the same dossier removes any question about what has been disclosed.
+
 ![Account settings.](docs/screenshots/qualified/settings.png)
+
+Account & Security is organised into four tabs — profile, security, sessions and notifications — with the profile tab open. Display name is editable, email is marked read-only, and the entity, Zambezi Growth Partners, is marked as managed by ZIDA. Identity is recorded as a local password. Below the form, an *Access & Entitlements* card sets out the tier in plain terms: full deal room access covering the document data room, the engagement pipeline, the Communication Hub and the MOU workflow.
+
+Two labels on this page carry the whole governance model. What an investor may change sits in an editable field; the entity itself is held by ZIDA, so accreditation cannot be amended by the party being accredited. The entitlements card then removes ambiguity about what the tier actually confers, written where the account holder reads it rather than buried in a permissions matrix. Separate tabs for sessions and notifications give that holder the means to see and govern their own access.
 
 ## 4. What You Can Do
 

@@ -36,19 +36,40 @@ async function capture(page: import("@playwright/test").Page, dir: string, entry
 test.describe("@capture public", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
+  /**
+   * Marks the consent banner and marketing popup as already seen, before any page script runs.
+   *
+   * Dismissing them by clicking, which is what this did previously, is a race the capture loses
+   * often enough to matter: the consent banner is on a 1.5s timer and the popup waits on a fetch,
+   * so both can arrive after the clicks have already given up. Several images in the Public
+   * Visitor guide shipped with the modal covering the page it was meant to show. Pre-seeding the
+   * keys the components themselves check means there is nothing to race — they never mount.
+   */
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "zimbabwe-cookie-consent",
+        JSON.stringify({ essential: true, analytics: false })
+      );
+      sessionStorage.setItem("zim:marketing-popup-shown", "1");
+    });
+  });
+
   for (const entry of PUBLIC_PAGES) {
     test(`public — ${entry.title}`, async ({ page }) => {
       await page.goto(entry.path);
 
-      // Signed out, so the consent banner and demo popup have nothing to remember them by and
-      // reappear on every page. They must go before the shot, not after.
-      for (const overlay of [
-        page.getByRole("dialog").getByRole("button", { name: "Dismiss" }).first(),
-        page.getByRole("button", { name: "Accept" }),
-        page.getByRole("button", { name: "Dismiss announcement" }),
-      ]) {
-        await overlay.click({ timeout: 2500 }).catch(() => {});
-      }
+      // The announcement bar remembers dismissal per announcement id, which is not known here, so
+      // it stays a click. It is a slim bar rather than an overlay, so losing this race costs
+      // layout shift rather than a covered page.
+      await page
+        .getByRole("button", { name: "Dismiss announcement" })
+        .click({ timeout: 2500 })
+        .catch(() => {});
+
+      // Nothing should be left, but assert it rather than trust it — this is the check that would
+      // have caught the covered screenshots at capture time instead of at document review.
+      await expect(page.getByRole("dialog")).toHaveCount(0);
 
       await page.waitForTimeout(1200);
       await page.screenshot({ path: `${OUTPUT_ROOT}/public/${entry.slug}.png` });

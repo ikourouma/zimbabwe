@@ -9,8 +9,8 @@
 | --- | --- |
 | What is this? | A running record of every defect found while verifying the pilot platform, with evidence, severity, and remediation status. |
 | How were these found? | Browser automation against production. None was found by the pre-existing HTTP smoke suite, which by design cannot observe client-side behaviour. |
-| What is the most serious open item? | DEF-002. The content delivery network serves a previous build's JavaScript after a deployment, so a corrected defect can remain live for users and stakeholders indefinitely. |
-| What was the most serious closed item? | DEF-001. Every role signed in successfully and then came to rest on the public marketing homepage instead of their console. |
+| What is the most serious open item? | DEF-009. A cached pre-fix page shell can take the sign-in page down for real browsers until the content delivery network is purged. |
+| What was the most instructive item? | DEF-010. Three inquiry consoles reported an empty queue while the read behind them was failing, because the interface could not distinguish "nothing is waiting" from "I could not find out". |
 | Why does this matter for the walkthrough? | Stakeholders following a written guide report what they see. A defect not caught here becomes an enhancement request against behaviour nobody intended. |
 
 ## Contents
@@ -47,6 +47,8 @@
 | DEF-007 | Home page requests a content block that does not exist | Low | Open |
 | DEF-008 | Local development server cannot complete sign-in | Low | Open |
 | DEF-009 | Sign-in page down for real browsers on a pre-fix cached shell | Critical | Awaiting CDN purge |
+| DEF-010 | Inquiry queues silently reported empty while the read was failing | High | Closed |
+| DEF-011 | Demo popup covered the pages it was meant to illustrate | Medium | Closed |
 
 ## 3. Closed Defects
 
@@ -91,6 +93,32 @@ Statically prerendered pages are served with a one-year shared-cache lifetime, a
 **Remediation.** Page responses now carry a sixty-second shared-cache lifetime with a five-minute stale-while-revalidate window, replacing the one-year default. The edge still absorbs traffic bursts and still answers instantly while refreshing behind the request, but a deployment reaches users within about a minute instead of never. Console routes were excluded because they already carry a no-store directive, and the framework appends rather than replaces headers.
 
 Verified in production: the sign-in page now returns the capped directive. `E2E_BYPASS_CDN=1` is retained for diagnosis, since it is what distinguishes "the fix is wrong" from "the edge has not caught up yet".
+
+### DEF-010 — Inquiry queues silently reported empty while the read was failing
+
+**Severity:** High. **Status:** Closed in `92642d7`, verified in production.
+
+Every inquiry console — ZIDA Admin, Platform Manager and Ministry Desk — displayed *"No Qualified Investor applications yet."* while three applications were in fact pending. The queue was not empty; it was unreadable, and the interface could not tell the difference.
+
+**Root cause.** `GET /api/inquiries` returned 500. Interpolating a JavaScript array into a database query template expands it into a parameter tuple, so a clause intended as `= ANY(:ids)` was issued as the invalid `= ANY(($1, $2))` and the statement threw. The affected query enriches inquiries with a matched user account and only runs when at least one inquiry has no linked account, which is why it had never fired before: seeding pending applications from unregistered applicants was the first time that condition was met. The same construction was found and corrected in the ministry-scoped audit feed, where it would have failed for any ministry holding a project.
+
+**Why it presented as an empty queue.** The client treated any non-successful response as an empty list. A 500 and a genuinely quiet queue produced identical screens, and the empty state was the more plausible of the two, so nothing prompted investigation.
+
+**How it was found.** The screenshot capture for the approval-decision dialog skipped itself, reporting green, because it found no application to open. The capture run passed. Only opening the resulting image — which showed *"Qualified Investor Applications (0)"* — revealed that the page had been empty rather than the capture faulty.
+
+**Remediation.** Both queries now build an explicit parameter list. Separately, the client distinguishes an authorisation refusal, where an empty list is the correct answer for a non-staff visitor, from a genuine failure, which now renders an error panel with a retry control instead of an empty state.
+
+**The lesson, and it generalises.** A read path that cannot fail visibly will eventually fail invisibly. Any queue an officer relies on to know that work is waiting must be able to say that it does not know, because a queue that reports empty when it is broken is worse than one that reports an error.
+
+### DEF-011 — Demo popup covered the pages it was meant to illustrate
+
+**Severity:** Medium. **Status:** Closed.
+
+Several screenshots in the Public Visitor guide were captured with the seeded *UAT Demo popup* modal open over the page, obscuring the content each image existed to show.
+
+**Two causes, both fixed.** The capture pass dismissed overlays by clicking them immediately after navigation, which is a race it does not reliably win: the consent banner appears on a delay and the marketing popup waits on a network response, so both can arrive after the clicks have given up. The capture now marks both as already seen before any page script runs, so they never mount, and asserts that no modal is open before photographing — the check that would have caught this at capture time rather than at document review.
+
+Separately, the seeded demonstration popup and announcement were switched from active to draft. Both remain on the platform and can be restored from Platform Settings, or with `npm run overlays:on`.
 
 ## 4. Open Defects
 
@@ -155,7 +183,7 @@ Sign-in against the local development server does not complete; the form submits
 
 | Observation | Note |
 | --- | --- |
-| Demo popup, announcement bar and consent banner | All three overlay the interface on first visit. Expected for seeded demonstration content, but they must be dismissed before screenshot capture or they appear in every guide. |
+| Demo popup, announcement bar and consent banner | Raised to DEF-011 after the popup was found in captured screenshots rather than merely predicted to be a risk. |
 | Sign-in page requests restricted endpoints | The signed-out sign-in page requests engagement and inquiry data, receiving unauthorised responses, then repeats them as a registered user and receives forbidden responses. Correctly refused in both cases, so this is wasted work rather than an exposure. |
 
 ## 6. Verification Coverage

@@ -61,3 +61,6 @@ e2e-report/
 # both are regenerated from source by the capture pass and the docs build.
 docs/screenshots/
 docs/build/
+
+# Which overlays npm run overlays:off suspended, so overlays:on restores only those
+scripts/.overlays-suspended.json

@@ -53,6 +53,10 @@ Before documents are released to you, the platform asks you to accept a confiden
 
 ![The Ministry Desk overview. Pipeline health for your ministry only.](docs/screenshots/ministry/overview.png)
 
+The desk opens under the ministry's own name — Ministry of Information Communication Technology, Postal and Courier Services — with a subtitle stating plainly that the national pipeline has been scoped to that designation. Four figures follow: ten projects in total, two under review, none currently sitting at approved, and eight published. Beneath them, four cards route into Ministry Pipeline, MOU Registry, Engagements and Users & Roles, each carrying a line that says what the section is for.
+
+The column on the right is the part a permanent secretary would want. Recent Activity names the actor and the exact transition — draft to submitted for review, under review to approved, approved back to draft, an amendment request declined — and several of those entries are ZIDA acts on this ministry's projects. So a ministry sees what central government has done to its portfolio, not only what its own officers did. That is the difference between being informed after the fact and holding the record.
+
 Your navigation contains twelve sections:
 
 | Section | Address | What it is for |
@@ -74,35 +78,79 @@ Your navigation contains twelve sections:
 
 ![The Ministry Pipeline. Other ministries' projects are not present — not hidden behind a filter, but absent.](docs/screenshots/ministry/projects.png)
 
+A *My Ministry Only* chip is lit and reads ten, against an *All* count of thirty-nine. The instruction above the table sets out the arrangement: your ministry's projects show by default, the chip can be switched off to browse the national pipeline for context, and either way you can only create, edit and advance projects where your ministry is the primary beneficiary. Status chips break the set down from draft to archived, and the table carries title, sector, status, capital and last update.
+
+What the capital column shows is why this view is worth an investor's time: not a single headline number but the actual shape of each requirement, so Sunway City Special Economic Zone records US$195 million seeking US$50 million equity and US$145 million debt, and Solgas Energy sets out three phases against USD 95 million. An investor proposal sits in the same table as ministry-originated projects, tagged as such. The ministry reads its own ten in the national thirty-nine and can act on neither more nor fewer than the ones it is accountable for.
+
 ### Review Queue
 
 ![The Review Queue: submissions awaiting your validation, plus pending amendment requests.](docs/screenshots/ministry/review.png)
+
+Two tabs divide the work — *New Submissions*, holding two, and *Pending Requests* — and the line beneath the heading states the escalation rule before you touch anything: approve sends the request on to ZIDA Admin, decline closes it. The two cards below are the same workflow at different points. One is only submitted, so the single control offered is *Start review*. The other, Powertel Fibre Internet (GPON), is under review and carries three: request changes, approve, reject. Each card exposes full project detail and an action history.
+
+Look at the reviewer notes field on the second card, labelled as required in order to request changes or reject. An adverse decision cannot be issued without a reason entered against it, which means the originating officer receives grounds rather than a verdict, and the file retains why. Note too the amber banner declaring the first record a seeded pilot entry pending official validation. A platform that marks its own demonstration data is a platform whose production data can be taken at face value.
 
 ### Engagements and MOU Registry
 
 ![Engagements on your ministry's projects. Read-only.](docs/screenshots/ministry/engagements.png)
 
+Three investor engagements are tracked here, and the subtitle is explicit that creation and status changes stay with the investor and the ZIDA deal team. The stage chips run from draft through submitted and under compliance review to approved or rejected, with two currently submitted and one approved. The table gives investor, project, status, ticket size and last update: Pilot Qualified Investor twice against TelOne Fibre to the Home, and Grace Mutindi of Zambezi Growth Partners approved on the Kumusha Power Project at US$5–25 million.
+
+Two separate approaches to the same fibre project is precisely the demand signal a ministry needs and rarely receives — evidence that a particular asset is drawing repeat interest, visible at the desk that owns it, on the day it happens rather than in a quarterly return. Ticket size travels with each record, so the ministry can size the interest as well as count it. The read-only posture is written on the page rather than implied by an absent button, which tells the officer where the decision sits.
+
 ![Memoranda involving your ministry's projects. Read-only, with comments.](docs/screenshots/ministry/mou.png)
+
+The registry groups memoranda tied to your ministry's projects by their drafting, approval and signature stage, and the chips spell that sequence out in full: no memorandum yet, drafting, in review, both parties approved, finalised, ready for signature, executed. Of the three engagements listed, two are recorded as having no memorandum yet and one — Kumusha Power Project with Zambezi Growth Partners — is in drafting. Alongside investor and project, each row carries the engagement status, the memorandum stage and the ticket size, and the whole set exports to CSV.
+
+Naming the seven stages on the face of the page turns a document lifecycle into something a ministry can supervise: the officer can tell at a glance that nothing is stalled awaiting signature and that only one instrument is in preparation. Recording *No MOU Yet* as a state, rather than leaving the field blank, distinguishes an engagement not yet at that point from data that is simply missing. The CSV export means the ministry can brief from its own extract.
 
 ### Inquiries
 
 ![Enquiries relating to your ministry.](docs/screenshots/ministry/inquiries.png)
 
+This queue is empty in the demonstration account, and the panel says so — *No inquiries match this filter* — with every counter at nil across pending, changes requested, approved and declined. The heading text carries the more important information: the ministry has read-only visibility of strategic enquiries, and the approve, request-information and decline decisions stay with the ZIDA deal team because approving an enquiry automatically upgrades the applicant to Qualified Investor. A *My Ministry Only* chip, a search field and a CSV export sit above the board.
+
+The page explains the authority it withholds, and gives the reason in one sentence. That matters more than it appears to: a boundary an officer understands is one they will work within, whereas a button that has simply been removed invites a telephone call and a workaround. Accreditation determines what an investor may see across the entire platform, so it cannot be granted ministry by ministry. Zimbabwe issues that status once, centrally, on a single standard.
+
 ### Users & Roles and Team
 
 ![Users & Roles. Government staff accounts belonging to your ministry.](docs/screenshots/ministry/users.png)
 
+The subtitle narrows this directory precisely: staff accounts you have created for your ministry desk, under the Ministry of Information Communication Technology, Postal and Courier Services. One account is listed — Blessing Chirwa, account reference ZIDA-000111, on a ministry address, role *Government*, status active, created 5 September 2026. Filters run across all, active, suspended, pending and deactivated, search covers name, email and account identifier, and a *Create user* control sits at the top right.
+
+Every account carries an issued reference and a creation date, so a question about who was given access to a ministry's portfolio, and when, has a documented answer rather than a recollection. The role column reading *Government* confirms the distinction drawn later in this guide: accounts made here are reviewing officers attached to this ministry, not peers at the desk's own level. A ministry can therefore staff itself at the pace its work requires, without a central request queue standing between an officer and their team.
+
 ![Team. Ministry roster and invitations.](docs/screenshots/ministry/teams.png)
+
+Three counters head the page — active, pending ZIDA review, and total invited — each at zero here, and the roster below reports that no team members have been invited yet. The invitation panel takes a full name, an email address, an optional telephone number, and optional office address and reason fields that apply to the whole batch; *Add another* extends the list before a single *Send invite*. The instruction above states the governing rule: every invitation is reviewed by ZIDA before it goes live, described on the page as a four-eyes control.
+
+That control is the substance of this page. A ministry may nominate colleagues at its own level, but it cannot enlarge its own authority, because each name passes a ZIDA validation step independently even when submitted in a batch. Giving the ministry its own *Pending ZIDA review* counter makes the gate visible from the requesting side rather than leaving invitations to disappear into a central process. The reason field captures the justification at the moment of the request, when it is still accurate.
 
 ### Communication Hub, Reports, Profile and Account
 
 ![The Communication Hub.](docs/screenshots/ministry/communication.png)
 
+Five threads sit in the left-hand list — general questions on individual projects alongside an engagement thread on TelOne Fibre to the Home — filtered by all, general, active deals and engagements. The open thread shows an amendment request from a Qualified Investor proposing a change of location, rendered as a card marked declined, naming Harare CBD as the proposed value and Pilot ZIDA Admin as the officer who refused it. A note inside the card reads that the ministry is copied for transparency and that ZIDA Admin decides the final outcome. Composer selectors set visibility and audience.
+
+The thread is doing two things at once: carrying the correspondence and carrying the decision record, with the deciding officer named. A ministry copied on a request it does not determine still holds the reasoning, which is what allows it to answer an investor's follow-up question without opening a second file. The audience selector requires a deliberate choice about who can read a message before it is sent, and the response-time commitment shown to the investor is stated rather than assumed. Threads export to CSV and PDF.
+
 ![Ministry-scoped reporting.](docs/screenshots/ministry/reports.png)
+
+Reports opens on *My Activity Report* — a personal summary of your engagements and account activity — and it is presented as a printable document rather than a dashboard. The header carries the Republic of Zimbabwe investment platform mark, a reference number, the generating officer named as Tapiwa Zvobgo (Ministry Admin), a snapshot timestamp given to the second, and live platform data declared as the source. A *Print / Save as PDF* control sits above it. The body was still loading when this capture was taken.
+
+The framing is what to notice. Every report leaves this page as a document of record: referenced, attributed to a named officer, timed to the second, and footed with a statement that it is confidential, prepared for internal and government stakeholder use, a live snapshot at the moment of generation rather than a bounded reporting period, and no substitute for audited financial statements. A ministry can put that in front of a minister without adding caveats by hand, because the platform has already stated the limits of its own figures.
 
 ![My Profile.](docs/screenshots/ministry/profile.png)
 
+Your profile states that it is the same view ZIDA staff see on your Institutional Compliance Dossier, with a link across to credentials and security. The identity card gives the officer's name, the ministry email address the account signs in with, and a *Ministry Admin* badge. Below it, a *Designated Ministry* panel names the Ministry of Information Communication Technology, Postal and Courier Services, and explains that the console shows only the pipeline and team tied to that ministry, with a Platform or ZIDA Admin required to change it.
+
+One field on this page decides everything else in this guide, and it is displayed as a fact about the account rather than an editable preference. Because the designated ministry sets the whole scope of the console, keeping it beyond the officer's own reach is what prevents a ministry from widening its remit by amending its own record. The panel also names who to approach instead, so the constraint comes with a route rather than a dead end.
+
 ![Account settings.](docs/screenshots/ministry/account.png)
+
+Account & Security divides into four tabs — profile, security, sessions and notifications — with the profile tab open. The display name is editable. The three rows beneath it are not, and each says why: the email address is tagged read-only, the entity is the Ministry of Information Communication Technology, Postal and Courier Services and tagged as managed by ZIDA, and the identity method is recorded as a local password. An *Access & Entitlements* card at the foot describes the Ministry Admin role as oversight of your designated ministry's project pipeline and ministry staff, scoped to your ministry only.
+
+Those two small tags carry the governance. An email address that cannot be edited means the identity written into the audit trail cannot later be rewritten by the officer it records, and an entity managed by ZIDA means a ministry attachment cannot be self-amended. Printing the entitlement in the same terms the platform enforces means scope is documented rather than assumed, while the sessions and notifications tabs leave day-to-day account hygiene with the officer, where it belongs.
 
 ## 4. How Ministry Scoping Works
 

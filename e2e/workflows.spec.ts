@@ -86,14 +86,21 @@ test.describe("@capture workflows — ZIDA Admin", () => {
       test.skip(true, "No application in a decidable state; the decision dialog cannot be reached.");
     }
 
+    // Identify the decision modal by its heading rather than by counting open dialogs. Both the
+    // detail drawer and the modal carry role="dialog", but the drawer is marked aria-hidden while
+    // the modal is open, so getByRole resolves to one element either way and a count never changes.
+    const decision = page
+      .getByRole("dialog")
+      .filter({ has: page.getByRole("heading", { name: "Approve as Qualified Investor" }) });
+
     await approve.click();
-    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(decision).toBeVisible();
     await page.waitForTimeout(800);
     await shoot(page, "application-approval-dialog");
 
     // Escape, not Cancel. Cancel and Approve are adjacent in this dialog's footer.
     await page.keyboard.press("Escape");
-    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(decision).toHaveCount(0);
   });
 });
 

@@ -56,6 +56,10 @@ Before documents are released to you, the platform asks you to accept a confiden
 
 ![The Government Reviewer console overview.](docs/screenshots/government/overview.png)
 
+The console opens on Deal Room Overview, and the left rail is badged Government Reviewer Console rather than as an investor workspace. Four figures carry the national position: forty projects in pipeline, twenty-six published, nine in review and ten engagements. Below them the Engagement Funnel plots investor approaches by stage — submitted, under compliance review, approved, rejected. The Platform Snapshot records twenty-six published projects, US$2.21 billion of capital and four investors, with published projects broken out by sector.
+
+Nine projects in review is the reviewer's own workload, and it sits beside the twenty-six already published, so the ratio of what is being assessed to what has reached the registry is legible immediately. The sector breakdown answers the question a minister asks first: where the pipeline is concentrated. My Analytics is kept separate and personal — saved projects, documents previewed, messages sent — so an officer's footprint is measured on its own terms rather than folded into the national aggregate.
+
 Your navigation contains eleven sections:
 
 | Section | Address | What it is for |
@@ -76,6 +80,10 @@ Your navigation contains eleven sections:
 
 ![The Pipeline. Unlike an investor's view, this shows drafts, submissions and archived records as well as published projects.](docs/screenshots/government/pipeline.png)
 
+Here the national portfolio is laid out as a board, one column per stage: draft, submitted for review, under review, changes requested, approved and published. Counts appear on each column and again as filter chips above them — thirty-two records in all, twenty-six of them published, with a single item each in draft, under review and changes requested. Cards name sector and indicative capital, from Powertel Fibre Internet (GPON) at US$26.9 million to Solgas Energy's 10MW solar project. The same records can be read as a list, a table or a matrix.
+
+Congestion cannot hide on a view like this. An empty submitted-for-review column and two projects sitting at approved tell a reviewer, and anyone looking over their shoulder, exactly where the pipeline has stalled and where it has not. The approved column is the more consequential of the two: those projects have cleared substantive assessment and are waiting on ZIDA to publish them. That gap between approved and published is not a delay in the workflow — it is the workflow, made visible.
+
 This is your working surface. Two things distinguish it from the investor view. First, **status**: you see draft, submitted, under review, changes requested, approved, published and archived records, not only what is live. Second, **authority**: you can move projects between statuses directly from this view.
 
 There are optional filters for *my ministry only* and *assigned to me*. Both are **off by default** — the national view is the default view, which is the correct default for a national reviewer but is worth confirming against how your team actually works.
@@ -84,27 +92,63 @@ There are optional filters for *my ministry only* and *assigned to me*. Both are
 
 ![Engagements. Every investor approach nationally, with the controls to progress them.](docs/screenshots/government/engagements.png)
 
+Ten investor engagements are listed nationally, each row naming the investor, the organisation behind them, the project approached and the current status. Nomsa Dube of Kestrel Capital Partners stands at approved against the Masuwe International Medical Center Project, with a term sheet under legal review and a site visit completed; James Okafor of Sahara Frontier Infrastructure Fund is under compliance review on Goromonzi Agro Processing, awaiting an updated feasibility study. The status cell on each row is a control, and the chips above count three submitted, two under compliance review and four approved.
+
+What this establishes is that an approach to the Zimbabwean state is a recorded case rather than a conversation. Every engagement carries a named counterparty, a specific project, a stage and a dated note explaining why it stands where it does. A reviewer can therefore answer, without asking anyone, which investors are waiting on government and which are waiting on their own submissions — and so can an auditor reading the same rows a year later.
+
 ### MOU Registry
 
 ![The MOU Registry. Your role here is approval, not drafting.](docs/screenshots/government/mou.png)
+
+Ten memoranda are grouped by stage, and the stages are kept deliberately distinct: no MOU yet, drafting, in review, both parties approved, finalized, ready for signature and executed. Six records sit at no MOU yet, one is drafting, one in review, one ready for signature and one executed. Each row sets the engagement's status against the memorandum's stage, alongside ticket sizes where the investor has stated them — USD 10–15M, $5M–$25M, $1M–$5M. The register exports to CSV.
+
+Putting engagement status beside memorandum stage in the same row is what makes the dependency checkable rather than merely stated: nothing reaches drafting while its engagement is still submitted. Separating both-parties-approved from finalized and from executed matters as much again, because it means agreement, settlement of text and signature are three events with three records. A reviewer supplies one of those approvals, and the register shows the remainder of the chain proceeding without them.
 
 ### Reports
 
 ![Reports, including the National Executive Report available to government roles.](docs/screenshots/government/reports.png)
 
+Two tabs sit under Reports — My Activity Summary, open here, and National Executive Briefing. The activity report renders as a formal document rather than a dashboard: headed Republic of Zimbabwe · Investment Platform, carrying its own reference number, generated by Tafadzwa Mutasa (Government), with a snapshot timestamp to the second and its source recorded as live platform data. The account summary states name, email, organisation and role, marks the Confidentiality Framework accepted, and totals engagements, pending review and approved. A print or save-as-PDF control sits above it.
+
+A report that names its author, its moment and its source can be circulated outside the platform without losing its standing, which is the difference between an export and a briefing. Nothing here was transcribed into a slide deck, so there is no gap between what the platform holds and what leadership reads. The confidentiality attestation appearing on the same page as the figures is a small detail with a specific effect: the terms under which an officer holds this information travel with the information.
+
 ### Communication Hub, Vault, Saved, Proposals, Profile and Account
 
 ![The Communication Hub.](docs/screenshots/government/communication.png)
 
+One inbox holds ten threads, filtered as general enquiries, active deals and engagements. Threads on the left are titled by project and show message counts and the last contributor. The open thread concerns Goromonzi Agro Processing Industrial Park (Special Economic Zone), with the project's own strip above it — published, US$36.9 million total cost, Mashonaland East. Within the thread, a project amendment request is recorded as a card: the requesting ministry, the proposed change to location, its routing for first review, and its decline by that ministry's administrator.
+
+Correspondence and governance action occupy the same thread here, so the reasoning behind a decision is stored next to the decision rather than in somebody's mailbox. The composer's visible-to-investor setting keeps internal deliberation and investor-facing reply in one record without confusing the two. Threads export to CSV or PDF, and the stated response expectation of one business day sits on the page, which means an investor's sense of how the state communicates rests on something measurable.
+
 ![The Document Vault.](docs/screenshots/government/vault.png)
+
+Four cards make up the vault. The first records the non-disclosure certificate as accepted on 5 September 2026 at 10:36:22 PM, against agreement version 1.0. The second, Company & accreditation, shows business registration not uploaded and offers slots for a commitment letter and a guarantee letter. The remaining two, MOU snapshots and recent document downloads, are empty on this account, reading no MOUs yet and no downloads recorded yet.
+
+Recording the confidentiality undertaking with a version number as well as a timestamp answers a question that otherwise depends on memory: not merely whether an officer accepted terms, but which terms. The download log beside it does the same for documents, so the question of who saw a sponsor's financial model has an answer held on the officer's own record. The accreditation slots belong to the investor side of the platform, and on a government account they are expected to remain empty.
 
 ![Saved Projects.](docs/screenshots/government/saved.png)
 
+Saved Projects is a personal watchlist, described on the page as somewhere to track opportunities saved from a project's detail page or card. On this account it is empty, showing a single prompt to browse the pipeline and save projects to build the list, with a Browse Pipeline button beneath it.
+
+The distinction worth noting is that saving carries no authority. A reviewer following a project has not been assigned it, has not claimed it and has altered nothing about its status, which is why the pipeline keeps a separate assigned-to-me filter. Across a national portfolio of forty records, an officer needs a way to keep sight of a handful of files without that interest being read as ownership of them. This page is that, and nothing beyond it.
+
 ![Proposals visible to you.](docs/screenshots/government/proposals.png)
+
+My Proposals is described as projects you have originated and submitted into ZIDA's national investment pipeline, and it is empty on this account. What is present, once in the corner of the page and again at its centre, is a Propose a Project control, together with an invitation to submit a bankable project idea directly into ZIDA's review pipeline.
+
+This one is worth pausing on, because section 5 records project creation as sitting with ministries, ZIDA and qualified investors rather than with a reviewer. The control appears here regardless, and an officer who originated a project through it would then be in a position to review their own submission — the separation this role is built around. Whether the page should be absent for this persona, or present in a read-only form, is the kind of question section 8 exists to capture.
 
 ![My Profile.](docs/screenshots/government/profile.png)
 
+My Profile holds the institutional record rather than personal preferences, and the page says so: this is the same view ZIDA staff see on your Institutional Compliance Dossier. Tafadzwa Mutasa is badged Government User. Beneath sits Company & Representative, carrying the entity of record — Zimbabwe Investment and Development Agency, its corporate phone and website, business registration ID ZIDA-ACT-2019-10, and an address at ZB Life Towers, 77 Jason Moyo Avenue, Harare — with the authorised representative titled Investment Promotion Officer. A compliance and documents section follows.
+
+Holding one identity of record, seen identically by the officer and by ZIDA, removes the usual source of dispute about who filed what on whose behalf: the fields that prepopulate a submission are the fields both parties can read. One point to check against section 5, which notes that amendment and association requests require a ministry assignment — the entity here is the agency itself, and no ministry assignment appears on the page. If national reviewers are expected to file those requests, that needs confirming.
+
 ![Account settings.](docs/screenshots/government/settings.png)
+
+Account & Security divides into four tabs — Profile, Security, Sessions and Notifications — with Profile open. Display name is editable. Email is marked read-only, and the entity, Zimbabwe Investment and Development Agency, is marked managed by ZIDA. Identity is recorded as a local password. Below the card, Access & Entitlements sets out the account's remit in plain language: government portfolio oversight, sovereign engagement tooling and inter-ministerial coordination.
+
+That two of these fields cannot be edited by the person they describe is the point of the page. An officer cannot quietly change the address the audit trail records against every project they approve, nor reassign themselves to a different institution, because the entity is held by ZIDA rather than by the user. Section 2 asks whether that address should be required to be an official government one; because the field is already administered centrally, answering that question is a policy decision rather than a rebuild.
 
 ## 4. What You Can Do
 

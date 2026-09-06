@@ -50,6 +50,10 @@ ZIDA staff are not subject to the non-disclosure gate that applies to investor, 
 
 ![The ZIDA Admin overview: project status distribution, pending enquiries and the governance activity feed.](docs/screenshots/admin/overview.png)
 
+This is the agency's command position, and it is designed to be read in about ten seconds. Five figures across the top give you the state of the national portfolio at a glance — how many projects exist in total, how many are live on the public registry, how many are sitting in review, how many are still unsubmitted drafts, and how many enquiries are awaiting triage. Each carries a status word rather than just a number, so *Needs action* and *Awaiting triage* tell you where your attention is owed before you have interpreted anything.
+
+Underneath, the distribution chart shows the whole pipeline by stage at once, which is the view that reveals whether the portfolio is healthy or congested: a tall published bar with a thin review column means the agency is keeping pace, and the reverse means it is not. To the right, the activity feed names every officer and every act — who approved a memorandum, who upgraded an investor to qualified, who changed a role — in plain language and in sequence. Nothing here was compiled for a report. It is the platform's own record of institutional work as it happens, which is precisely why it can be trusted as a management instrument.
+
 Your navigation contains ten sections:
 
 | Section | Address | What it is for |
@@ -69,9 +73,17 @@ Your navigation contains ten sections:
 
 ![Projects. The full registry, unscoped by ministry.](docs/screenshots/admin/projects.png)
 
+Projects opens on the Master Sovereign Project Registry, and the filter row is itself a census of the national pipeline: 40 projects, 26 published, four submitted, four in review, two approved, two still in draft, one archived. The table beneath carries sector, status, declared capital and the date each record was last changed — Goromonzi Agro Processing Industrial Park at US$36.9 million, TelOne Fibre to the Home at US$50 million — and the same records can be read as a Kanban board, a list or a matrix.
+
+Nothing on this page is scoped to a ministry, which is what makes it ZIDA's view rather than a departmental one. The counts are not a report anyone compiled; they are the records themselves, filtered, so the number published cannot drift from the number actually on the registry. For an investor asking what Zimbabwe currently has in preparation, the answer is drawn from the same table the agency works in every day, and the capital column makes the declared scale of that pipeline legible without a separate exercise.
+
 ### Review Queue
 
 ![The Review Queue. Publication authority sits here.](docs/screenshots/admin/review.png)
+
+Eleven new submissions are waiting here, each one a card rather than a row: the project title, the beneficiary ministry, a short description, expandable links to the full project detail and its action history, a reviewer notes box and a Start review button. Mazowe Valley Irrigation Revitalisation, filed to the Ministry of Lands, Agriculture, Fisheries, Water and Rural Resettlement, describes 4,200 hectares of gravity-fed irrigation. A second tab holds pending amendment and association requests.
+
+The line under the heading is the important one: available actions are driven by the role's governance rules, and buttons only appear for transitions the signed-in officer is authorised to make. Authority is expressed in the interface rather than in a circulated policy, so an officer cannot take a step that is not theirs to take. The reviewer notes field means a request for change travels back to the submitter with reasoning attached, and the action history makes every prior transition reconstructible.
 
 This is where the approved-to-published step happens — the step no reviewer and no ministry can take.
 
@@ -79,25 +91,53 @@ This is where the approved-to-published step happens — the step no reviewer an
 
 ![Inquiries. General enquiries and qualified-investor applications, with a category filter to separate them.](docs/screenshots/admin/inquiries.png)
 
+Seven inquiries have arrived through three channels — the contact form, investor registration and strategic partnership — and a tab at the top isolates the three that are qualified-investor applications. The board is arranged by decision state, with all seven currently in Pending and the Changes Requested, Approved and Declined columns empty. Each card gives the sender's name, corporate email and channel; Lerato Dlamini, Chen Wei and Sandile Nkomo also carry a KYC marker. The queue exports to CSV.
+
+Keeping general correspondence and accreditation applications on one surface, but separable by a single filter, prevents the more consequential of the two from being lost in the volume of the other. An enquiry costs ZIDA a reply; an application changes what a company is entitled to see. The KYC marker signals which applicants have already attached identity material, so the officer knows before opening a card whether the evidence needed for a decision is likely to be there.
+
 Two different things share this queue: general enquiries from the public contact form, and qualified-investor applications. The category filter separates them, and applications are the ones with entitlement consequences.
 
 ### Users & Roles
 
 ![Users & Roles. The account directory, role assignment and accreditation review.](docs/screenshots/admin/users.png)
 
+Users & Roles opens on four measures — 34 total accounts, 34 active, multi-factor compliance at 0% and marked not enforced, and no pending invitations. A panel below flags one team invitation awaiting validation: John Doe, invited by a qualified investor and due to become a Qualified Investor himself, with a Review link. The role filters give the whole distribution — nine registered, four qualified, seven government, ten ministry admins, two ZIDA admins, two platform admins — and each row shows an account identifier such as ZIDA-000123.
+
+An organisation cannot enlarge its own access here. When an investor or a ministry invites a colleague, the invitation waits in that validation panel until ZIDA has seen who is inviting whom and what role would follow. The role census means the distribution of entitlement across the platform can be read in a moment rather than reconstructed, and the multi-factor tile states the current position plainly instead of leaving it unexamined — which is how a control comes to be adopted rather than assumed.
+
 ### MOU Registry
 
 ![The MOU Registry. Drafting, finalization and execution all sit with this role.](docs/screenshots/admin/mou.png)
+
+Every memorandum on the platform is listed against its stage, and the filter row sets out the lifecycle in numbers: of ten engagements, six have no memorandum yet, one is in drafting, one in review, one ready for signature and one executed. The table pairs each investor and their fund with the project, the engagement status and the memorandum stage — Nomsa Dube of Kestrel Capital Partners ready for signature on the Masuwe International Medical Center Project, Grace Mutindi of Zambezi Growth Partners drafting on Kumusha Power.
+
+Because stage is a recorded state rather than a note in a file, the position of every negotiation is visible without asking anyone. Drafting, both-party approval, finalisation, readiness for signature and execution each leave a mark, and one memorandum already sits at executed, which means the path from engagement to signed agreement has been travelled rather than merely designed. Ticket size beside engagement status lets ZIDA see the commercial weight of what is closest to conclusion.
 
 ### Reports, Communication Hub, Profile and Account
 
 ![Government executive reporting.](docs/screenshots/admin/reports.png)
 
+The Government Executive Report is generated on demand and stamped accordingly: named to the officer who produced it, timed to the second, referenced as REP-20260905-058F, marked for government use and sourced explicitly to live platform data. The command strip carries a pipeline value of $2.34B across 40 projects, investor capital coverage of 0.3%, average review turnaround of 10.0 days and a funnel conversion rate of 44.4%. Beneath sit a publication rate of 65.0% and an average project capital size of $77.99M, with a print or PDF option.
+
+Two of the four headline indicators carry an action prompt rather than a congratulation — activate relationship desk outreach, review the ministry clearance queue — which tells you the report was built to be used internally before it was built to be shown. That is precisely what makes it usable externally. A briefing willing to name 0.3% capital coverage against $2.21B published is a briefing whose favourable figures can be believed, and it can be produced for a minister in the time it takes to print.
+
 ![The Communication Hub.](docs/screenshots/admin/communication.png)
+
+Ten threads sit in a single inbox, filtered into general correspondence, active deals and engagements. Opening the Goromonzi Agro Processing Industrial Park thread brings the project's own particulars with it — published, US$36.9 million total cost, Mashonaland East — alongside a link through to the record and CSV and PDF exports. Inside the conversation, an amendment request appears as a structured card naming the requesting ministry and the proposed change, marked declined, with the ministry's reply threaded beneath it.
+
+The visibility selector on the composer is the detail that matters: a reply can be marked visible to the investor or kept as an internal note, so ZIDA's deliberation and its correspondence occupy one record without being mistaken for each other. Workflow events land in the same thread as the discussion around them, which means the reasoning behind a declined amendment is not held in a separate system from the decision itself. A stated response expectation of one business day is published to the investor.
 
 ![My Profile.](docs/screenshots/admin/profile.png)
 
+My Profile holds the officer's own account and, below it, the company record — described on the page as the same view ZIDA staff see on an Institutional Compliance Dossier. The identity card names Farai Chigumba as a ZIDA Admin. The Company & Representative section asks for entity name, corporate phone, authorised representative and title, job title, corporate website, business registration identifier and headquarters address; here those fields are still empty, and the page notes unsaved changes. A compliance and documents section follows.
+
+These are the same fields the platform checks before it will grant qualified-investor status, which means an officer deciding an accreditation is looking at the form they complete themselves. The page states the purpose without ambiguity: this record is the company's identity of record, and it prepopulates read-only fields when a project is proposed or an application filed. One corrected entity record therefore propagates into every subsequent filing, rather than being retyped and quietly diverging between them.
+
 ![Account settings.](docs/screenshots/admin/account.png)
+
+Account & Security divides into four tabs — profile, security, sessions and notifications. On the profile tab the display name is editable, but the email address is marked read-only and the entity, Zimbabwe Investment and Development Agency, is marked managed by ZIDA. Identity is recorded as a local password. A second card sets out the entitlements attached to the ZIDA Admin role in a single sentence: managing projects, engagements, inquiries, users and the Communication Hub across the platform.
+
+Two small locks do real work here. An officer cannot change the email address their account is identified by, and cannot reassign themselves to a different institution, so the audit trail's attribution of an act to a person and an organisation holds over time. The sessions tab means an active session on a lost or shared device can be examined and ended rather than merely reported. Stating entitlements in plain language also removes the excuse of not knowing what a role permits.
 
 ## 4. What You Can Do
 
