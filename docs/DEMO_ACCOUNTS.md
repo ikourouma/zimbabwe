@@ -1,6 +1,6 @@
 # Stakeholder demo accounts (local only — do not commit)
 
-Generated: 2026-09-06T02:27:07.880Z
+Generated: 2026-09-06T02:36:26.965Z
 
 Sign in at https://zidaproject.com/auth/sign-in. Every account below uses the same password:
 

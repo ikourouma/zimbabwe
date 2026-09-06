@@ -25,6 +25,7 @@ import {
   projects,
   strategicInquiries,
 } from "@/lib/db/schema";
+import { NDA_VERSION } from "@/lib/governance/nda";
 import { seedDb, seedPool } from "../lib/db/seed/db";
 import { findAuthUserId, setAccountPassword, signUpViaAuthApi } from "../lib/db/seed/accounts";
 import {
@@ -127,46 +128,39 @@ async function seedAccounts() {
 
     userIds.set(account.email, userId);
 
+    const profileValues = {
+      role: account.role,
+      accountStatus: "active" as const,
+      organization: account.organization,
+      ministryId: account.ministryId ?? null,
+      jobTitle: account.jobTitle,
+      // Pre-accept the confidentiality clickwrap. NdaGate is a non-dismissible overlay on the Deal
+      // Room and Ministry Desk for every non-staff role, so without this 21 of these 23 accounts
+      // open onto a legal dialog instead of the console the guide is describing — and because
+      // acceptance is recorded once per account, only the first stakeholder through each persona
+      // would ever see it anyway. The gate is documented in the guides with its own screenshot
+      // instead, which shows it to every reader rather than to whoever happened to sign in first.
+      ndaAcceptedAt: new Date(),
+      ndaVersion: NDA_VERSION,
+      ndaAcceptedTitle: account.jobTitle,
+      ...(account.kyc
+        ? {
+            phone: account.kyc.phone,
+            hqAddress: account.kyc.hqAddress,
+            businessRegistrationId: account.kyc.businessRegistrationId,
+            websiteUrl: account.kyc.websiteUrl,
+            executiveRepresentativeName: account.kyc.executiveRepresentativeName,
+            executiveRepresentativeTitle: account.kyc.executiveRepresentativeTitle,
+          }
+        : {}),
+    };
+
     await seedDb
       .insert(profiles)
-      .values({
-        userId,
-        role: account.role,
-        accountStatus: "active",
-        organization: account.organization,
-        ministryId: account.ministryId ?? null,
-        jobTitle: account.jobTitle,
-        ...(account.kyc
-          ? {
-              phone: account.kyc.phone,
-              hqAddress: account.kyc.hqAddress,
-              businessRegistrationId: account.kyc.businessRegistrationId,
-              websiteUrl: account.kyc.websiteUrl,
-              executiveRepresentativeName: account.kyc.executiveRepresentativeName,
-              executiveRepresentativeTitle: account.kyc.executiveRepresentativeTitle,
-            }
-          : {}),
-      })
+      .values({ userId, ...profileValues })
       .onConflictDoUpdate({
         target: profiles.userId,
-        set: {
-          role: account.role,
-          accountStatus: "active",
-          organization: account.organization,
-          ministryId: account.ministryId ?? null,
-          jobTitle: account.jobTitle,
-          ...(account.kyc
-            ? {
-                phone: account.kyc.phone,
-                hqAddress: account.kyc.hqAddress,
-                businessRegistrationId: account.kyc.businessRegistrationId,
-                websiteUrl: account.kyc.websiteUrl,
-                executiveRepresentativeName: account.kyc.executiveRepresentativeName,
-                executiveRepresentativeTitle: account.kyc.executiveRepresentativeTitle,
-              }
-            : {}),
-          updatedAt: sql`now()`,
-        },
+        set: { ...profileValues, updatedAt: sql`now()` },
       });
 
     record("account", `${account.email} (${account.role})`, created ? "created" : "updated");
@@ -356,12 +350,22 @@ async function seedEngagementsAndMous() {
     }
 
     const [existingMou] = await seedDb
-      .select({ id: engagementMous.id, status: engagementMous.status })
+      .select({
+        id: engagementMous.id,
+        status: engagementMous.status,
+        investorApprovedBy: engagementMous.investorApprovedBy,
+      })
       .from(engagementMous)
       .where(eq(engagementMous.engagementId, engagementId))
       .limit(1);
 
-    if (existingMou && existingMou.status === target.mouStatus) {
+    // Status alone is not enough to call this done: an earlier run wrote a user id into
+    // `investorApprovedBy`, which the panel renders verbatim, so a row can be in the right state
+    // and still show a UUID where a name belongs.
+    const approvalIsWellFormed =
+      target.mouStatus !== "in_review" || existingMou?.investorApprovedBy === investor.name;
+
+    if (existingMou && existingMou.status === target.mouStatus && approvalIsWellFormed) {
       record("mou", `${project.title} (${target.mouStatus})`, "skipped");
       continue;
     }
@@ -383,9 +387,12 @@ async function seedEngagementsAndMous() {
         "This Memorandum is governed by, and construed in accordance with, the laws of the Republic of Zimbabwe. Any dispute arising from it shall first be referred to good-faith negotiation between the parties.",
     };
 
+    // `investorApprovedBy` holds a display name, not an id — the actions route writes `actor.name`
+    // and MouPanel's ApprovalCard renders the value straight to screen, so an id here would put a
+    // raw UUID on the memorandum in front of stakeholders.
     const investorApproval =
       target.mouStatus === "in_review"
-        ? { investorApprovedAt: new Date(), investorApprovedBy: investorId }
+        ? { investorApprovedAt: new Date(), investorApprovedBy: investor.name }
         : { investorApprovedAt: null, investorApprovedBy: null };
 
     if (existingMou) {
