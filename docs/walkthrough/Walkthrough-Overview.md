@@ -108,9 +108,9 @@ The concept note also describes access in tiers rather than roles. Both models d
 
 | Concept note tier | Roles in that tier | What it can see |
 | --- | --- | --- |
-| Public Visitor | unauthenticated | Published projects, no financial data |
-| Registered Visitor | `registered` | Full project detail, no financial data, no documents |
-| Qualified Investor / Partner | `qualified` | Financial indicators and gated documents |
+| Public Visitor | unauthenticated | Published projects, no return metrics, no documents |
+| Registered Visitor | `registered` | Full project detail and headline capital requirement; no return metrics, no documents |
+| Qualified Investor / Partner | `qualified` | Return metrics, capital structure and gated documents |
 | Institutional User | `government`, `ministry_admin`, `admin` | Government-side visibility, scoped by role |
 | Afronovation Super Admin | `super_admin` | Everything, plus the platform's configuration |
 

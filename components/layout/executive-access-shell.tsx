@@ -121,10 +121,9 @@ function LeftPanelContent({ variant }: { variant: ExecutiveAccessVariant }) {
               </>
             ) : isSignUp ? (
               <>
-                Your account is created instantly at the &ldquo;Registered&rdquo; tier. Pilot testers:
-                use credentials from{" "}
-                <code className="text-[10px]">docs/PILOT_TEST_ACCOUNTS.md</code> after running{" "}
-                <code className="text-[10px]">npm run db:seed</code>.
+                Your account is created instantly at the &ldquo;Registered&rdquo; tier. Financial
+                indicators and project documents are released once ZIDA has verified your
+                organisation.
               </>
             ) : (
               <>
@@ -132,9 +131,7 @@ function LeftPanelContent({ variant }: { variant: ExecutiveAccessVariant }) {
                 <Link href="/auth/sign-up" className="underline" style={{ color: "var(--color-gold)" }}>
                   Create an account
                 </Link>{" "}
-                first. Pilot testers: use credentials from{" "}
-                <code className="text-[10px]">docs/PILOT_TEST_ACCOUNTS.md</code> after running{" "}
-                <code className="text-[10px]">npm run db:seed</code>.
+                to browse the national project registry.
               </>
             )}
           </p>

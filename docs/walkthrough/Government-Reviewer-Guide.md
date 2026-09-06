@@ -132,11 +132,11 @@ Saved Projects is a personal watchlist, described on the page as somewhere to tr
 
 The distinction worth noting is that saving carries no authority. A reviewer following a project has not been assigned it, has not claimed it and has altered nothing about its status, which is why the pipeline keeps a separate assigned-to-me filter. Across a national portfolio of forty records, an officer needs a way to keep sight of a handful of files without that interest being read as ownership of them. This page is that, and nothing beyond it.
 
-![Proposals visible to you.](docs/screenshots/government/proposals.png)
+![My Proposals, read-only on a reviewer's account.](docs/screenshots/government/proposals.png)
 
-My Proposals is described as projects you have originated and submitted into ZIDA's national investment pipeline, and it is empty on this account. What is present, once in the corner of the page and again at its centre, is a Propose a Project control, together with an invitation to submit a bankable project idea directly into ZIDA's review pipeline.
+My Proposals is described as projects you have originated and submitted into ZIDA's national investment pipeline, and it is empty on this account, noting only that projects originated by investors appear here once submitted into ZIDA's review pipeline. No Propose a Project control is offered.
 
-This one is worth pausing on, because section 5 records project creation as sitting with ministries, ZIDA and qualified investors rather than with a reviewer. The control appears here regardless, and an officer who originated a project through it would then be in a position to review their own submission — the separation this role is built around. Whether the page should be absent for this persona, or present in a read-only form, is the kind of question section 8 exists to capture.
+That absence is the point. Project creation sits with ministries, ZIDA administrators and qualified investors, and a reviewer who originated a project here would then be in a position to review their own submission — precisely the separation this role exists to hold. The page remains reachable so a reviewer can see the origination surface investors use, but the act itself is withheld, and withheld on the server as well as in the interface: a request to create a project made directly against the API under this role is refused.
 
 ![My Profile.](docs/screenshots/government/profile.png)
 

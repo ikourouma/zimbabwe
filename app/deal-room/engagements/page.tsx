@@ -84,6 +84,12 @@ export default function DealRoomEngagementsPage() {
   const canManage = workflowRole !== null;
   const canSelfInitiate = role === "qualified";
 
+  // POST /api/engagements admits admin, super_admin and qualified only, so anyone else offered the
+  // control gets a 403 for their trouble. `canManage` is true for government reviewers, who can
+  // advance an engagement someone else raised but cannot open one — an engagement is an investor's
+  // approach, and a reviewer creating one would be inventing the investor's interest.
+  const canCreate = role === "qualified" || role === "admin" || role === "super_admin";
+
   const projectTitleOf = useCallback((projectId: string) => getProject(projectId)?.title ?? "Unknown project", [getProject]);
 
   // Superset the store's default (archived-excluded) list with the archived-inclusive fetch, then
@@ -224,7 +230,7 @@ export default function DealRoomEngagementsPage() {
         filters={filters}
         onFiltersChange={setFilters}
         toolbarEnd={
-          (canManage || canSelfInitiate) && (
+          canCreate && (
             <Button onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4" /> New Engagement
             </Button>

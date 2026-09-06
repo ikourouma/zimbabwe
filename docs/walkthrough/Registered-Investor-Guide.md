@@ -11,7 +11,7 @@
 | What does this persona represent? | The concept note's Registered Investor. It is the entry tier for every self-registered account. |
 | Where do I start? | `https://zidaproject.com/auth/sign-in` |
 | What will I be able to do? | Browse the full project registry, save projects, complete a company profile, and apply for qualified-investor status. |
-| What will I not be able to do? | See financial indicators, raise engagements, exchange messages, or open gated documents. Those unlock on qualification. |
+| What will I not be able to do? | See return metrics, raise engagements, exchange messages, or open gated documents. Those unlock on qualification. Headline capital requirements remain visible so you can size an opportunity first. |
 | How long does this take? | About 25 minutes to work through every process. |
 | What do I do if something is wrong or missing? | Record it in section 8. Every entry becomes a tracked enhancement request. |
 
@@ -33,7 +33,7 @@
 
 The Registered Investor is an investor, fund, or corporate partner who has created an account on the platform but whose credentials have not yet been verified by the investment authority.
 
-This tier exists to solve a specific problem. An investment authority cannot publish capital estimates, projected returns, and feasibility documents to anonymous visitors, but it also cannot demand full corporate disclosure from someone who is still deciding whether Zimbabwe is of interest. Registration is the middle step: enough of an account to work seriously with the registry, without access to commercially sensitive material.
+This tier exists to solve a specific problem. An investment authority cannot publish projected returns, capital structures, and feasibility documents to anonymous visitors, but it also cannot demand full corporate disclosure from someone who is still deciding whether Zimbabwe is of interest. Registration is the middle step: enough of an account to work seriously with the registry, including the headline capital requirement that lets an investor size a project, without access to the commercially sensitive material behind it.
 
 > **Concept note lineage**
 > Section 10 of Concept Note v0.3 defines this persona as: *"View expanded project details, save projects, submit investment interest, and request meetings."* The platform implements it as the `registered` role. The first three are live. Requesting meetings is part of the engagement workflow, which is deliberately reserved for the qualified tier — see section 5.
@@ -162,7 +162,7 @@ This section matters as much as the previous one. These are deliberate entitleme
 
 | Not available | Why | Who holds it |
 | --- | --- | --- |
-| Capital estimates, projected returns, payback periods | Commercially sensitive; released only to verified investors | Qualified Investor |
+| Projected returns, payback periods, capital structure | Commercially sensitive; released only to verified investors. The headline capital requirement is not withheld — it is what lets you size a project before deciding whether to pursue qualification — but the return metrics behind it are | Qualified Investor |
 | Gated documents such as feasibility summaries and investor packs | Same reason, and download activity is recorded against a verified identity | Qualified Investor |
 | Raising an engagement on a project | An engagement is a formal approach to government and presumes a verified counterparty | Qualified Investor |
 | Messaging the investment authority in-platform | Message threads are attached to engagements | Qualified Investor |

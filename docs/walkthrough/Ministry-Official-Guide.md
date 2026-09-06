@@ -76,7 +76,7 @@ Your navigation contains twelve sections:
 
 ### Ministry Pipeline
 
-![The Ministry Pipeline. Other ministries' projects are not present — not hidden behind a filter, but absent.](docs/screenshots/ministry/projects.png)
+![The Ministry Pipeline. Your ministry's projects are filtered in by default; the national pipeline stays readable for context, but authority to act does not extend to it.](docs/screenshots/ministry/projects.png)
 
 A *My Ministry Only* chip is lit and reads ten, against an *All* count of thirty-nine. The instruction above the table sets out the arrangement: your ministry's projects show by default, the chip can be switched off to browse the national pipeline for context, and either way you can only create, edit and advance projects where your ministry is the primary beneficiary. Status chips break the set down from draft to archived, and the table carries title, sector, status, capital and last update.
 
@@ -160,11 +160,15 @@ Your account carries a ministry assignment. Every project records a **primary be
 
 | Your ministry's relationship to a project | You can see it | You can act on it |
 | --- | --- | --- |
-| Primary beneficiary | Yes | Yes — full review authority |
-| Secondary beneficiary | Yes | **No — read-only** |
-| Not a beneficiary | No | No |
+| Primary beneficiary | Yes — shown by default | Yes — full review authority |
+| Secondary beneficiary | Yes — shown by default | **No — read-only** |
+| Not a beneficiary | Yes — on request, by switching off the *My Ministry Only* chip | No |
 
-The middle row is the one that surprises people. Being named as a secondary beneficiary gives you visibility of a project, so you can see what is happening in an area that affects you, but the review authority stays with the primary ministry. Only one ministry is accountable for a given project.
+Two rows deserve comment. Being named as a **secondary beneficiary** gives you visibility of a project, so you can see what is happening in an area that affects you, but the review authority stays with the primary ministry. Only one ministry is accountable for a given project.
+
+The **third row** is a deliberate design decision rather than an oversight. Ministry scoping in this platform governs *authority*, not *sight*. Your pipeline opens filtered to your own ministry, but the chip can be switched off to read the national pipeline, because a ministry planning its own portfolio benefits from knowing what the rest of government is bringing forward — and because a national investment pipeline that each ministry can only see a tenth of is not a national pipeline. What does not extend beyond your ministry is the ability to edit, advance, approve or publish. The platform enforces that on the server, not merely by hiding buttons: an attempt to modify another ministry's project is refused even if the request is made directly against the API.
+
+If Zimbabwe would prefer cross-ministry visibility to be closed rather than open, that is a configuration question worth raising in section 8 — but it should be decided deliberately, not discovered.
 
 There is one further rule: an investor's proposal that is still in **draft** is not visible to you, even when your ministry is the named beneficiary. Investors are entitled to prepare a proposal privately. It becomes visible to you once they submit it.
 

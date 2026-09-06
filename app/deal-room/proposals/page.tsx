@@ -41,7 +41,7 @@ const VIEW_KEY = "zimbabwe.dealRoom.proposalsView";
  */
 export default function DealRoomProposalsPage() {
   const router = useRouter();
-  const { isAuthenticated, isQualified, userId, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isQualified, role, userId, isLoading: authLoading } = useAuth();
   const { projects, updateProject, isLoading: projectsLoading } = useProjectStore();
   const [filters, setFilters] = useState<ProjectFilters>({});
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("all");
@@ -138,6 +138,11 @@ export default function DealRoomProposalsPage() {
 
   const isLoading = authLoading || projectsLoading;
 
+  // `isQualified` above admits government reviewers, who can read this page but whom
+  // POST /api/projects rejects. Offering them the control produces a 403 and contradicts the
+  // documented boundary that originating a project is not a reviewer's act.
+  const canPropose = role === "qualified" || role === "admin" || role === "super_admin";
+
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
@@ -147,9 +152,11 @@ export default function DealRoomProposalsPage() {
             Projects you&apos;ve originated and submitted into ZIDA&apos;s national investment pipeline.
           </p>
         </div>
-        <Link href="/deal-room/proposals/new" className="btn-sovereign text-xs px-4 py-2 whitespace-nowrap">
-          <FilePlus2 className="h-4 w-4" /> Propose a Project
-        </Link>
+        {canPropose && (
+          <Link href="/deal-room/proposals/new" className="btn-sovereign text-xs px-4 py-2 whitespace-nowrap">
+            <FilePlus2 className="h-4 w-4" /> Propose a Project
+          </Link>
+        )}
       </div>
 
       {isLoading ? (
@@ -171,11 +178,15 @@ export default function DealRoomProposalsPage() {
           </div>
           <h2 className="text-lg font-semibold text-white mb-2">No proposals yet</h2>
           <p className="text-sm mb-6" style={{ color: "var(--color-text-secondary)" }}>
-            Have a bankable project idea? Submit it directly into ZIDA&apos;s review pipeline.
+            {canPropose
+              ? "Have a bankable project idea? Submit it directly into ZIDA's review pipeline."
+              : "Projects originated by investors appear here once submitted into ZIDA's review pipeline."}
           </p>
-          <Link href="/deal-room/proposals/new" className="btn-sovereign text-xs px-4 py-2 whitespace-nowrap inline-flex">
-            Propose a Project
-          </Link>
+          {canPropose && (
+            <Link href="/deal-room/proposals/new" className="btn-sovereign text-xs px-4 py-2 whitespace-nowrap inline-flex">
+              Propose a Project
+            </Link>
+          )}
         </div>
       ) : (
         <>

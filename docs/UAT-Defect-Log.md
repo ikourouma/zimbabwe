@@ -120,6 +120,42 @@ Several screenshots in the Public Visitor guide were captured with the seeded *U
 
 Separately, the seeded demonstration popup and announcement were switched from active to draft. Both remain on the platform and can be restored from Platform Settings, or with `npm run overlays:on`.
 
+### DEF-012 — Sign-in and registration pages carried developer instructions
+
+**Severity:** Medium. **Status:** Closed.
+
+The footnote beneath the sign-in and registration panels told the reader to use credentials from an internal repository file after running a database seeding command. This is the platform's front door, and it was the text a visiting official would have read first.
+
+Both footnotes now say something a visitor can act on: the registration note explains that an account is created immediately at the registered tier and that financial indicators and documents are released after verification, and the sign-in note points to registration as the route into the project registry.
+
+### DEF-013 — Reviewers were offered controls the server refuses
+
+**Severity:** Medium. **Status:** Closed.
+
+The Government Reviewer console displayed a *Propose a Project* control on My Proposals and a *New Engagement* control on Engagements. Both actions are refused by the server for that role, so the buttons could only ever have produced a permission error.
+
+This was never an access problem — `POST /api/projects` and `POST /api/engagements` both reject the government role outright, and that was confirmed by reading the authorization checks rather than inferred. It was a credibility problem: a reviewer who originated a project would then be reviewing their own submission, which is the separation this role exists to hold, and an interface that appears to offer that invites exactly the question the platform should be foreclosing. Both controls are now shown only to the roles the server admits, and the guide has been rewritten to describe the corrected pages.
+
+### DEF-014 — A placeholder record sat in the national registry
+
+**Severity:** Medium. **Status:** Closed.
+
+A project titled `xyz`, described as `test`, had been left in the database by manual testing on 5 August. It carried a status of *submitted for review*, so it appeared in the Review Queue, the Ministry Pipeline and the Platform Manager registry — and in the walkthrough screenshots of all three, immediately alongside Sunway City Special Economic Zone and Goromonzi Agro Processing.
+
+The record and its two associated messages have been removed. `npm run registry:prune` now reports placeholder records and deletes them only when passed `--apply`; it identifies them by a title and description both too short to be content, and it refuses to touch any record that has since acquired a document or an engagement.
+
+### DEF-015 — Two guides described entitlements the platform does not enforce
+
+**Severity:** Medium. **Status:** Closed.
+
+Writing a description of every screenshot put each image against the text that claimed to explain it, and two claims did not survive the comparison.
+
+The first concerned money. The Registered Investor guide listed *capital estimates* among the things withheld until qualification, and the overview described the registered tier as seeing "no financial data" — but the pipeline screenshot plainly showed a capital figure on every card. Reading the entitlement code settled it in the platform's favour: the headline capital requirement is deliberately released to every tier, because an investor cannot decide whether to seek qualification without knowing the size of what they would be seeking it for. What is withheld, and verifiably stripped by the server before the response is sent rather than merely hidden by the interface, is the return metrics behind that figure — internal rate of return, net present value, payback period, projected revenue and capital structure — together with every gated document. The guides now say that, and the distinction is a better argument for the tier model than the overstatement it replaces.
+
+The second concerned ministries. The Ministry Official guide asserted that other ministries' projects were "not present — not hidden behind a filter, but absent", while its own screenshot showed a *My Ministry Only* chip reading ten against a national count of thirty-nine. The screenshot was right. Ministry scoping governs authority, not sight: the pipeline opens filtered to your own ministry and the filter can be lifted, but no amount of lifting it confers the ability to edit, advance or publish another ministry's work, and that boundary is enforced server-side against direct API calls. The guide now explains the distinction and flags the open configuration question, since a government that would prefer cross-ministry visibility closed should decide that rather than discover it.
+
+Neither was a platform fault. Both would have been read as one by a stakeholder holding the guide beside the screen.
+
 ## 4. Open Defects
 
 ### DEF-009 — Sign-in page down for real browsers on a pre-fix cached shell

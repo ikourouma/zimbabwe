@@ -17,6 +17,7 @@
     "seed:readiness": "tsx --env-file=.env.local scripts/seed-demo-readiness.ts",
     "overlays:off": "tsx --env-file=.env.local scripts/toggle-marketing-overlays.ts --off",
     "overlays:on": "tsx --env-file=.env.local scripts/toggle-marketing-overlays.ts --on",
+    "registry:prune": "tsx --env-file=.env.local scripts/prune-placeholder-projects.ts",
     "smoke": "tsx --env-file=.env.local scripts/smoke-all-roles.ts",
     "email:test": "tsx --env-file=.env.local scripts/send-test-email.ts",
     "e2e": "tsx --env-file=.env.local node_modules/@playwright/test/cli.js test --grep-invert @capture",
