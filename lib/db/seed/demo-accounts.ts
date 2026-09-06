@@ -110,14 +110,29 @@ function zidaKyc(repName: string, repTitle: string): DemoKyc {
  *  place because the "My Team" panel is incoherent if the three rows disagree on the company. */
 export const DEMO_INVESTOR_ORG = "Zambezi Growth Partners";
 
-function investorKyc(repName: string, repTitle: string, phone: string): DemoKyc {
+/**
+ * The investing firm's company record, identical on all three of its accounts.
+ *
+ * Domiciled in Mauritius rather than, as it was, at a suburban Virginia office park with a
+ * Delaware-shaped registration number and +1 703 telephones. A foreign investor is exactly who
+ * this platform exists to attract, so the nationality was never the problem — the combination was.
+ * An Africa-named fund with a United States address and a Delaware prefix reads as a template
+ * somebody forgot to finish, and invites a question about the entity that has nothing to do with
+ * what is being demonstrated. Ebène Cybercity is where Africa-focused funds actually domicile, so
+ * the record now reads as a deliberate choice.
+ *
+ * The authorised representative is the firm's, not the individual account holder's: a company has
+ * one person empowered to bind it, and naming each teammate as their own representative made the
+ * field look like a duplicate of their job title.
+ */
+function investorKyc(phone: string): DemoKyc {
   return {
     phone,
-    hqAddress: "1201 Wilson Boulevard, Suite 400, Arlington, Virginia 22209, United States",
-    businessRegistrationId: "DE-7742119",
+    hqAddress: "Level 6, Cyber Tower 1, Ebène Cybercity, 72201, Mauritius",
+    businessRegistrationId: "C-138472",
     websiteUrl: "https://www.zambezigrowth.com",
-    executiveRepresentativeName: repName,
-    executiveRepresentativeTitle: repTitle,
+    executiveRepresentativeName: "Grace Mutindi",
+    executiveRepresentativeTitle: "Managing Partner",
   };
 }
 
@@ -187,7 +202,7 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     jobTitle: "Managing Partner",
     description: 'Vetted investor and owner of the organisation team — the "My Team" persona',
     organization: DEMO_INVESTOR_ORG,
-    kyc: investorKyc("Grace Mutindi", "Managing Partner", "+1 703 555 0142"),
+    kyc: investorKyc("+230 403 0142"),
   },
   {
     email: "qualified.team+demo@zidaproject.com",
@@ -196,7 +211,7 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     jobTitle: "Portfolio Director",
     description: `Vetted investor, team member under ${DEMO_INVESTOR_ORG}`,
     organization: DEMO_INVESTOR_ORG,
-    kyc: investorKyc("Peter Lindqvist", "Portfolio Director", "+1 703 555 0143"),
+    kyc: investorKyc("+230 403 0143"),
   },
   {
     email: "qualified.team2+demo@zidaproject.com",
@@ -205,7 +220,7 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     jobTitle: "Investment Associate",
     description: `Vetted investor, team member under ${DEMO_INVESTOR_ORG}`,
     organization: DEMO_INVESTOR_ORG,
-    kyc: investorKyc("Aisha Bello", "Investment Associate", "+1 703 555 0144"),
+    kyc: investorKyc("+230 403 0144"),
   },
 
   // --- ZIDA ----------------------------------------------------------------------------------

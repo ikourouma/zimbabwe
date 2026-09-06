@@ -225,6 +225,27 @@ export function parseCapitalTotalMillions(raw?: string): number | null {
   return total ? total.valueMillions : labeled[0]?.valueMillions ?? null;
 }
 
+/**
+ * Compact headline figure for dense surfaces — board cards, table cells, thread headers — where
+ * the source text has nowhere to go.
+ *
+ * `capitalRequired` is free text transcribed from the ZIDA 2025 deck, and a good number of records
+ * carry an analyst's working note rather than a figure: "US$39.5 million total raise referenced in
+ * project description; phase costs listed as US$19.5 million and US$15.0 million", or
+ * "USD2.940 million as interpreted from source deck; source text shows 'USD2,940 million' and
+ * requires validation". Printed verbatim on a card, that is internal commentary about the
+ * confidence of a number appearing on the face of an opportunity an external investor is screening.
+ *
+ * This derives the headline figure with the same parser the Cost Structure card and every aggregate
+ * total already use, so a card, a project page and a sector roll-up cannot disagree. It invents
+ * nothing: where no figure parses it returns null and the caller shows nothing, and the full source
+ * text remains on the project's own detail page, where the room exists to qualify it.
+ */
+export function formatCapitalHeadline(raw?: string): string | null {
+  const millions = parseCapitalTotalMillions(raw);
+  return millions === null ? null : formatMillions(millions);
+}
+
 // ---------------------------------------------------------------------------
 // Institutional capital brackets (registry quick-chips)
 // ---------------------------------------------------------------------------

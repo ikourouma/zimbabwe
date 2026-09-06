@@ -1,10 +1,10 @@
-/**
+﻿/**
  * Every page each persona can reach, with the caption used in their walkthrough guide.
  *
  * Shared by the screenshot capture pass and the document generator so a guide can never reference
  * an image that was never captured, and a captured image is never left out of a guide.
  *
- * `slug` becomes the screenshot filename. `caption` is stakeholder-facing prose, not a nav label —
+ * `slug` becomes the screenshot filename. `caption` is stakeholder-facing prose, not a nav label â€”
  * it answers "what am I looking at and why would I come here", which is what the guides need.
  */
 
@@ -13,6 +13,17 @@ export interface PageEntry {
   path: string;
   title: string;
   caption: string;
+  /**
+   * A taller viewport for this page only, in pixels.
+   *
+   * Set it where the default 800px cuts a page off somewhere that makes the image contradict
+   * itself. The activity and executive report pages are the case that prompted it: each opens with
+   * a summary block and then a table of the rows behind it, so at 800px the summary announced five
+   * engagements above a table showing two, with a third sliced through the middle at the fold. A
+   * reader sees a report disagreeing with its own headline. Left off elsewhere, since a viewport
+   * capture is the honest picture of what a reader meets on arrival.
+   */
+  viewportHeight?: number;
 }
 
 /** Unauthenticated. The concept note's Public Visitor persona. */
@@ -40,7 +51,7 @@ const DEAL_ROOM_BASE: PageEntry[] = [
   { slug: "pipeline", path: "/deal-room/pipeline", title: "Pipeline", caption: "The national project registry with filtering, presented as board, list, table or matrix." },
   { slug: "saved", path: "/deal-room/saved", title: "Saved Projects", caption: "Projects bookmarked for later review." },
   { slug: "vault", path: "/deal-room/vault", title: "Document Vault", caption: "Personal document store: non-disclosure certificate, accreditation records and memorandum snapshots." },
-  { slug: "reports", path: "/deal-room/reports", title: "My Activity Report", caption: "A personal record of registry and engagement activity." },
+  { slug: "reports", path: "/deal-room/reports", title: "My Activity Report", caption: "A personal record of registry and engagement activity.", viewportHeight: 1600 },
   { slug: "profile", path: "/deal-room/profile", title: "My Profile", caption: "Organisation and verification details. Completing these is a precondition of qualification." },
   { slug: "settings", path: "/deal-room/settings", title: "Account", caption: "Account and security settings." },
 ];
@@ -74,7 +85,7 @@ export const MINISTRY_PAGES: PageEntry[] = [
   { slug: "communication", path: "/ministry/communication", title: "Communication Hub", caption: "Message threads on this ministry's projects." },
   { slug: "users", path: "/ministry/users", title: "Users & Roles", caption: "Government staff accounts belonging to this ministry." },
   { slug: "teams", path: "/ministry/teams", title: "Team", caption: "Ministry team invitations and roster." },
-  { slug: "reports", path: "/ministry/reports", title: "Reports", caption: "Ministry-scoped reporting." },
+  { slug: "reports", path: "/ministry/reports", title: "Reports", caption: "Ministry-scoped reporting.", viewportHeight: 1600 },
   { slug: "profile", path: "/ministry/profile", title: "My Profile", caption: "Personal profile and ministry assignment." },
   { slug: "account", path: "/ministry/account", title: "Account", caption: "Account and security settings." },
 ];
@@ -86,7 +97,7 @@ export const ADMIN_PAGES: PageEntry[] = [
   { slug: "inquiries", path: "/admin/inquiries", title: "Inquiries", caption: "Enquiries and qualified-investor applications, with approve, decline and request-changes decisions." },
   { slug: "mou", path: "/admin/mou", title: "MOU Registry", caption: "All memoranda across the platform." },
   { slug: "users", path: "/admin/users", title: "Users & Roles", caption: "The account directory, with role assignment and accreditation review." },
-  { slug: "reports", path: "/admin/reports", title: "Reports", caption: "Government executive reporting." },
+  { slug: "reports", path: "/admin/reports", title: "Reports", caption: "Government executive reporting.", viewportHeight: 1600 },
   { slug: "communication", path: "/admin/communication", title: "Communication Hub", caption: "Staff and stakeholder messaging." },
   { slug: "profile", path: "/admin/profile", title: "My Profile", caption: "Personal profile." },
   { slug: "account", path: "/admin/account", title: "Account", caption: "Account and security settings." },
@@ -99,8 +110,8 @@ export const SUPER_ADMIN_PAGES: PageEntry[] = [
   { slug: "users", path: "/super-admin/users", title: "Users & Roles", caption: "The account directory and entitlement assignment." },
   { slug: "inquiries", path: "/super-admin/inquiries", title: "Inquiries", caption: "All enquiries platform-wide, filterable by category and status." },
   { slug: "mou", path: "/super-admin/mou", title: "MOU Registry", caption: "All memoranda platform-wide." },
-  { slug: "reports", path: "/super-admin/reports", title: "Reports", caption: "Executive reporting." },
-  { slug: "taxonomies", path: "/super-admin/taxonomies", title: "Taxonomies", caption: "Sectors, ministries, strategic pillars and development goals — the classification scheme every project is filed against." },
+  { slug: "reports", path: "/super-admin/reports", title: "Reports", caption: "Executive reporting.", viewportHeight: 1600 },
+  { slug: "taxonomies", path: "/super-admin/taxonomies", title: "Taxonomies", caption: "Sectors, ministries, strategic pillars and development goals â€” the classification scheme every project is filed against." },
   { slug: "communication", path: "/super-admin/communication", title: "Communication Hub", caption: "Staff messaging." },
   { slug: "settings", path: "/super-admin/settings", title: "Site Settings", caption: "Tenant and site configuration." },
   { slug: "audit", path: "/super-admin/audit", title: "Audit Log", caption: "The governance audit trail: who did what, when, and on whose authority." },
@@ -117,3 +128,4 @@ export const PAGES_BY_PERSONA: Record<string, PageEntry[]> = {
   admin: ADMIN_PAGES,
   superadmin: SUPER_ADMIN_PAGES,
 };
+

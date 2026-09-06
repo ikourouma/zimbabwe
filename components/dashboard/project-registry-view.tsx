@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Trash2 } from "lucide-react";
 import type { InvestmentProject, ProjectFilters, ProjectStatus } from "@/lib/types";
+import { formatCapitalHeadline } from "@/lib/utils/capital";
 import { useProjectStore } from "@/context/project-store-context";
 import { useTaxonomyStore } from "@/context/taxonomy-store-context";
 import { useAuth } from "@/context/auth-context";
@@ -221,7 +222,16 @@ export function ProjectRegistryView({ basePath }: ProjectRegistryViewProps) {
         header: "Status",
         cell: ({ row }) => <StatusBadge status={row.original.projectStatus} />,
       },
-      { accessorKey: "capitalRequired", header: "Capital", cell: ({ row }) => row.original.capitalRequired ?? "—" },
+      {
+        // Parsed headline figure rather than the raw source text — see formatCapitalHeadline.
+        accessorKey: "capitalRequired",
+        header: "Capital",
+        cell: ({ row }) => (
+          <span title={row.original.capitalRequired ?? undefined}>
+            {formatCapitalHeadline(row.original.capitalRequired) ?? "—"}
+          </span>
+        ),
+      },
       {
         accessorKey: "updatedAt",
         header: "Updated",

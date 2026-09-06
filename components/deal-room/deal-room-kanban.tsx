@@ -5,6 +5,7 @@ import { MessageCircle } from "lucide-react";
 import type { InvestmentProject, ProjectStatus } from "@/lib/types";
 import type { WorkflowRole } from "@/lib/governance/project-workflow";
 import { canTransition, STATUS_LABELS } from "@/lib/governance/project-workflow";
+import { formatCapitalHeadline } from "@/lib/utils/capital";
 import { StatusBadge } from "@/components/projects/status-badge";
 import { useTaxonomyStore } from "@/context/taxonomy-store-context";
 import { cn } from "@/lib/utils";
@@ -142,19 +143,16 @@ export function DealRoomKanban({ projects, role, onStatusChange, onCardClick, on
                        *  ("Agriculture · US$36…"), which is the wrong half to lose: the figure is
                        *  the one number released to every tier, and the whole reason an investor
                        *  can size an opportunity before pursuing it. */}
-                      {project.capitalRequired && (
-                        // Clamped to two lines, and titled with the full value. A handful of
-                        // records carry a whole validation note in this field rather than a figure
-                        // ("Multiple estimated project costs listed in source deck: US$81.6m, …;
-                        // components require validation"), which unclamped turned one card into a
-                        // column of prose. Truncating a paragraph is right; truncating a figure was
-                        // not, which is why it no longer shares a line with the ministry name.
+                      {/* The parsed headline figure, not the raw source text — see
+                       *  formatCapitalHeadline for why. The full text stays on hover and on the
+                       *  project's own page, where there is room to qualify it. */}
+                      {formatCapitalHeadline(project.capitalRequired) && (
                         <p
-                          className="mt-0.5 text-xs font-medium line-clamp-2"
+                          className="mt-0.5 text-xs font-medium"
                           style={{ color: "var(--color-gold)" }}
                           title={project.capitalRequired}
                         >
-                          {project.capitalRequired}
+                          {formatCapitalHeadline(project.capitalRequired)}
                         </p>
                       )}
                       <div className="mt-2 flex items-center justify-between gap-2">

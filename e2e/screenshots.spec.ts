@@ -19,6 +19,11 @@ const OUTPUT_ROOT = "docs/screenshots";
 /** Viewport-sized rather than full-page: it shows what a reader sees on arrival, and keeps images
  *  a shape that embeds sensibly in a Word document. */
 async function capture(page: import("@playwright/test").Page, dir: string, entry: PageEntry) {
+  if (entry.viewportHeight) {
+    const current = page.viewportSize();
+    await page.setViewportSize({ width: current?.width ?? 1280, height: entry.viewportHeight });
+  }
+
   await page.goto(entry.path);
 
   await expect(page).toHaveURL(new RegExp(`${entry.path.replace(/\//g, "\\/")}\\/?$`), {

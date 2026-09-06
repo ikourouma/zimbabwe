@@ -130,7 +130,19 @@ export default function DealRoomEngagementsPage() {
         id: "project",
         header: "Project",
         accessorFn: (row) => projectTitleOf(row.projectId),
-        cell: ({ row }) => projectTitleOf(row.original.projectId).slice(0, 50),
+        // Truncation belongs to the column, not to the string. Slicing at 50 characters cut
+        // "Goromonzi Agro Processing Industrial Park (Special Economic Zone)" to "…Park (Special"
+        // — mid-parenthesis, with no ellipsis to signal that anything had been removed, and it cut
+        // at the same point whether the column was wide or narrow. This lets the cell take the room
+        // it has, marks the cut, and keeps the full title on hover.
+        cell: ({ row }) => {
+          const title = projectTitleOf(row.original.projectId);
+          return (
+            <span className="block max-w-[22rem] truncate" title={title}>
+              {title}
+            </span>
+          );
+        },
       },
       {
         accessorKey: "status",

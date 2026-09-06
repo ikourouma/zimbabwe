@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { MessageCircle } from "lucide-react";
 import type { InvestmentProject } from "@/lib/types";
+import { formatCapitalHeadline } from "@/lib/utils/capital";
 import { StatusBadge } from "@/components/projects/status-badge";
 import { useTaxonomyStore } from "@/context/taxonomy-store-context";
 
@@ -80,7 +81,10 @@ export function PipelineMatrixView({ projects, onCardClick, onMessageClick }: Pi
                     <p className="text-sm font-medium text-white line-clamp-2">{project.title}</p>
                     <p className="text-xs truncate" style={{ color: "var(--color-text-muted)" }}>
                       {ministry?.shortName ?? "—"}
-                      {project.capitalRequired ? ` · ${project.capitalRequired}` : ""}
+                      {/* Parsed headline figure — see formatCapitalHeadline. */}
+                      {formatCapitalHeadline(project.capitalRequired)
+                        ? ` · ${formatCapitalHeadline(project.capitalRequired)}`
+                        : ""}
                     </p>
                     <div className="flex items-center justify-between gap-2">
                       <StatusBadge status={project.projectStatus} />

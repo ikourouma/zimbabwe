@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { InvestmentProject } from "@/lib/types";
+import { formatCapitalHeadline } from "@/lib/utils/capital";
 import { STATUS_LABELS } from "@/lib/governance/project-workflow";
 import { StatusBadge } from "@/components/projects/status-badge";
 import { DataTable } from "@/components/dashboard/data-table";
@@ -43,9 +44,14 @@ export function PipelineTableView({ projects, onCardClick }: PipelineTableViewPr
         cell: ({ row }) => <StatusBadge status={row.original.projectStatus} />,
       },
       {
+        // Parsed headline figure rather than the raw source text — see formatCapitalHeadline.
         accessorKey: "capitalRequired",
         header: "Capital",
-        cell: ({ row }) => row.original.capitalRequired ?? "—",
+        cell: ({ row }) => (
+          <span title={row.original.capitalRequired ?? undefined}>
+            {formatCapitalHeadline(row.original.capitalRequired) ?? "—"}
+          </span>
+        ),
       },
       {
         accessorKey: "updatedAt",

@@ -228,6 +228,50 @@ All three now read the live registry. The screenshot capture also waits for the 
 
 Adding the archived column took the board from six lanes to seven, and at two lines of clamped text every card became an abbreviation: *Goromonzi Agro…*, *Mossfield Crop…*, *CICADA Macadamia…*, *Misty Mountains…*. Not one card on the board displayed a full project title, which is the single thing a card exists to communicate. Titles now run to three lines and carry the full text on hover.
 
+### DEF-023 — The walkthrough disclaimer was written inside the investor's own words
+
+**Severity:** High. **Status:** Closed.
+
+Every seeded engagement carried the identical note *"Demonstration engagement for the stakeholder walkthrough — illustrative and pending official validation"*, and the same sentence was appended to the body of the concierge message. In the Communication Hub this read as though the investor had ended her own request for sector guidance by disclaiming it, and in the engagements table it made the Notes column look like a field nobody uses.
+
+The intent was right and the placement was wrong. A statement about the provenance of the data belongs around the content, where the sitewide banner already states it once for every page, not inside a person's correspondence where a reader takes it for something they said. Each engagement now carries a note describing what is actually being pursued, and the message body is the message.
+
+### DEF-024 — Analyst working notes were printing on investor-facing cards
+
+**Severity:** High. **Status:** Closed.
+
+`capitalRequired` is free text transcribed from the ZIDA 2025 deck, and a number of records hold a working note rather than a figure. Printed verbatim, one archived card read *"USD2.940 million as interpreted…"* and a saved-project row read *"US$39.5 million total raise referenced in project description; phase costs listed as US$19.5 million and US$15.0 million"*. Commentary about how much confidence to place in a number was appearing on the face of an opportunity an external investor is screening, and the recent decision to set capital in gold had made it the most prominent thing on the card.
+
+Board cards, table cells, matrix entries and thread headers now show the headline figure derived by the same parser the Cost Structure card and every sector roll-up already use, so a card, a project page and an aggregate cannot disagree. Nothing is invented: where no figure parses the cell shows a dash, and the full source text remains on the project's own page and on hover, where there is room to qualify it.
+
+### DEF-025 — Five engagements and a sent message, beside "No recent activity yet"
+
+**Severity:** Medium. **Status:** Closed.
+
+The Deal Room overview counted five engagements and one message sent while the Recent Activity panel immediately beside it reported nothing at all. The counters read the engagement and message tables; the feed reads the audit trail. Seeded records were written straight to the tables, so no trail existed.
+
+The seed now writes the same audit rows the corresponding API routes write. This is a different matter from the download and preview counters, which remain at zero deliberately: those figures are backed by audit rows asserting that a person opened a document, and seeding one would be a claim about someone's conduct rather than a record of a record.
+
+### DEF-026 — A project title cut mid-parenthesis with nothing to mark the cut
+
+**Severity:** Low. **Status:** Closed.
+
+The engagements table truncated project titles at fifty characters of raw string, so *Goromonzi Agro Processing Industrial Park (Special Economic Zone)* appeared as *…Park (Special* — cut inside a bracket, with no ellipsis to indicate anything was missing, and cut at the same point however wide the column happened to be. Truncation is now the column's job: the cell takes the room it has, marks the cut, and holds the full title on hover.
+
+### DEF-027 — The demonstration investor was headquartered in Virginia
+
+**Severity:** Medium. **Status:** Closed.
+
+Zambezi Growth Partners was registered at a suburban office park in Arlington, Virginia, with telephone numbers on +1 703 and a business registration ID of DE-7742119. A foreign investor is precisely who this platform exists to attract, so nationality was never the issue — the combination was. An Africa-named fund with a United States address and a Delaware-shaped prefix reads as a template somebody forgot to finish, and invites a question about the entity that has nothing to do with what is being demonstrated. The firm is now domiciled in Ebène Cybercity, Mauritius, where Africa-focused funds actually domicile.
+
+The same screen listed each team member as their own authorised representative, which made the field look like a duplicate of their job title. A company has one person empowered to bind it, and all three accounts now name her.
+
+### DEF-028 — The activity report contradicted its own summary at the fold
+
+**Severity:** Low. **Status:** Closed.
+
+Screenshots are captured at viewport size, which is the honest picture of what a reader meets on arrival. On the report pages it was the wrong picture: each opens with a summary block and then the table of rows behind it, so the capture showed a summary announcing five engagements above a table listing two, with a third sliced through the middle at the page edge. Since the report is the printable artefact — it carries its own reference number and a print control — a reader was being shown a document that appeared to disagree with itself. The report pages now capture at a taller viewport; every other page is unchanged.
+
 ## 4. Open Defects
 
 ### DEF-009 — Sign-in page down for real browsers on a pre-fix cached shell

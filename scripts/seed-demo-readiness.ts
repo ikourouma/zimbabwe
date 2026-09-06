@@ -18,6 +18,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { and, eq, sql } from "drizzle-orm";
 import {
+  auditLogs,
   engagementMous,
   investorEngagements,
   orgInvites,
@@ -42,6 +43,19 @@ import {
 } from "../lib/db/seed/demo-accounts";
 
 const COMMIT = process.argv.includes("--commit");
+
+/**
+ * Drops the demo investor's engagements, memoranda and concierge thread so the next pass rebuilds
+ * them from the definitions in this file.
+ *
+ * Every step here is otherwise write-once: it looks for the record, and leaves it alone if it finds
+ * one. That is the right default — re-running the seed must not multiply the exhibits or overwrite
+ * whatever a stakeholder did during a session. But it also means editing what an exhibit *says*
+ * has no effect on a database that already holds the old version, which is how five engagements
+ * came to carry a QA disclaimer in the field a reader takes for the investor's own note (DEF-023).
+ * This is the escape hatch for that case, and it is opt-in because it destroys records.
+ */
+const REBUILD_ACTIVITY = process.argv.includes("--rebuild-activity");
 
 /** `blocked` is distinct from `skipped` on purpose. On a dry run the accounts do not exist yet, so
  *  every step after the first has nothing to inspect — reporting that as "already present" would
@@ -309,12 +323,43 @@ async function seedEngagementsAndMous() {
     return;
   }
 
-  const targets: { ministryId: string; mouStatus: MouStatus; ticket: string }[] = [
-    { ministryId: "min-energy", mouStatus: "drafting", ticket: "$5M–$25M" },
-    { ministryId: "min-agriculture", mouStatus: "in_review", ticket: "$1M–$5M" },
-    { ministryId: "min-ict", mouStatus: "both_approved", ticket: "$25M–$100M" },
-    { ministryId: "min-industry", mouStatus: "finalized", ticket: "$5M–$25M" },
-    { ministryId: "min-housing", mouStatus: "executed", ticket: "$25M–$100M" },
+  // Each engagement carries a note of its own. All five used to repeat the same sentence —
+  // "Demonstration engagement for the stakeholder walkthrough — illustrative and pending official
+  // validation" — which made the Notes column look like a non-functional field rather than the
+  // record of what the investor is actually pursuing, and put a QA disclaimer in a column a
+  // stakeholder reads as the investor's own words. The provenance notice lives on the sitewide
+  // banner, which states it once for everything rather than once per row.
+  const targets: { ministryId: string; mouStatus: MouStatus; ticket: string; note: string }[] = [
+    {
+      ministryId: "min-energy",
+      mouStatus: "drafting",
+      ticket: "$5M–$25M",
+      note: "Grid connection study reviewed. Awaiting confirmation of the offtake tariff before terms are drafted.",
+    },
+    {
+      ministryId: "min-agriculture",
+      mouStatus: "in_review",
+      ticket: "$1M–$5M",
+      note: "Site visit completed. Terms approved on our side and with ZIDA for counter-approval.",
+    },
+    {
+      ministryId: "min-ict",
+      mouStatus: "both_approved",
+      ticket: "$25M–$100M",
+      note: "Both parties have approved the draft terms. Proceeding to finalisation.",
+    },
+    {
+      ministryId: "min-industry",
+      mouStatus: "finalized",
+      ticket: "$5M–$25M",
+      note: "Terms finalised and the content frozen. Awaiting scheduling of signature.",
+    },
+    {
+      ministryId: "min-housing",
+      mouStatus: "executed",
+      ticket: "$25M–$100M",
+      note: "Memorandum signed in Harare. Moving to definitive agreement and financial close.",
+    },
   ];
 
   for (const target of targets) {
@@ -356,12 +401,31 @@ async function seedEngagementsAndMous() {
           status: "approved",
           ticketSize: target.ticket,
           signatoryTitle: investor.jobTitle,
-          notes: `Demonstration engagement for the stakeholder walkthrough — illustrative and pending official validation.`,
+          notes: target.note,
           certifiedAt: new Date(),
           publishedAt: new Date(),
         })
         .returning({ id: investorEngagements.id });
       engagementId = created.id;
+
+      // The audit row POST /api/engagements would have written. Without it the Deal Room overview
+      // reported five engagements beside a Recent Activity panel reading "No recent activity yet",
+      // because the counters read the engagement table while the feed reads the audit trail. This
+      // is not the same as fabricating the download and preview counters deliberately left at zero
+      // further down: the engagement genuinely exists, and the row records the record.
+      await seedDb.insert(auditLogs).values({
+        actorUserId: investorId,
+        action: "engagement.created",
+        entityType: "engagement",
+        entityId: engagementId,
+        metadata: {
+          actorName: investor.name,
+          investorName: investor.name,
+          projectId: project.id,
+          status: "approved",
+        },
+      });
+
       record("engagement", `${project.title}`, "created");
     } else {
       record("engagement", `${project.title}`, "skipped");
@@ -588,7 +652,7 @@ async function seedInvestorActivity() {
     return;
   }
 
-  await seedDb.insert(projectMessages).values({
+  const [postedMessage] = await seedDb.insert(projectMessages).values({
     scope: "concierge",
     threadOwnerUserId: investorId,
     authorUserId: investorId,
@@ -596,11 +660,33 @@ async function seedInvestorActivity() {
     authorRole: "qualified",
     visibility: "investor_visible",
     subject: "Sector guidance ahead of a Q4 allocation",
+    // No provenance disclaimer in the body. It used to end "Demonstration message for the
+    // stakeholder walkthrough — illustrative and pending official validation", which put a QA
+    // notice inside a person's correspondence: a reader sees Grace Mutindi ask a substantive
+    // question and then appear to disclaim her own message. The sitewide banner already carries
+    // that notice on every page, which is where a statement about the data belongs — around the
+    // content, not inside it.
     body:
       "We are shaping a Q4 allocation across renewable generation and agro-processing and would " +
       "welcome guidance on which of the published opportunities are closest to financial close. " +
-      "Demonstration message for the stakeholder walkthrough — illustrative and pending official validation.",
+      "Where a project already has a ministry sponsor engaged, that would help us prioritise.",
+  }).returning({ id: projectMessages.id });
+
+  // As with the engagements above, the audit row POST /api/concierge/messages would have written,
+  // so the Recent Activity feed reflects the message the Communication Hub displays.
+  await seedDb.insert(auditLogs).values({
+    actorUserId: investorId,
+    action: "message.created",
+    entityType: "project_message",
+    entityId: postedMessage.id,
+    metadata: {
+      actorName: investor.name,
+      scope: "concierge",
+      threadOwnerUserId: investorId,
+      visibility: "investor_visible",
+    },
   });
+
   record("message", "concierge thread", "created");
 }
 
@@ -750,12 +836,54 @@ sets \`suspended\` instead, so use the per-user action if you want them archived
 
 // ---------------------------------------------------------------------------------------------
 
+/** See REBUILD_ACTIVITY. Deletes children before parents, and the audit rows alongside them, so a
+ *  rebuilt exhibit does not leave a trail pointing at engagements that no longer exist. */
+async function rebuildInvestorActivity() {
+  const investorId = await findAuthUserId("qualified+demo@zidaproject.com");
+  if (!investorId) {
+    missingPrerequisite("rebuild", "qualified+demo");
+    return;
+  }
+
+  if (!COMMIT) {
+    record("rebuild", "engagements, memoranda and concierge thread", "updated");
+    return;
+  }
+
+  const owned = await seedDb
+    .select({ id: investorEngagements.id })
+    .from(investorEngagements)
+    .where(eq(investorEngagements.userId, investorId));
+
+  for (const engagement of owned) {
+    await seedDb.delete(engagementMous).where(eq(engagementMous.engagementId, engagement.id));
+    await seedDb.delete(auditLogs).where(eq(auditLogs.entityId, engagement.id));
+  }
+  await seedDb.delete(investorEngagements).where(eq(investorEngagements.userId, investorId));
+
+  const thread = await seedDb
+    .select({ id: projectMessages.id })
+    .from(projectMessages)
+    .where(and(eq(projectMessages.threadOwnerUserId, investorId), eq(projectMessages.scope, "concierge")));
+
+  for (const message of thread) {
+    await seedDb.delete(auditLogs).where(eq(auditLogs.entityId, message.id));
+  }
+  await seedDb
+    .delete(projectMessages)
+    .where(and(eq(projectMessages.threadOwnerUserId, investorId), eq(projectMessages.scope, "concierge")));
+
+  record("rebuild", `${owned.length} engagements, ${thread.length} messages`, "updated");
+}
+
 async function main() {
   console.log(
     COMMIT
       ? "Running in COMMIT mode — changes will be written.\n"
       : "Running as a DRY RUN. Re-run with --commit to write. Lines marked ~ are what would change.\n",
   );
+
+  if (REBUILD_ACTIVITY) await rebuildInvestorActivity();
 
   await seedAccounts();
   await seedTeamLinks();

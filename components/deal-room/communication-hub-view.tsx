@@ -13,6 +13,7 @@ import { MessageThread } from "@/components/deal-room/message-thread";
 import { NewMessageModal } from "@/components/deal-room/new-message-modal";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { formatCapitalHeadline } from "@/lib/utils/capital";
 import type { ProjectMessageWithProject } from "@/lib/types";
 
 const LAST_SEEN_KEY = "zimbabwe.dashboard.communicationHub.lastSeen";
@@ -362,8 +363,11 @@ export function CommunicationHubView() {
                     <span className="capitalize" style={{ color: "var(--color-text-muted)" }}>
                       {selectedProject.projectStatus.replace(/_/g, " ")}
                     </span>
-                    {selectedProject.capitalRequired && (
-                      <span style={{ color: "var(--color-text-muted)" }}>· {selectedProject.capitalRequired}</span>
+                    {/* Parsed headline figure — see formatCapitalHeadline. */}
+                    {formatCapitalHeadline(selectedProject.capitalRequired) && (
+                      <span style={{ color: "var(--color-text-muted)" }} title={selectedProject.capitalRequired}>
+                        · {formatCapitalHeadline(selectedProject.capitalRequired)}
+                      </span>
                     )}
                     {selectedProject.province && (
                       <span style={{ color: "var(--color-text-muted)" }}>· {selectedProject.province}</span>
