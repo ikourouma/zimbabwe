@@ -22,7 +22,9 @@ import {
   investorEngagements,
   orgInvites,
   profiles,
+  projectMessages,
   projects,
+  projectWatchlist,
   strategicInquiries,
 } from "@/lib/db/schema";
 import { NDA_VERSION } from "@/lib/governance/nda";
@@ -100,7 +102,7 @@ async function signUpWithBackoff(email: string, password: string, name: string) 
 // ---------------------------------------------------------------------------------------------
 
 async function seedAccounts() {
-  console.log(`\n[1/6] Accounts (${ALL_ACCOUNTS.length})`);
+  console.log(`\n[1/7] Accounts (${ALL_ACCOUNTS.length})`);
   const password = demoPassword();
 
   for (const account of ALL_ACCOUNTS) {
@@ -173,7 +175,7 @@ async function seedAccounts() {
 // ---------------------------------------------------------------------------------------------
 
 async function seedTeamLinks() {
-  console.log("\n[2/6] Investor team membership");
+  console.log("\n[2/7] Investor team membership");
 
   for (const link of DEMO_TEAM_LINKS) {
     const ownerId = userIds.get(link.ownerEmail);
@@ -232,7 +234,7 @@ async function seedTeamLinks() {
  *  keys the role upgrade off engagementType and the decline/changes emails key off type. A row
  *  missing either is invisible to the workflow the ZIDA Admin guide documents. */
 async function seedApplications() {
-  console.log("\n[3/6] Pending investor applications");
+  console.log("\n[3/7] Pending investor applications");
 
   for (const { account, application } of DEMO_APPLICANTS) {
     const userId = userIds.get(account.email);
@@ -286,7 +288,7 @@ async function seedApplications() {
  *  is the only state where a reviewer actually has something to approve — without it the
  *  memorandum step in three guides describes a button nobody can press. */
 async function seedEngagementsAndMous() {
-  console.log("\n[4/6] Engagements and memoranda");
+  console.log("\n[4/7] Engagements and memoranda");
 
   const investorId = userIds.get("qualified+demo@zidaproject.com");
   const investor = DEMO_ACCOUNTS.find((a) => a.email === "qualified+demo@zidaproject.com");
@@ -420,7 +422,7 @@ async function seedEngagementsAndMous() {
 // ---------------------------------------------------------------------------------------------
 
 async function seedReviewQueue() {
-  console.log("\n[5/6] Review queue depth");
+  console.log("\n[5/7] Review queue depth");
 
   for (const spec of DEMO_QUEUE_PROJECTS) {
     const [existing] = await seedDb
@@ -466,11 +468,99 @@ async function seedReviewQueue() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// 6. Roster document
+// 6. Investor activity behind the analytics panel
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * A watchlist and one live conversation for the demo investor.
+ *
+ * The Deal Room overview's My Analytics panel counts saved projects, engagements, documents
+ * downloaded and previewed, and messages sent. Engagements were the only non-zero line, so the
+ * flagship investor view demonstrated an analytics capability with a column of noughts beside it,
+ * and Recent Activity read "No recent activity yet."
+ *
+ * Only activity a real account would genuinely accumulate is seeded here. Saving a project and
+ * writing to the ZIDA team are things this investor plausibly did. Download and preview counters
+ * are deliberately left alone: those figures are backed by audit rows, and an audit trail asserting
+ * that someone opened a document they never opened is a different kind of claim from a demonstration
+ * record. They stay at zero, and the guides say why.
+ */
+async function seedInvestorActivity() {
+  console.log("\n[6/7] Investor activity");
+
+  const investorId = userIds.get("qualified+demo@zidaproject.com");
+  const investor = DEMO_ACCOUNTS.find((a) => a.email === "qualified+demo@zidaproject.com");
+  if (!investorId || !investor) {
+    missingPrerequisite("activity", "qualified+demo");
+    return;
+  }
+
+  // Saved from across sectors rather than the two already under engagement — a watchlist that
+  // duplicates the pipeline demonstrates nothing about screening.
+  const watchable = await seedDb
+    .select({ id: projects.id, title: projects.title })
+    .from(projects)
+    .where(eq(projects.projectStatus, "published"))
+    .orderBy(projects.title)
+    .limit(4);
+
+  for (const project of watchable) {
+    const [existing] = await seedDb
+      .select({ id: projectWatchlist.id })
+      .from(projectWatchlist)
+      .where(and(eq(projectWatchlist.userId, investorId), eq(projectWatchlist.projectId, project.id)))
+      .limit(1);
+    if (existing) {
+      record("watchlist", project.title, "skipped");
+      continue;
+    }
+    if (!COMMIT) {
+      record("watchlist", project.title, "created");
+      continue;
+    }
+    await seedDb.insert(projectWatchlist).values({ userId: investorId, projectId: project.id });
+    record("watchlist", project.title, "created");
+  }
+
+  // One concierge thread. This is the cold-start channel an investor uses to reach ZIDA before any
+  // engagement exists, and it is the thread the Communication Hub screenshot shows.
+  const [existingThread] = await seedDb
+    .select({ id: projectMessages.id })
+    .from(projectMessages)
+    .where(and(eq(projectMessages.threadOwnerUserId, investorId), eq(projectMessages.scope, "concierge")))
+    .limit(1);
+
+  if (existingThread) {
+    record("message", "concierge thread", "skipped");
+    return;
+  }
+  if (!COMMIT) {
+    record("message", "concierge thread", "created");
+    return;
+  }
+
+  await seedDb.insert(projectMessages).values({
+    scope: "concierge",
+    threadOwnerUserId: investorId,
+    authorUserId: investorId,
+    authorName: investor.name,
+    authorRole: "qualified",
+    visibility: "investor_visible",
+    subject: "Sector guidance ahead of a Q4 allocation",
+    body:
+      "We are shaping a Q4 allocation across renewable generation and agro-processing and would " +
+      "welcome guidance on which of the published opportunities are closest to financial close. " +
+      "Demonstration message for the stakeholder walkthrough — illustrative and pending official validation.",
+  });
+  record("message", "concierge thread", "created");
+}
+
+// ---------------------------------------------------------------------------------------------
+// 7. Roster document
 // ---------------------------------------------------------------------------------------------
 
 async function writeRoster() {
-  console.log("\n[6/6] Roster document");
+  console.log("\n[7/7] Roster document");
   if (!COMMIT) {
     record("roster", "docs/DEMO_ACCOUNTS.md", "created");
     return;
@@ -532,6 +622,7 @@ async function main() {
   await seedApplications();
   await seedEngagementsAndMous();
   await seedReviewQueue();
+  await seedInvestorActivity();
   await writeRoster();
 
   const created = changes.filter((c) => c.action === "created").length;
