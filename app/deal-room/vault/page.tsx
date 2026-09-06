@@ -6,12 +6,21 @@ import { toast } from "sonner";
 import { FileArchive, FileCheck, FileText, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { AccessGate } from "@/components/dashboard/access-gate";
+import { MOU_STATUS_LABELS } from "@/lib/governance/mou-workflow";
+import type { MouStatus } from "@/lib/types";
 
 interface VaultPayload {
   nda: { acceptedAt: string; version: string | null; ip: string | null } | null;
   businessRegistration: boolean;
   accreditation: { id: string; kind: string; fileName: string; status: string; createdAt: string }[];
-  mous: { id: string; engagementId: string; status: string; hasSnapshot: boolean; updatedAt: string }[];
+  mous: {
+    id: string;
+    engagementId: string;
+    projectTitle: string | null;
+    status: MouStatus;
+    hasSnapshot: boolean;
+    updatedAt: string;
+  }[];
   downloads: { id: string; entityId: string; createdAt: string }[];
 }
 
@@ -124,10 +133,12 @@ export default function DocumentVaultPage() {
                 {data.mous.map((mou) => (
                   <li key={mou.id}>
                     <Link href="/deal-room/mou" className="underline" style={{ color: "var(--color-gold)" }}>
-                      {mou.status}
-                      {mou.hasSnapshot ? " — snapshot available" : ""}
+                      {mou.projectTitle ?? "Memorandum of Understanding"}
                     </Link>
                     <span className="ml-2 text-xs" style={{ color: "var(--color-text-muted)" }}>
+                      {MOU_STATUS_LABELS[mou.status] ?? mou.status}
+                      {mou.hasSnapshot ? " · snapshot available" : ""}
+                      {" · "}
                       {new Date(mou.updatedAt).toLocaleDateString()}
                     </span>
                   </li>

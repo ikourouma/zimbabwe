@@ -26,6 +26,11 @@ async function capture(page: import("@playwright/test").Page, dir: string, entry
   });
   await expect(page.locator(".dashboard-skeleton")).toHaveCount(0, { timeout: 30_000 });
 
+  // Not every pending panel renders a skeleton. Reports, the team roster, the vault and the
+  // sessions list each say "Loading …" in plain text instead, which the skeleton check above
+  // sails straight past — the Ministry Reports and My Profile images both shipped showing it.
+  await expect(page.getByText(/^Loading .*…$/)).toHaveCount(0, { timeout: 30_000 });
+
   // Charts and count-up figures animate on mount; capturing mid-animation produces images that
   // disagree with each other across runs and look like defects to a reader.
   await page.waitForTimeout(1200);
