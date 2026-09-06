@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { DEMO_APPLICANTS } from "../lib/db/seed/demo-accounts";
 import { storageStatePath } from "./roles";
 
 /**
@@ -64,14 +65,20 @@ test.describe("@capture workflows — ZIDA Admin", () => {
 
     const approve = page.getByRole("button", { name: "Approve as Qualified Investor" });
 
-    // The decision controls only render for a pending or changes-requested application. Opening the
-    // first row is the only way to find out, and there may be none pending on the day this runs.
-    const rows = page.locator("[data-inquiry-row], table tbody tr").first();
-    if ((await rows.count()) === 0) {
-      test.skip(true, "No investor applications present to open.");
+    // This page opens in kanban, not table, so there is no row to click — an earlier version
+    // looked for `table tbody tr`, found nothing, and skipped itself every run while still
+    // reporting green. Every one of the four views renders the applicant's name, so matching a
+    // seeded applicant by name finds the card regardless of which view a previous session left
+    // persisted in localStorage.
+    const card = page
+      .getByRole("button", { name: new RegExp(DEMO_APPLICANTS[0].account.name, "i") })
+      .first();
+
+    if ((await card.count()) === 0) {
+      test.skip(true, "No seeded investor application present — run npm run seed:readiness -- --commit.");
     }
 
-    await rows.click();
+    await card.click();
     await page.waitForTimeout(1500);
     await shoot(page, "application-detail-drawer");
 

@@ -1,0 +1,130 @@
+﻿npm : npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help 
+npmrc` for supported config options.
+At C:\Users\ikour\AppData\Local\Temp\ps-script-960d745f-794f-4552-a77e-dccd8b866d1c.ps1:114 char:38
++ cd c:\Users\ikour\Projects\zimbabwe; npm run screenshots 2>&1 | Out-F ...
++                                      ~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm warn Unknow...config options.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+> zimbabwe-investment-platform@0.1.0 screenshots
+> tsx --env-file=.env.local node_modules/@playwright/test/cli.js test --grep @capture
+
+
+Playwright target: https://zidaproject.com
+
+
+Running 97 tests using 1 worker
+
+(node:37416) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+Playwright target: https://zidaproject.com
+
+  ok  1 [setup] ΓÇ║ e2e\auth.setup.ts:2:1020 ΓÇ║ authenticate Registered Investor (13.5s)
+  ok  2 [setup] ΓÇ║ e2e\auth.setup.ts:2:1020 ΓÇ║ authenticate Qualified Investor (13.4s)
+  ok  3 [setup] ΓÇ║ e2e\auth.setup.ts:2:1020 ΓÇ║ authenticate Government Reviewer (13.6s)
+  ok  4 [setup] ΓÇ║ e2e\auth.setup.ts:2:1020 ΓÇ║ authenticate Ministry Official (14.8s)
+  ok  5 [setup] ΓÇ║ e2e\auth.setup.ts:2:1020 ΓÇ║ authenticate ZIDA Admin (13.7s)
+  ok  6 [setup] ΓÇ║ e2e\auth.setup.ts:2:1020 ΓÇ║ authenticate Platform Admin (13.6s)
+  ok  7 [setup] ΓÇ║ e2e\auth.setup.ts:2:1020 ΓÇ║ authenticate Ministry Official (Agriculture) (13.6s)
+(node:36200) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+Playwright target: https://zidaproject.com
+
+  ok  8 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:888 ΓÇ║ @capture public ΓÇ║ public ΓÇö Home (10.4s)
+  ok  9 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:888 ΓÇ║ @capture public ΓÇ║ public ΓÇö National Opportunity (9.7s)
+  ok 10 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:888 ΓÇ║ @capture public ΓÇ║ public ΓÇö Platform Concept (9.6s)
+  ok 11 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:888 ΓÇ║ @capture public ΓÇ║ public ΓÇö Strategic Pillars (9.9s)
+  ok 12 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:888 ΓÇ║ @capture public ΓÇ║ public ΓÇö Priority Sectors (10.0s)
+  ok 13 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:888 ΓÇ║ @capture public ΓÇ║ public ΓÇö Project Registry (9.8s)
+  ok 14 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:888 ΓÇ║ @capture public ΓÇ║ public ΓÇö Investor Journey (10.1s)
+  ok 15 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:888 ΓÇ║ @capture public ΓÇ║ public ΓÇö Strategic Partnerships (10.4s)
+  ok 16 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:888 ΓÇ║ @capture public ΓÇ║ public ΓÇö National Profile (9.9s)
+  ok 17 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:888 ΓÇ║ @capture public ΓÇ║ public ΓÇö Contact (9.7s)
+  ok 18 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:888 ΓÇ║ @capture public ΓÇ║ public ΓÇö FAQs (9.5s)
+  ok 19 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:888 ΓÇ║ @capture public ΓÇ║ public ΓÇö Afronovation (9.8s)
+  ok 20 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:888 ΓÇ║ @capture public ΓÇ║ public ΓÇö Sign In (10.2s)
+  ok 21 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:888 ΓÇ║ @capture public ΓÇ║ public ΓÇö Create Account (10.1s)
+  ok 22 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:888 ΓÇ║ @capture public ΓÇ║ public ΓÇö Legal (9.7s)
+  ok 23 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Registered Investor ΓÇ║ Registered Investor ΓÇö Overview (3.2s)
+  ok 24 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Registered Investor ΓÇ║ Registered Investor ΓÇö Pipeline (2.8s)
+  ok 25 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Registered Investor ΓÇ║ Registered Investor ΓÇö Saved Projects (3.0s)
+  ok 26 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Registered Investor ΓÇ║ Registered Investor ΓÇö Document Vault (2.6s)
+  ok 27 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Registered Investor ΓÇ║ Registered Investor ΓÇö My Activity Report (4.1s)
+  ok 28 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Registered Investor ΓÇ║ Registered Investor ΓÇö My Profile (2.5s)
+  ok 29 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Registered Investor ΓÇ║ Registered Investor ΓÇö Account (2.5s)
+  ok 30 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Qualified Investor ΓÇ║ Qualified Investor ΓÇö Overview (3.2s)
+  ok 31 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Qualified Investor ΓÇ║ Qualified Investor ΓÇö Pipeline (2.7s)
+  ok 32 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Qualified Investor ΓÇ║ Qualified Investor ΓÇö Saved Projects (3.1s)
+  ok 33 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Qualified Investor ΓÇ║ Qualified Investor ΓÇö Document Vault (3.6s)
+  ok 34 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Qualified Investor ΓÇ║ Qualified Investor ΓÇö My Activity Report (3.4s)
+  ok 35 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Qualified Investor ΓÇ║ Qualified Investor ΓÇö My Profile (2.8s)
+  ok 36 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Qualified Investor ΓÇ║ Qualified Investor ΓÇö Account (3.1s)
+  ok 37 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Qualified Investor ΓÇ║ Qualified Investor ΓÇö My Proposals (3.2s)
+  ok 38 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Qualified Investor ΓÇ║ Qualified Investor ΓÇö Engagements (3.8s)
+  ok 39 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Qualified Investor ΓÇ║ Qualified Investor ΓÇö MOU Registry (2.7s)
+  ok 40 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Qualified Investor ΓÇ║ Qualified Investor ΓÇö Communication Hub (3.6s)
+  ok 41 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Qualified Investor ΓÇ║ Qualified Investor ΓÇö Team (4.5s)
+  ok 42 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Government Reviewer ΓÇ║ Government Reviewer ΓÇö Overview (3.7s)
+  ok 43 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Government Reviewer ΓÇ║ Government Reviewer ΓÇö Pipeline (3.3s)
+  ok 44 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Government Reviewer ΓÇ║ Government Reviewer ΓÇö Saved Projects (3.3s)
+  ok 45 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Government Reviewer ΓÇ║ Government Reviewer ΓÇö Document Vault (2.8s)
+  ok 46 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Government Reviewer ΓÇ║ Government Reviewer ΓÇö My Activity Report (2.8s)
+  ok 47 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Government Reviewer ΓÇ║ Government Reviewer ΓÇö My Profile (3.3s)
+  ok 48 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Government Reviewer ΓÇ║ Government Reviewer ΓÇö Account (3.1s)
+  ok 49 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Government Reviewer ΓÇ║ Government Reviewer ΓÇö My Proposals (3.3s)
+  ok 50 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Government Reviewer ΓÇ║ Government Reviewer ΓÇö Engagements (2.8s)
+  ok 51 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Government Reviewer ΓÇ║ Government Reviewer ΓÇö MOU Registry (4.4s)
+  ok 52 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Government Reviewer ΓÇ║ Government Reviewer ΓÇö Communication Hub (3.8s)
+  ok 53 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Ministry Official ΓÇ║ Ministry Official ΓÇö Overview (5.4s)
+  ok 54 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Ministry Official ΓÇ║ Ministry Official ΓÇö Ministry Pipeline (3.9s)
+  ok 55 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Ministry Official ΓÇ║ Ministry Official ΓÇö Review Queue (4.4s)
+  ok 56 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Ministry Official ΓÇ║ Ministry Official ΓÇö Engagements (4.3s)
+  ok 57 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Ministry Official ΓÇ║ Ministry Official ΓÇö MOU Registry (4.6s)
+  ok 58 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Ministry Official ΓÇ║ Ministry Official ΓÇö Inquiries (4.3s)
+  ok 59 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Ministry Official ΓÇ║ Ministry Official ΓÇö Communication Hub (5.4s)
+  ok 60 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Ministry Official ΓÇ║ Ministry Official ΓÇö Users & Roles (4.4s)
+  ok 61 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Ministry Official ΓÇ║ Ministry Official ΓÇö Team (4.8s)
+  ok 62 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Ministry Official ΓÇ║ Ministry Official ΓÇö Reports (2.7s)
+  ok 63 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Ministry Official ΓÇ║ Ministry Official ΓÇö My Profile (2.6s)
+  ok 64 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Ministry Official ΓÇ║ Ministry Official ΓÇö Account (2.7s)
+  ok 65 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture ZIDA Admin ΓÇ║ ZIDA Admin ΓÇö Overview (4.0s)
+  ok 66 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture ZIDA Admin ΓÇ║ ZIDA Admin ΓÇö Projects (3.5s)
+  ok 67 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture ZIDA Admin ΓÇ║ ZIDA Admin ΓÇö Review Queue (3.4s)
+  ok 68 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture ZIDA Admin ΓÇ║ ZIDA Admin ΓÇö Inquiries (3.3s)
+  ok 69 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture ZIDA Admin ΓÇ║ ZIDA Admin ΓÇö MOU Registry (2.9s)
+  ok 70 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture ZIDA Admin ΓÇ║ ZIDA Admin ΓÇö Users & Roles (4.1s)
+  ok 71 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture ZIDA Admin ΓÇ║ ZIDA Admin ΓÇö Reports (3.4s)
+  ok 72 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture ZIDA Admin ΓÇ║ ZIDA Admin ΓÇö Communication Hub (4.1s)
+  ok 73 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture ZIDA Admin ΓÇ║ ZIDA Admin ΓÇö My Profile (3.2s)
+  ok 74 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture ZIDA Admin ΓÇ║ ZIDA Admin ΓÇö Account (3.8s)
+  ok 75 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Platform Admin ΓÇ║ Platform Admin ΓÇö Analytics (4.1s)
+  ok 76 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Platform Admin ΓÇ║ Platform Admin ΓÇö Projects (4.5s)
+  ok 77 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Platform Admin ΓÇ║ Platform Admin ΓÇö Review Queue (3.7s)
+  ok 78 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Platform Admin ΓÇ║ Platform Admin ΓÇö Users & Roles (4.1s)
+  ok 79 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Platform Admin ΓÇ║ Platform Admin ΓÇö Inquiries (3.5s)
+  ok 80 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Platform Admin ΓÇ║ Platform Admin ΓÇö MOU Registry (3.6s)
+  ok 81 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Platform Admin ΓÇ║ Platform Admin ΓÇö Reports (3.0s)
+  ok 82 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Platform Admin ΓÇ║ Platform Admin ΓÇö Taxonomies (2.9s)
+  ok 83 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Platform Admin ΓÇ║ Platform Admin ΓÇö Communication Hub (4.2s)
+  ok 84 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Platform Admin ΓÇ║ Platform Admin ΓÇö Site Settings (3.4s)
+  ok 85 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Platform Admin ΓÇ║ Platform Admin ΓÇö Audit Log (3.9s)
+  ok 86 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Platform Admin ΓÇ║ Platform Admin ΓÇö Publishing Override (2.7s)
+  ok 87 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Platform Admin ΓÇ║ Platform Admin ΓÇö My Profile (2.7s)
+  ok 88 [chromium] ΓÇ║ e2e\screenshots.spec.ts:2:1628 ΓÇ║ @capture Platform Admin ΓÇ║ Platform Admin ΓÇö Account (3.1s)
+  ok 89 [chromium] ΓÇ║ e2e\workflows.spec.ts:2:714 ΓÇ║ @capture workflows ΓÇö ZIDA Admin ΓÇ║ project creation wizard (3.9s)
+  ok 90 [chromium] ΓÇ║ e2e\workflows.spec.ts:2:958 ΓÇ║ @capture workflows ΓÇö ZIDA Admin ΓÇ║ review queue with reviewer actions (4.4s)
+  ok 91 [chromium] ΓÇ║ e2e\workflows.spec.ts:2:1119 ΓÇ║ @capture workflows ΓÇö ZIDA Admin ΓÇ║ qualified investor applications queue (3.7s)
+  -  92 [chromium] ΓÇ║ e2e\workflows.spec.ts:2:1316 ΓÇ║ @capture workflows ΓÇö ZIDA Admin ΓÇ║ application detail and approval dialog
+  ok 93 [chromium] ΓÇ║ e2e\workflows.spec.ts:2:2385 ΓÇ║ @capture workflows ΓÇö Ministry Official ΓÇ║ ministry project creation wizard (2.7s)
+  ok 94 [chromium] ΓÇ║ e2e\workflows.spec.ts:2:2564 ΓÇ║ @capture workflows ΓÇö Ministry Official ΓÇ║ ministry review queue (4.7s)
+  ok 95 [chromium] ΓÇ║ e2e\workflows.spec.ts:2:2888 ΓÇ║ @capture workflows ΓÇö Qualified Investor ΓÇ║ engagement wizard (4.1s)
+  ok 96 [chromium] ΓÇ║ e2e\workflows.spec.ts:2:3378 ΓÇ║ @capture workflows ΓÇö Qualified Investor ΓÇ║ memorandum panel (4.6s)
+  ok 97 [chromium] ΓÇ║ e2e\workflows.spec.ts:2:3883 ΓÇ║ @capture workflows ΓÇö public ΓÇ║ qualification application wizard (10.4s)
+
+  Slow test file: [chromium] ΓÇ║ e2e\screenshots.spec.ts (6.3m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  1 skipped
+  96 passed (8.7m)

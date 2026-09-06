@@ -438,8 +438,14 @@ export async function findUserIdByEmail(email: string): Promise<string | null> {
 export async function findUserIdsByEmails(emails: string[]): Promise<Record<string, string>> {
   if (emails.length === 0) return {};
   const lowered = [...new Set(emails.map((e) => e.toLowerCase()))];
+  // Interpolating a JS array into a `sql` template expands it to a parameter tuple, so `= ANY(${a})`
+  // renders as the invalid `= ANY(($1, $2))` and the query throws. An explicit IN list built with
+  // sql.join keeps each element its own bound parameter.
   const rows = await db.execute<{ id: string; email: string }>(
-    sql`SELECT id, email FROM neon_auth."user" WHERE lower(email) = ANY(${lowered})`
+    sql`SELECT id, email FROM neon_auth."user" WHERE lower(email) IN (${sql.join(
+      lowered.map((email) => sql`${email}`),
+      sql`, `
+    )})`
   );
   const map: Record<string, string> = {};
   for (const row of rows.rows) map[row.email.toLowerCase()] = row.id;

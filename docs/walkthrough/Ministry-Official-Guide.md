@@ -44,7 +44,10 @@ Go to `https://zidaproject.com/auth/sign-in` and enter your credentials. You wil
 
 This is a different console from the one investors and national reviewers use. Everything in it is filtered to your ministry, without your having to apply a filter.
 
-You will be asked to accept a non-disclosure undertaking before documents are released to you.
+Before documents are released to you, the platform asks you to accept a confidentiality undertaking — the Sovereign Confidentiality Framework. It appears once, on first sign-in, and records the date, version and the title you attest under. The walkthrough accounts have this pre-accepted so that every reviewer sees the same console; on a real account it is the first thing you will see.
+
+> **What to check**
+> Your account is identified by the email address you sign in with, and that address is what the audit trail records against every project you approve. Is the address you were given the one your ministry would want on that record? More broadly, should a ministry account be **required** to use an official government address rather than any working mailbox? Section 9 of the Overview sets out what that would make possible — including deriving your ministry from your address instead of it being assigned by hand. Record your view in section 8.
 
 ## 3. Your Console
 

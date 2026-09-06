@@ -24,6 +24,7 @@
 6. The Access Tier Model
 7. How the Guides Were Produced
 8. What We Need Back From You
+9. Institutional Email Identity — An Adjacent Opportunity
 
 ---
 
@@ -137,13 +138,40 @@ Each guide ends with two or three feedback tables. Please complete them as you g
 | Wording that is wrong or sensitive | The wording table in the Public Visitor guide |
 | Which deferred persona matters most | This document, section 4 |
 | Who should hold the Platform Manager role | The Platform Manager guide, section 8 |
+| How officials should be identified by email | This document, section 9 |
 
-Four questions we would particularly like answered, because they are design decisions rather than defects and they are cheapest to change now:
+Five questions we would particularly like answered, because they are design decisions rather than defects and they are cheapest to change now:
 
 1. Should **publication** require one ZIDA officer or two? It currently requires one.
 2. Should a **Ministry Official** have a say in whether an investor engagement on their own project proceeds? They currently have visibility but no decision.
 3. Should **ZIDA** be able to unpublish a project directly? That currently requires the Platform Manager.
 4. Should **ministries** manage their own staff accounts through the full lifecycle? They can currently create accounts but not change or deactivate them.
+5. Should a government account be **required to use an official government address**? Section 9 sets out what that would mean.
+
+## 9. Institutional Email Identity — An Adjacent Opportunity
+
+This section is not a walkthrough step and requires nothing from you during the review. It records an observation the pilot surfaced, because the moment to raise it is while account structure is still being decided.
+
+**What the platform does today.** Every account is an email address. That address is the login, the notification destination, and — in the compliance dossier the Platform Manager sees — a trust signal: the platform already distinguishes an institutional address from a free consumer mailbox and displays that distinction on the user record. What it cannot currently do is verify that an address claiming to represent a ministry actually does.
+
+**Why that matters here.** A Ministry Official approving a project, a Government Reviewer moving one to approved, and a ZIDA Admin publishing it are all exercising delegated public authority, and the audit trail records who did it by account. If those accounts sit on personal or commercial mailboxes, the audit trail is only as durable as a mailbox nobody official controls. When an officer transfers or leaves, the record of their decisions stays; their access does not necessarily follow.
+
+**What a government email system would change.** A modern Government Email Management System replaces legacy and personal inboxes with a secure, centrally administered, cloud-based service — one that organises the volume of correspondence an agency generates, protects citizen and commercial data under government control, and applies statutory record-keeping automatically rather than by individual discipline. Giving every official a `.gov.zw` address makes institutional identity verifiable rather than asserted.
+
+**How it connects to this platform.** Concept Note v0.3 positions this platform as the first delivery under a broader national digital acceleration effort, with subsequent systems sharing infrastructure and standards rather than each being built in isolation. Official email identity is exactly that kind of shared foundation: it is not specific to investment promotion, and every government system built after this one would inherit it. Three things would follow directly:
+
+| Capability | What it enables |
+| --- | --- |
+| Domain-verified government accounts | The platform can require a `.gov.zw` address for `government` and `ministry_admin` roles, so institutional authority is proven at sign-up rather than granted on trust |
+| Ministry inferred from the address | An officer's ministry can be derived from their address rather than assigned by hand, removing the most common account-setup error |
+| Lifecycle tied to employment | Deactivating an officer's mailbox on transfer or departure withdraws platform access with it, instead of relying on someone remembering to do both |
+
+**What this is not.** It is not in scope for this pilot, it is not a dependency, and nothing in the guides assumes it. The platform works today with any valid address. This is recorded so that if Zimbabwe is already pursuing official email provision, the platform can be aligned to it deliberately rather than retrofitted later.
+
+> **What we need from you**
+> Is a government email programme already under way or planned? If so, we would rather design account provisioning around it now — requiring official addresses for government roles is a small change today and a migration later. If not, is it something the platform should help make the case for?
+
+---
 
 > **Important**
 > Seeded demonstration records are illustrative and pending official validation. Financial indicators, project readiness claims, ministry mappings and supporting documents should be validated by ZIDA and the relevant authorities before production publication. The platform treats imported records as draft or pending validation until approved through the governance workflow.

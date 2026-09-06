@@ -11,6 +11,7 @@ import { AccessGate } from "@/components/dashboard/access-gate";
 import { InquiryFiltersBar } from "@/components/dashboard/inquiry-filters-bar";
 import { InquiryDecisionModal, type InquiryDecisionAction } from "@/components/dashboard/inquiry-decision-modal";
 import { InquiryDetailDrawer } from "@/components/dashboard/inquiry-detail-drawer";
+import { InquiryLoadError } from "@/components/dashboard/inquiry-load-error";
 import { InquiryKanbanView, InquiryListView, InquiryMatrixView, InquiryTableView } from "@/components/dashboard/inquiry-views";
 import { PipelineViewSwitcher, type PipelineView } from "@/components/deal-room/pipeline-view-switcher";
 import {
@@ -46,7 +47,7 @@ type InquiryCategoryFilter = "executive" | "all";
  * and its own Users & Roles link base path.
  */
 export default function SuperAdminInquiriesPage() {
-  const { inquiries, updateInquiryStatus, isLoading } = useLeadCapture();
+  const { inquiries, updateInquiryStatus, isLoading, loadFailed } = useLeadCapture();
   const { contactReasons, sectors, isLoading: taxonomyLoading } = useTaxonomyStore();
   const { isSuperAdmin, isLoading: authLoading } = useAuth();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -236,6 +237,8 @@ export default function SuperAdminInquiriesPage() {
             </div>
           ))}
         </div>
+      ) : loadFailed ? (
+        <InquiryLoadError />
       ) : categoryScopedInquiries.length === 0 ? (
         <div className="dashboard-panel p-10 text-center" style={{ color: "var(--color-text-muted)" }}>
           {categoryFilter === "all"

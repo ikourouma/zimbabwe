@@ -50,6 +50,9 @@ This is worth pausing on, because it is easy to misread. The Investor Dashboard 
 
 If you do not yet have an account, `https://zidaproject.com/auth/sign-up` creates one, and every self-registered account starts at this tier.
 
+> **The confidentiality undertaking**
+> On a newly created account, the first thing you see is the Sovereign Confidentiality Framework — a one-time acceptance recording the date, the agreement version and the title you attest under. It gates the Investor Dashboard for every non-ZIDA role. The walkthrough accounts have it pre-accepted so that every reviewer sees the same console rather than only the first person through it; if you sign up a fresh account instead, you will meet it immediately.
+
 ## 3. Your Dashboard
 
 The Overview is your landing page. It tells you where you stand and what to do next.

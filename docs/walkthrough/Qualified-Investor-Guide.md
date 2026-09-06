@@ -47,7 +47,7 @@ Go to `https://zidaproject.com/auth/sign-in` and enter your credentials. You wil
 The console is the same one you used as a registered investor, with five additional sections and considerably more visible on each project.
 
 > **The non-disclosure gate**
-> Before the platform releases gated documents to you, you must accept a non-disclosure undertaking. This applies to every non-ZIDA role, not only investors. Your acceptance is recorded with a timestamp and appears in your Document Vault as a certificate. If you have not accepted it, document downloads will prompt you rather than fail silently.
+> Before the platform releases gated documents to you, you must accept a non-disclosure undertaking — the Sovereign Confidentiality Framework. This applies to every non-ZIDA role, not only investors. It appears once, on first sign-in, and your acceptance is recorded with a timestamp, the agreement version and the title you attest under; it then appears in your Document Vault as a certificate. The walkthrough accounts have this pre-accepted so that every reviewer sees the same console rather than only the first person through it; on a real account it is the first thing you will see.
 
 ## 3. Your Dashboard
 

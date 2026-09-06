@@ -126,6 +126,14 @@ export async function fetchAuditLogsForMinistry(ministryId: string, limit = 50):
   const ministryProjectIds = allProjects.filter((p) => projectMatchesMinistry(p, ministryId)).map((p) => p.id);
   if (ministryProjectIds.length === 0) return [];
 
+  // Interpolating a JS array into a `sql` template expands it to a parameter tuple, so `= ANY(${a})`
+  // renders as the invalid `= ANY(($1, $2))` and the query throws. An explicit IN list built with
+  // sql.join keeps each element its own bound parameter.
+  const projectIdList = sql.join(
+    ministryProjectIds.map((id) => sql`${id}`),
+    sql`, `
+  );
+
   const rows = await db.execute<{
     id: string;
     actor_user_id: string | null;
@@ -147,8 +155,8 @@ export async function fetchAuditLogsForMinistry(ministryId: string, limit = 50):
       u.name AS actor_name
     FROM audit_logs al
     LEFT JOIN neon_auth."user" u ON u.id::text = al.actor_user_id
-    WHERE (al.entity_type = 'project' AND al.entity_id = ANY(${ministryProjectIds}))
-       OR (al.entity_type IN ('engagement', 'project_message') AND al.metadata ->> 'projectId' = ANY(${ministryProjectIds}))
+    WHERE (al.entity_type = 'project' AND al.entity_id IN (${projectIdList}))
+       OR (al.entity_type IN ('engagement', 'project_message') AND al.metadata ->> 'projectId' IN (${projectIdList}))
     ORDER BY al.created_at DESC
     LIMIT ${limit}
   `);

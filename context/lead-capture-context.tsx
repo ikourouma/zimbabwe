@@ -6,6 +6,10 @@ import type { LeadInquiry } from "@/lib/types";
 interface LeadCaptureContextValue {
   inquiries: LeadInquiry[];
   isLoading: boolean;
+  /** Set when the list could not be read. Without this a failing GET is indistinguishable from an
+   *  empty queue: a 500 rendered as "No Qualified Investor applications yet." for long enough that
+   *  a screenshot pass captured the empty state and reported success. */
+  loadFailed: boolean;
   addInquiry: (inquiry: Omit<LeadInquiry, "id" | "createdAt">) => Promise<void>;
   /** `reason` is required by the server for every decision except resetting back to "pending" —
    *  see the reason-required vetting workflow (Investor Qualification Vetting plan). Throws with
@@ -19,13 +23,21 @@ const LeadCaptureContext = createContext<LeadCaptureContextValue | null>(null);
 export function LeadCaptureProvider({ children }: { children: React.ReactNode }) {
   const [inquiries, setInquiries] = useState<LeadInquiry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
       const res = await fetch("/api/inquiries");
-      if (res.ok) setInquiries(await res.json());
+      if (res.ok) {
+        setInquiries(await res.json());
+        setLoadFailed(false);
+      } else {
+        // 401/403 is the ordinary case for a visitor who is not staff, and an empty list is the
+        // right answer for them. Anything else is a genuine failure the console must not hide.
+        setLoadFailed(res.status !== 401 && res.status !== 403);
+      }
     } catch {
-      /* non-admin visitors get empty list */
+      setLoadFailed(true);
     } finally {
       setIsLoading(false);
     }
@@ -64,7 +76,7 @@ export function LeadCaptureProvider({ children }: { children: React.ReactNode })
 
   return (
     <LeadCaptureContext.Provider
-      value={{ inquiries, isLoading, addInquiry, updateInquiryStatus, refresh }}
+      value={{ inquiries, isLoading, loadFailed, addInquiry, updateInquiryStatus, refresh }}
     >
       {children}
     </LeadCaptureContext.Provider>

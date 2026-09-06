@@ -10,6 +10,7 @@ import type { LeadInquiry } from "@/lib/types";
 import { AccessGate } from "@/components/dashboard/access-gate";
 import { InquiryFiltersBar } from "@/components/dashboard/inquiry-filters-bar";
 import { InquiryDetailDrawer } from "@/components/dashboard/inquiry-detail-drawer";
+import { InquiryLoadError } from "@/components/dashboard/inquiry-load-error";
 import { InquiryKanbanView, InquiryListView, InquiryMatrixView, InquiryTableView } from "@/components/dashboard/inquiry-views";
 import { PipelineViewSwitcher, type PipelineView } from "@/components/deal-room/pipeline-view-switcher";
 import {
@@ -31,7 +32,7 @@ const VIEW_STORAGE_KEY = "zimbabwe.inquiries.ministry.view";
  * remains admin/super_admin-only.
  */
 export default function MinistryInquiriesPage() {
-  const { inquiries, isLoading } = useLeadCapture();
+  const { inquiries, isLoading, loadFailed } = useLeadCapture();
   const { sectors, ministries, isLoading: taxonomyLoading } = useTaxonomyStore();
   const { isMinistryAdmin, ministryId, isLoading: authLoading } = useAuth();
   const { projects, isLoading: projectsLoading } = useProjectStore();
@@ -171,6 +172,8 @@ export default function MinistryInquiriesPage() {
             </div>
           ))}
         </div>
+      ) : loadFailed ? (
+        <InquiryLoadError />
       ) : visible.length === 0 ? (
         <div className="dashboard-panel p-10 text-center" style={{ color: "var(--color-text-muted)" }}>
           No inquiries match this filter.

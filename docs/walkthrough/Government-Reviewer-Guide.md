@@ -47,7 +47,10 @@ Go to `https://zidaproject.com/auth/sign-in` and enter your credentials. You wil
 
 The address is the same one investors use, but the console is badged **Government Reviewer Console** and behaves differently: you see every project at every status, and you can act on other parties' records rather than only your own.
 
-You will be asked to accept a non-disclosure undertaking before documents are released to you, as every non-ZIDA console role is.
+Before documents are released to you, the platform asks you to accept a confidentiality undertaking — the Sovereign Confidentiality Framework — as it does of every non-ZIDA console role. It appears once, on first sign-in, and records the date, version and the title you attest under. The walkthrough accounts have this pre-accepted so that every reviewer sees the same console; on a real account it is the first thing you will see.
+
+> **What to check**
+> Your account is identified by the email address you sign in with, and that address is what the audit trail records against every project you move to approved. This role carries national scope, so that record matters more here than anywhere else on the platform. Should a Government Reviewer account be **required** to use an official government address rather than any working mailbox — and should losing that address withdraw platform access with it? Section 9 of the Overview sets out what that would make possible. Record your view in section 8.
 
 ## 3. Your Console
 

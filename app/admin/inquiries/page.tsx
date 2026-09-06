@@ -10,6 +10,7 @@ import { AccessGate } from "@/components/dashboard/access-gate";
 import { InquiryFiltersBar } from "@/components/dashboard/inquiry-filters-bar";
 import { InquiryDecisionModal, type InquiryDecisionAction } from "@/components/dashboard/inquiry-decision-modal";
 import { InquiryDetailDrawer } from "@/components/dashboard/inquiry-detail-drawer";
+import { InquiryLoadError } from "@/components/dashboard/inquiry-load-error";
 import { InquiryKanbanView, InquiryListView, InquiryMatrixView, InquiryTableView } from "@/components/dashboard/inquiry-views";
 import { PipelineViewSwitcher, type PipelineView } from "@/components/deal-room/pipeline-view-switcher";
 import {
@@ -31,7 +32,7 @@ const VIEW_STORAGE_KEY = "zimbabwe.inquiries.admin.view";
 type InquiryCategoryFilter = "all" | "investor";
 
 export default function AdminInquiriesPage() {
-  const { inquiries, updateInquiryStatus, isLoading } = useLeadCapture();
+  const { inquiries, updateInquiryStatus, isLoading, loadFailed } = useLeadCapture();
   const { sectors } = useTaxonomyStore();
   const { isAdmin, isLoading: authLoading } = useAuth();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -210,6 +211,8 @@ export default function AdminInquiriesPage() {
             </div>
           ))}
         </div>
+      ) : loadFailed ? (
+        <InquiryLoadError />
       ) : categoryScopedInquiries.length === 0 ? (
         <div className="dashboard-panel p-10 text-center" style={{ color: "var(--color-text-muted)" }}>
           {categoryFilter === "investor" ? "No Qualified Investor applications yet." : "No inquiries yet."}
