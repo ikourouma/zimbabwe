@@ -20,7 +20,7 @@ type PilotAccount = {
   organization?: string | null;
 };
 
-const PILOT_ACCOUNTS: PilotAccount[] = [
+export const PILOT_ACCOUNTS: PilotAccount[] = [
   { email: "registered+pilot@zidaproject.com", role: "registered", name: "Pilot Registered Investor" },
   { email: "qualified+pilot@zidaproject.com", role: "qualified", name: "Pilot Qualified Investor" },
   {
@@ -74,7 +74,7 @@ function generatePassword() {
   return randomBytes(12).toString("base64url");
 }
 
-async function findAuthUserId(email: string): Promise<string | null> {
+export async function findAuthUserId(email: string): Promise<string | null> {
   const result = await seedDb.execute<{ id: string }>(
     sql`SELECT id FROM neon_auth."user" WHERE email = ${email} LIMIT 1`
   );
@@ -82,14 +82,19 @@ async function findAuthUserId(email: string): Promise<string | null> {
   return row?.id ?? null;
 }
 
-async function updatePilotPassword(userId: string, password: string) {
+/** Sets a credential password directly, without going through the auth API — which matters for
+ *  bulk seeds, since the sign-up endpoint is rate-limited and this is a plain DB write. */
+export async function setAccountPassword(userId: string, password: string) {
   const hashed = await hashPassword(password);
   await seedDb.execute(
     sql`UPDATE neon_auth.account SET password = ${hashed}, "updatedAt" = now() WHERE "userId" = ${userId} AND "providerId" = 'credential'`
   );
 }
 
-async function signUpViaAuthApi(
+/** Creates a Neon Auth user, or returns the existing one on a 409/422 rather than failing — which
+ *  is what makes both this seed and the demo seed re-runnable. Exported for
+ *  scripts/seed-demo-readiness.ts so there is one sign-up path, not two. */
+export async function signUpViaAuthApi(
   email: string,
   password: string,
   name: string,
@@ -118,7 +123,7 @@ async function signUpViaAuthApi(
     const existingId = await findAuthUserId(email);
     if (existingId) {
       if (options.syncPassword) {
-        await updatePilotPassword(existingId, password);
+        await setAccountPassword(existingId, password);
       }
       return { userId: existingId, created: false };
     }
