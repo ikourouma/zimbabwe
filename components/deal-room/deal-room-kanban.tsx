@@ -37,9 +37,21 @@ interface DealRoomKanbanProps {
   /** Communication Hub entry point — opens the drawer straight to its Messages tab (see the
    *  Deal Room Engagement and MOU Upgrade plan's "ask ZIDA a question" entry points). */
   onMessageClick?: (project: InvestmentProject) => void;
+  /** Whether to draw the archived column. Off for investors, who are shown what they can pursue
+   *  rather than what has been withdrawn; on for the staff who need the closed record. The caller
+   *  must filter archived projects out of `projects` to match, so the column count and the totals
+   *  above the board agree. */
+  showArchived?: boolean;
 }
 
-export function DealRoomKanban({ projects, role, onStatusChange, onCardClick, onMessageClick }: DealRoomKanbanProps) {
+export function DealRoomKanban({
+  projects,
+  role,
+  onStatusChange,
+  onCardClick,
+  onMessageClick,
+  showArchived = true,
+}: DealRoomKanbanProps) {
   const { ministries } = useTaxonomyStore();
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<ProjectStatus | null>(null);
@@ -47,6 +59,7 @@ export function DealRoomKanban({ projects, role, onStatusChange, onCardClick, on
   const getMinistryById = (id: string) => ministries.find((m) => m.id === id);
 
   const canDrag = role !== null;
+  const columns = showArchived ? BOARD_COLUMNS : BOARD_COLUMNS.filter((c) => c !== "archived");
 
   const handleDrop = (column: ProjectStatus) => {
     setDragOverColumn(null);
@@ -71,8 +84,13 @@ export function DealRoomKanban({ projects, role, onStatusChange, onCardClick, on
        *  "columns cut off" fix) — falls back to a horizontally-scrollable fixed-width row below
        *  that breakpoint, where 7 comfortably-readable columns can't fit regardless of layout. */}
       <div className="overflow-x-auto pb-2 lg:overflow-visible">
-        <div className="grid grid-cols-7 gap-3 min-w-[1050px] lg:min-w-0">
-          {BOARD_COLUMNS.map((column) => {
+        <div
+          className={cn(
+            "grid gap-3 lg:min-w-0",
+            columns.length === 7 ? "grid-cols-7 min-w-[1050px]" : "grid-cols-6 min-w-[900px]"
+          )}
+        >
+          {columns.map((column) => {
             const columnProjects = projects.filter((p) => p.projectStatus === column);
             return (
               <div

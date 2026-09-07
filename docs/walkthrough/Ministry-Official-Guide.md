@@ -80,7 +80,7 @@ Your navigation contains twelve sections:
 
 A *My Ministry Only* chip is lit and reads nine, against an *All* count of thirty-seven. The instruction above the table sets out the arrangement: your ministry's projects show by default, the chip can be switched off to browse the national pipeline for context, and either way you can only create, edit and advance projects where your ministry is the primary beneficiary. Status chips break the set down from draft to archived, and the table carries title, sector, status, capital and last update.
 
-What the capital column shows is why this view is worth an investor's time: not a single headline number but the actual shape of each requirement, so Sunway City Special Economic Zone records US$195 million seeking US$50 million equity and US$145 million debt, and Solgas Energy sets out three phases against USD 95 million. An *Investor Proposals* chip sits at the end of the status row to separate investor-originated submissions from ministry-originated projects in the same table, and here it reads nil. The ministry reads its own nine in the national thirty-seven and can act on neither more nor fewer than the ones it is accountable for.
+The capital column carries a single parsed headline figure for each project rather than the requirement in full, so Sunway City Special Economic Zone reads $195M, the Solgas Energy 60MW solar plant $95M and TelOne Wireless Broadband Deployment $263.2M, while the two artificial intelligence entries at the foot of the table carry a dash because no figure has yet been recorded against them. The equity and debt split behind a total, and any phasing of it, stay on the project's own page, which is what keeps nine requirements comparable at a glance without losing the structure beneath any one of them. An *Investor Proposals* chip sits at the end of the status row to separate investor-originated submissions from ministry-originated projects in the same table, and here it reads nil. The ministry reads its own nine in the national thirty-seven and can act on neither more nor fewer than the ones it is accountable for.
 
 ### Review Queue
 
@@ -185,7 +185,7 @@ There is one further rule: an investor's proposal that is still in **draft** is 
 | Move a submission into review | Review Queue | |
 | Request changes from the originator | Review Queue | |
 | Approve a project | Review Queue | Clears it for publication by ZIDA |
-| Archive a project | Review Queue | |
+| Reject a project under review | Review Queue | Recorded as archived, with a reason required |
 | Assign a reviewing officer | Any project where you are primary beneficiary | Allocates work within your ministry |
 | Upload and remove project documents | Your ministry's projects | |
 | Decide the ministry stage of an amendment request | Review Queue | The first of two stages — see Process E |
@@ -247,7 +247,7 @@ The same person should not both write and validate a project, so in practice thi
 | --- | --- |
 | Request changes | Returns to the originator with your notes, editable again |
 | Approve | Cleared for publication by ZIDA |
-| Archive | Closed. There is no deletion — archived is the terminal state |
+| Reject | Closed. The record is archived rather than deleted, and archived is the terminal state |
 
 6. The project now waits for a ZIDA Admin to publish it.
 

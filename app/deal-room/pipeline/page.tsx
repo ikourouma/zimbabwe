@@ -106,9 +106,23 @@ export default function DealRoomPipelinePage() {
   // must fall back to the "registered" persona's published-only filter — otherwise they'd see
   // draft/under-review projects that haven't cleared governance review.
   const pipelinePersona: DemoPersona = isQualified ? "admin" : "registered";
-  const taxonomyFilteredProjects = useMemo(
-    () => filterProjects(projects, filters, pipelinePersona),
-    [projects, filters, pipelinePersona]
+
+  // Archiving is how a project is withdrawn from the registry, so it is a closed record rather than
+  // an opportunity. Staff need to see it; an investor screening the board does not, and a lane of
+  // withdrawn projects sitting beside the live ones invites them to spend time on something that
+  // cannot be pursued. This has to gate the counts as well as the board, because the pills and the
+  // All total are computed from the same list — the previous arrangement, where archived projects
+  // were absent from the board but present in the total, is precisely the mismatch that made the
+  // board disagree with the row above it.
+  const canSeeArchived = role === "government" || role === "admin" || role === "super_admin";
+  const taxonomyFilteredProjects = useMemo(() => {
+    const scoped = filterProjects(projects, filters, pipelinePersona);
+    return canSeeArchived ? scoped : scoped.filter((p) => p.projectStatus !== "archived");
+  }, [projects, filters, pipelinePersona, canSeeArchived]);
+
+  const statusChips = useMemo(
+    () => (canSeeArchived ? STATUS_FILTER_CHIPS : STATUS_FILTER_CHIPS.filter((c) => c.value !== "archived")),
+    [canSeeArchived]
   );
 
   const byStatus = useMemo(() => {
@@ -172,8 +186,8 @@ export default function DealRoomPipelinePage() {
           <div className="dashboard-skeleton h-4 w-96" />
         </div>
         <div className="dashboard-skeleton h-12 w-full mb-4 rounded-md" />
-        <div className="grid grid-cols-2 lg:grid-cols-7 gap-3">
-          {Array.from({ length: 7 }).map((_, i) => (
+        <div className={cn("grid grid-cols-2 gap-3", canSeeArchived ? "lg:grid-cols-7" : "lg:grid-cols-6")}>
+          {Array.from({ length: canSeeArchived ? 7 : 6 }).map((_, i) => (
             <div key={i} className="dashboard-skeleton h-64 rounded-lg" />
           ))}
         </div>
@@ -210,7 +224,7 @@ export default function DealRoomPipelinePage() {
 
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="flex flex-wrap gap-2">
-          {STATUS_FILTER_CHIPS.map((chip) => (
+          {statusChips.map((chip) => (
             <button
               key={chip.value}
               type="button"
@@ -266,6 +280,7 @@ export default function DealRoomPipelinePage() {
           onStatusChange={handleStatusChange}
           onCardClick={openOverview}
           onMessageClick={openMessages}
+          showArchived={canSeeArchived}
         />
       )}
       {view === "list" && (
