@@ -6,7 +6,7 @@ import { requireRole } from "@/lib/auth/session";
 import { mapDbEngagementToApp } from "@/lib/db/mappers/engagement";
 import { db } from "@/lib/db/client";
 import { engagementMous, investorEngagements } from "@/lib/db/schema";
-import { fetchAllProjects, resolveProjectDbId } from "@/lib/db/queries/projects";
+import { fetchAllProjects, resolveProjectRef } from "@/lib/db/queries/projects";
 import { logAuditEvent } from "@/lib/db/queries/audit";
 import { projectMatchesMinistry } from "@/lib/entitlements/ministry-scope";
 import type { InvestorEngagement } from "@/lib/types";
@@ -78,8 +78,9 @@ export async function POST(request: Request) {
   try {
     const actor = await requireRole(["admin", "super_admin", "qualified"]);
     const body = (await request.json()) as Omit<InvestorEngagement, "id" | "createdAt" | "updatedAt">;
-    const projectId = await resolveProjectDbId(body.projectId);
-    if (!projectId) return NextResponse.json({ error: "Project not found" }, { status: 400 });
+    const project = await resolveProjectRef(body.projectId);
+    if (!project) return NextResponse.json({ error: "Project not found" }, { status: 400 });
+    const projectId = project.id;
 
     // A qualified investor self-initiating always links the engagement to their own account —
     // never lets the client attribute a self-service submission to someone else's userId.
@@ -110,7 +111,7 @@ export async function POST(request: Request) {
       action: "engagement.created",
       entityType: "engagement",
       entityId: inserted.id,
-      metadata: { investorName: inserted.investorName, projectId, status },
+      metadata: { investorName: inserted.investorName, projectId, projectTitle: project.title, status },
     });
 
     return NextResponse.json(mapDbEngagementToApp(inserted), { status: 201 });

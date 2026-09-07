@@ -280,6 +280,8 @@ export function GovernmentExecutiveReport() {
       ],
       rejected,
       conversionRate,
+      approved,
+      decidedOrInFlight,
     };
   }, [engagements, mouCounts]);
 
@@ -440,7 +442,13 @@ export function GovernmentExecutiveReport() {
                 label="Funnel Conversion Rate"
                 value={pctLabel(funnel.conversionRate)}
                 tone={conversionTone(funnel.conversionRate)}
-                hint={`${funnel.chartData[3].count} MOU(s) executed of ${engagements.length} engagement(s)`}
+                // The caption has to describe the number above it. It used to read "1 MOU(s)
+                // executed of 10 engagement(s)" beneath a figure of 66.7%, which is a different
+                // ratio entirely — one in ten is 10 per cent — so the headline appeared to
+                // contradict its own explanation on a page written for a minister. The executed
+                // memorandum count is genuinely worth reporting and keeps its own tile in the
+                // funnel section below.
+                hint={`${funnel.approved} approved of ${funnel.decidedOrInFlight} engagement(s) in flight`}
               />
             </div>
             <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5">

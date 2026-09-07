@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { AuditLogEntry } from "@/lib/types";
+import { auditActionLabel } from "@/lib/governance/audit-taxonomy";
 
 const ACTION_ICON: Record<string, LucideIcon> = {
   "project.created": FileEdit,
@@ -54,12 +55,22 @@ function describe(entry: AuditLogEntry): string {
         : `submitted a new ${String(meta.type ?? "inquiry").replace(/_/g, " ")} (${String(meta.email ?? "unknown")})`;
     case "engagement.status_changed":
       return `moved engagement with ${String(meta.investorName ?? "an investor")} to ${String(meta.to)}`;
+    // Named by project, not by investor. An engagement is nearly always logged by the investor
+    // themselves, so naming the investor produced "Grace Mutindi logged a new engagement with
+    // Grace Mutindi" — and on her own feed, where the actor renders as "You", "you logged a new
+    // engagement with Grace Mutindi" was worse still. The actor prefix already answers who; the
+    // useful second fact is which project.
     case "engagement.created":
-      return `logged a new engagement with ${String(meta.investorName ?? "an investor")}`;
+      return meta.projectTitle
+        ? `logged a new engagement on "${String(meta.projectTitle).slice(0, 60)}"`
+        : `logged a new engagement with ${String(meta.investorName ?? "an investor")}`;
+    // Same reasoning as engagement.created: parenthesising the investor's own name after their
+    // own act read as a second, unrelated party ("Lindiwe Ncube certified and published their
+    // engagement (Pilot Qualified Investor)").
     case "engagement.published":
-      return `certified and published their engagement${
-        meta.investorName ? ` (${String(meta.investorName)})` : ""
-      }`;
+      return meta.projectTitle
+        ? `certified and published their engagement on "${String(meta.projectTitle).slice(0, 60)}"`
+        : "certified and published their engagement";
     case "engagement.correction_requested":
       return `requested a correction to the engagement with ${String(meta.investorName ?? "an investor")}`;
     case "nda.accepted":
@@ -92,8 +103,9 @@ function describe(entry: AuditLogEntry): string {
         ? `sent a message to ${String(meta.recipientName)} on a project thread`
         : "posted to a project thread";
     default:
-      if (entry.action.startsWith("taxonomy.")) return `updated a taxonomy entry (${entry.action.replace("taxonomy.", "")})`;
-      return entry.action.replace(/_/g, " ").replace(/\./g, " → ");
+      // auditActionLabel turns the identifier into a phrase, so an action nobody has written a
+      // sentence for still reads as English rather than as "taxonomy → removeSector".
+      return auditActionLabel(entry.action).toLowerCase();
   }
 }
 

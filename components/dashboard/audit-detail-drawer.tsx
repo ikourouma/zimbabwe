@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ArrowRight, Copy, Download, History, Lock } from "lucide-react";
 import type { AuditLogEntry } from "@/lib/types";
-import { entityTypeLabel } from "@/lib/governance/audit-taxonomy";
+import { auditActionLabel, entityTypeLabel } from "@/lib/governance/audit-taxonomy";
 import { ROLE_LABELS } from "@/components/dashboard/role-change-modal";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -88,7 +88,7 @@ export function AuditDetailDrawer({ entry, onClose }: AuditDetailDrawerProps) {
         {entry && (
           <>
             <SheetHeader>
-              <SheetTitle>{entry.action.replace(/\./g, " → ")}</SheetTitle>
+              <SheetTitle>{auditActionLabel(entry.action)}</SheetTitle>
               <SheetDescription>{new Date(entry.createdAt).toLocaleString()}</SheetDescription>
             </SheetHeader>
 

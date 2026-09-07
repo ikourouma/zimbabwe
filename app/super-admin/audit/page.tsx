@@ -5,7 +5,12 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { AuditLogEntry } from "@/lib/types";
 import { useAuth } from "@/context/auth-context";
 import { useAuditLogs } from "@/lib/hooks/use-audit-logs";
-import { DEFAULT_AUDIT_FILTERS, matchesAuditFilters, entityTypeLabel } from "@/lib/governance/audit-taxonomy";
+import {
+  DEFAULT_AUDIT_FILTERS,
+  matchesAuditFilters,
+  entityTypeLabel,
+  auditActionLabel,
+} from "@/lib/governance/audit-taxonomy";
 import { ROLE_LABELS } from "@/components/dashboard/role-change-modal";
 import { AccessGate } from "@/components/dashboard/access-gate";
 import { DataTable } from "@/components/dashboard/data-table";
@@ -39,7 +44,7 @@ export default function SuperAdminAuditLogPage() {
         header: "Role",
         cell: ({ row }) => (row.original.actorRole ? ROLE_LABELS[row.original.actorRole] : "—"),
       },
-      { accessorKey: "action", header: "Action", cell: ({ row }) => row.original.action.replace(/\./g, " → ") },
+      { accessorKey: "action", header: "Action", cell: ({ row }) => auditActionLabel(row.original.action) },
       {
         accessorKey: "entityType",
         header: "Entity",

@@ -357,8 +357,11 @@ export function CommunicationHubView() {
                     className="sticky top-0 z-10 -mx-6 px-6 py-2.5 mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs backdrop-blur"
                     style={{ backgroundColor: "rgba(10,10,10,0.85)", borderBottom: "1px solid var(--color-sovereign-border)" }}
                   >
-                    <span className="inline-flex items-center gap-1.5 text-white font-medium">
-                      {selectedProject.title.slice(0, 48)}
+                    <span
+                      className="inline-flex max-w-[26rem] items-center gap-1.5 truncate text-white font-medium"
+                      title={selectedProject.title}
+                    >
+                      {selectedProject.title}
                     </span>
                     <span className="capitalize" style={{ color: "var(--color-text-muted)" }}>
                       {selectedProject.projectStatus.replace(/_/g, " ")}

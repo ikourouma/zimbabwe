@@ -70,6 +70,53 @@ export function entityTypeLabel(entityType: string): string {
   );
 }
 
+const ACTION_LABELS: Record<string, string> = {
+  "project.created": "Project created",
+  "project.status_changed": "Project status changed",
+  "project.override": "Publishing override",
+  "inquiry.submitted": "Inquiry submitted",
+  "inquiry.status_changed": "Inquiry decided",
+  "engagement.created": "Engagement created",
+  "engagement.published": "Engagement certified",
+  "engagement.status_changed": "Engagement status changed",
+  "engagement.withdrawn": "Engagement withdrawn",
+  "engagement.correction_requested": "Engagement correction requested",
+  "mou.status_changed": "Memorandum status changed",
+  "mou.approved": "Memorandum approved",
+  "mou.draft_updated": "Memorandum draft updated",
+  "message.created": "Message sent",
+  "nda.accepted": "Confidentiality framework accepted",
+  "user.updated": "User updated",
+  "user.role_changed": "Role changed",
+  "site_settings.updated": "Site settings updated",
+  "taxonomy.addSector": "Sector added",
+  "taxonomy.removeSector": "Sector removed",
+  "taxonomy.addMinistry": "Ministry added",
+  "taxonomy.removeMinistry": "Ministry removed",
+  "taxonomy.addPillar": "Strategic pillar added",
+  "taxonomy.removePillar": "Strategic pillar removed",
+  "taxonomy.addGoal": "Development goal added",
+  "taxonomy.removeGoal": "Development goal removed",
+};
+
+/**
+ * The action as a phrase rather than as its identifier.
+ *
+ * The log rendered the raw action with its dot swapped for an arrow, so the column an auditor reads
+ * first said "message → created", "taxonomy → removeSector" and "inquiry → status_changed". Those
+ * are function names. This is the register in which the governance trail is offered as evidence, so
+ * it should read as English; the identifier is still exported verbatim in the CSV, where a machine
+ * is the reader.
+ */
+export function auditActionLabel(action: string): string {
+  const known = ACTION_LABELS[action];
+  if (known) return known;
+  // Unknown actions still beat the raw string: split the namespace, break camelCase, sentence-case.
+  const [, verb = action] = action.split(".");
+  const words = verb.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").toLowerCase();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 // Re-exported under the "Audit" name for backward compatibility with existing imports — the
 // underlying type/labels/helper now live in lib/utils/time-horizon.ts so the Inquiries filter bar
 // can share the exact same "Today / 24h / 7d / 30d / Custom" semantics.

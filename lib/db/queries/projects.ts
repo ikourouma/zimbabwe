@@ -69,6 +69,18 @@ export async function resolveProjectDbId(idOrSlug: string): Promise<string | nul
   return row?.id ?? null;
 }
 
+/** As `resolveProjectDbId`, but carries the title back as well, for callers that write an audit
+ *  row — a trail that records only a project id makes the reader look the project up to find out
+ *  what happened. */
+export async function resolveProjectRef(idOrSlug: string): Promise<{ id: string; title: string } | null> {
+  const [row] = await db
+    .select({ id: projects.id, title: projects.title })
+    .from(projects)
+    .where(or(eq(projects.id, idOrSlug), eq(projects.slug, idOrSlug)))
+    .limit(1);
+  return row ?? null;
+}
+
 export async function syncProjectRelations(
   projectId: string,
   partial: Partial<InvestmentProject>

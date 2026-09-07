@@ -206,8 +206,13 @@ export function ProjectRegistryView({ basePath }: ProjectRegistryViewProps) {
         accessorKey: "title",
         header: "Title",
         cell: ({ row }) => (
-          <span className="inline-flex items-center gap-2">
-            <span className="text-white font-medium">{row.original.title.slice(0, 60)}</span>
+          <span className="inline-flex max-w-full items-center gap-2">
+            {/* Truncation belongs to the column, not the string. Slicing at 60 characters cut the
+             *  registry's most-cited project to "…Industrial Park (Special Economic" — inside a
+             *  parenthesis, with nothing to signal that anything had been removed. */}
+            <span className="min-w-0 max-w-[28rem] truncate text-white font-medium" title={row.original.title}>
+              {row.original.title}
+            </span>
             {row.original.investorSubmitted && (
               <span className="status-badge status-badge-info text-[10px]" title="Originated by a qualified investor via Propose a Project">
                 Investor

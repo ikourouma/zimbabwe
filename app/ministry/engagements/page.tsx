@@ -100,7 +100,16 @@ export default function MinistryEngagementsPage() {
         id: "project",
         header: "Project",
         accessorFn: (row) => projectTitleOf(row.projectId),
-        cell: ({ row }) => projectTitleOf(row.original.projectId).slice(0, 50),
+        // Truncate by column rather than at a fixed character count — see the same fix on the
+        // Deal Room engagements table.
+        cell: ({ row }) => {
+          const title = projectTitleOf(row.original.projectId);
+          return (
+            <span className="block max-w-[22rem] truncate" title={title}>
+              {title}
+            </span>
+          );
+        },
       },
       {
         accessorKey: "status",

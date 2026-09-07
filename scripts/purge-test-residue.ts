@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Removes developer test residue from the demonstration database, and brings denormalized copies
  * of the pilot account names back in line with the roster.
  *
@@ -36,14 +36,14 @@ type Change = { step: string; detail: string; action: "deleted" | "renamed" | "s
 const changes: Change[] = [];
 
 function record(step: string, detail: string, action: Change["action"]) {
-  const mark = action === "skipped" ? "·" : COMMIT ? "+" : "~";
+  const mark = action === "skipped" ? "Â·" : COMMIT ? "+" : "~";
   console.log(`  ${mark} ${step}: ${detail}${action === "skipped" ? " (nothing to do)" : ""}`);
   changes.push({ step, detail, action });
 }
 
 /** Titles and bodies that only a test harness writes. Deliberately anchored to harness vocabulary
  *  ("smoke", "selftest", "phase8") rather than to anything a person might legitimately name a
- *  project — "test" alone would match "Testing Laboratory Expansion". */
+ *  project â€” "test" alone would match "Testing Laboratory Expansion". */
 const HARNESS_PATTERN = "(smoke|selftest|self test|qa residual|phase[0-9]+ )";
 
 // -----------------------------------------------------------------------------------------------
@@ -51,7 +51,7 @@ const HARNESS_PATTERN = "(smoke|selftest|self test|qa residual|phase[0-9]+ )";
 // -----------------------------------------------------------------------------------------------
 
 async function purgeProjects() {
-  console.log("\n[1/4] Harness projects");
+  console.log("\n[1/5] Harness projects");
 
   const doomed = await seedDb
     .select({ id: projects.id, title: projects.title, status: projects.projectStatus })
@@ -79,7 +79,7 @@ async function purgeProjects() {
 // -----------------------------------------------------------------------------------------------
 
 async function purgeEngagements() {
-  console.log("\n[2/4] Harness engagements");
+  console.log("\n[2/5] Harness engagements");
 
   const doomed = await seedDb
     .select({ id: investorEngagements.id, investorName: investorEngagements.investorName })
@@ -118,7 +118,7 @@ async function purgeEngagements() {
     record("engagement", "no duplicate approaches", "skipped");
     return;
   }
-  for (const d of dupeRows) record("engagement", `duplicate: ${d.investor_name} → ${d.title}`, "deleted");
+  for (const d of dupeRows) record("engagement", `duplicate: ${d.investor_name} â†’ ${d.title}`, "deleted");
   if (!COMMIT) return;
 
   await seedDb.delete(investorEngagements).where(
@@ -134,7 +134,7 @@ async function purgeEngagements() {
 // -----------------------------------------------------------------------------------------------
 
 async function purgeMessages() {
-  console.log("\n[3/4] Harness messages");
+  console.log("\n[3/5] Harness messages");
 
   const doomed = await seedDb
     .select({ id: projectMessages.id, body: projectMessages.body })
@@ -167,12 +167,12 @@ async function purgeMessages() {
 // -----------------------------------------------------------------------------------------------
 
 async function realignPilotNames() {
-  console.log("\n[4/4] Pilot account names");
+  console.log("\n[4/5] Pilot account names");
 
   for (const account of PILOT_ACCOUNTS) {
     const userId = await findAuthUserId(account.email);
     if (!userId) {
-      record("name", `${account.email} — no such account`, "skipped");
+      record("name", `${account.email} â€” no such account`, "skipped");
       continue;
     }
 
@@ -197,16 +197,29 @@ async function realignPilotNames() {
       )
     ).rows;
 
-    const stale = Number(messageCount?.n ?? 0) + Number(engagementCount?.n ?? 0);
+    // Audit metadata carries its own copies (see below), and they go stale independently of the
+    // account and of the denormalized columns — so they have to count toward "is anything stale",
+    // or a second run over an already-renamed account skips past them forever.
+    const [auditCount] = (
+      await seedDb.execute<{ n: string }>(
+        sql`SELECT count(*)::text AS n FROM audit_logs
+            WHERE actor_user_id = ${userId}
+              AND (metadata ->> 'investorName' NOT IN ('', ${account.name})
+                OR metadata ->> 'actorName' NOT IN ('', ${account.name}))`
+      )
+    ).rows;
+
+    const stale =
+      Number(messageCount?.n ?? 0) + Number(engagementCount?.n ?? 0) + Number(auditCount?.n ?? 0);
 
     if (!authStale && stale === 0) {
-      record("name", `${account.name} — already consistent`, "skipped");
+      record("name", `${account.name} â€” already consistent`, "skipped");
       continue;
     }
 
     record(
       "name",
-      `${current?.name ?? "?"} → ${account.name} (${stale} denormalized row${stale === 1 ? "" : "s"})`,
+      `${current?.name ?? "?"} â†’ ${account.name} (${stale} denormalized row${stale === 1 ? "" : "s"})`,
       "renamed"
     );
     if (!COMMIT) continue;
@@ -222,10 +235,30 @@ async function realignPilotNames() {
       .update(investorEngagements)
       .set({ investorName: account.name })
       .where(eq(investorEngagements.userId, userId));
+
+    // The audit trail resolves the actor by join, so renaming the account relabels who did it. But
+    // some rows also carry a denormalized copy of the name in their own metadata, and the activity
+    // feed reads that copy when it names a counterparty — which is how the ministry desk came to
+    // show "Lindiwe Ncube logged a new engagement with Pilot Qualified Investor", the same person
+    // under both her names in a single sentence.
+    await seedDb.execute(
+      sql`UPDATE audit_logs
+          SET metadata = jsonb_set(metadata, '{investorName}', to_jsonb(${account.name}::text))
+          WHERE actor_user_id = ${userId}
+            AND metadata ->> 'investorName' IS NOT NULL
+            AND metadata ->> 'investorName' <> ${account.name}`
+    );
+    await seedDb.execute(
+      sql`UPDATE audit_logs
+          SET metadata = jsonb_set(metadata, '{actorName}', to_jsonb(${account.name}::text))
+          WHERE actor_user_id = ${userId}
+            AND metadata ->> 'actorName' IS NOT NULL
+            AND metadata ->> 'actorName' <> ${account.name}`
+    );
   }
 
   // The organisation on the profile is its own copy again, and it read "ZIDA Pilot" for every role
-  // that had no explicit override — which put the word Pilot into the user directory's organisation
+  // that had no explicit override â€” which put the word Pilot into the user directory's organisation
   // column and onto the project owner line of anything these accounts created.
   for (const account of PILOT_ACCOUNTS) {
     const userId = await findAuthUserId(account.email);
@@ -240,7 +273,7 @@ async function realignPilotNames() {
 
     if (!current || current.organization === expected) continue;
 
-    record("organisation", `${account.name}: ${current.organization ?? "—"} → ${expected ?? "—"}`, "renamed");
+    record("organisation", `${account.name}: ${current.organization ?? "â€”"} â†’ ${expected ?? "â€”"}`, "renamed");
     if (!COMMIT) continue;
 
     await seedDb.execute(
@@ -280,10 +313,65 @@ async function realignPilotNames() {
     );
 }
 
+// -----------------------------------------------------------------------------------------------
+// 5. The trail the harness left behind
+// -----------------------------------------------------------------------------------------------
+
+/**
+ * Audit rows recording acts that only a test harness performed.
+ *
+ * The earlier passes deleted the harness's projects, engagements and messages but left the trail of
+ * them, which is why the governance record still opened on a sector named "Testing" being created
+ * and deleted a minute apart, and on an accreditation granted to
+ * `e2e+approval-1788662344020@zidaproject.com` with the reason "Automated workflow check." Because
+ * the log sorts most recent first, those were also the top entries of Recent Activity on both the
+ * ZIDA Admin and Platform Manager landing pages â€” the first thing a reader sees, on the exhibit
+ * both guides offer as proof that every act is attributed.
+ *
+ * Deleting from an audit trail deserves care, so this is anchored to vocabulary no genuine record
+ * carries: harness email patterns, the harness's own reason strings, and the one taxonomy term it
+ * created. It does not touch a row merely because it is old, automated-looking or inconvenient.
+ */
+async function purgeAuditResidue() {
+  console.log("\n[5/5] Harness audit trail");
+
+  const doomed = await seedDb.execute<{ id: string; action: string; created_at: string }>(
+    sql`SELECT id::text AS id, action, created_at::text
+        FROM audit_logs
+        WHERE entity_id = 'sec-testing'
+           OR metadata ->> 'name' = 'Testing'
+           OR metadata ->> 'reason' = 'Automated workflow check.'
+           OR metadata ->> 'reason' ~* ${HARNESS_PATTERN}
+           OR metadata ->> 'title' ~* ${HARNESS_PATTERN}
+           OR metadata ->> 'title' = 'EmbassyOS'
+           OR metadata ->> 'investorName' ~* '(smoke|draft-lock|selftest)'
+           OR coalesce(metadata ->> 'applicantEmail', '') ~* '^(e2e\\+|smoke-)'
+           OR coalesce(metadata ->> 'targetEmail', '') ~* '^(e2e\\+|smoke-)'
+           OR coalesce(metadata ->> 'inviteEmail', '') ~* '^(e2e\\+|smoke-)'
+        ORDER BY created_at DESC`
+  );
+
+  const rows = doomed.rows ?? [];
+  if (rows.length === 0) {
+    record("audit", "no harness rows in the trail", "skipped");
+    return;
+  }
+
+  for (const r of rows) record("audit", `${r.action} â€” ${r.created_at.slice(0, 10)}`, "deleted");
+  if (!COMMIT) return;
+
+  await seedDb.execute(
+    sql`DELETE FROM audit_logs WHERE id::text IN (${sql.join(
+      rows.map((r) => sql`${r.id}`),
+      sql`, `
+    )})`
+  );
+}
+
 async function main() {
   console.log(
     COMMIT
-      ? "Running in COMMIT mode — changes will be written.\n"
+      ? "Running in COMMIT mode â€” changes will be written.\n"
       : "Running as a DRY RUN. Lines marked ~ are what would change. Re-run with --commit to apply.\n"
   );
 
@@ -291,6 +379,7 @@ async function main() {
   await purgeEngagements();
   await purgeMessages();
   await realignPilotNames();
+  await purgeAuditResidue();
 
   const deleted = changes.filter((c) => c.action === "deleted").length;
   const renamed = changes.filter((c) => c.action === "renamed").length;
@@ -301,3 +390,4 @@ async function main() {
 }
 
 void main();
+
