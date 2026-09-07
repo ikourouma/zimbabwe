@@ -3,6 +3,7 @@ import {
   FileEdit,
   FileSignature,
   Handshake,
+  MessageSquare,
   ScrollText,
   Settings,
   ShieldCheck,
@@ -28,6 +29,7 @@ const ACTION_ICON: Record<string, LucideIcon> = {
   "user.role_changed": UserCog,
   "site_settings.updated": Settings,
   "nda.accepted": ShieldCheck,
+  "message.created": MessageSquare,
 };
 
 function iconFor(action: string): LucideIcon {
@@ -78,6 +80,17 @@ function describe(entry: AuditLogEntry): string {
       )}${meta.source && meta.source !== "manual" ? ` (via ${String(meta.source)})` : ""}`;
     case "site_settings.updated":
       return "updated site settings";
+    // Both message routes have always written this action; nothing described it, so the fallback
+    // rendered it as the literal "message → created" in every feed and notification.
+    case "message.created":
+      if (meta.scope === "concierge") {
+        return meta.recipientName
+          ? `sent a message to ${String(meta.recipientName)}`
+          : "sent a message to the ZIDA deal team";
+      }
+      return meta.recipientName
+        ? `sent a message to ${String(meta.recipientName)} on a project thread`
+        : "posted to a project thread";
     default:
       if (entry.action.startsWith("taxonomy.")) return `updated a taxonomy entry (${entry.action.replace("taxonomy.", "")})`;
       return entry.action.replace(/_/g, " ").replace(/\./g, " → ");

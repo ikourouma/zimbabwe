@@ -51,7 +51,9 @@ const DEAL_ROOM_BASE: PageEntry[] = [
   { slug: "pipeline", path: "/deal-room/pipeline", title: "Pipeline", caption: "The national project registry with filtering, presented as board, list, table or matrix." },
   { slug: "saved", path: "/deal-room/saved", title: "Saved Projects", caption: "Projects bookmarked for later review." },
   { slug: "vault", path: "/deal-room/vault", title: "Document Vault", caption: "Personal document store: non-disclosure certificate, accreditation records and memorandum snapshots." },
-  { slug: "reports", path: "/deal-room/reports", title: "My Activity Report", caption: "A personal record of registry and engagement activity.", viewportHeight: 1600 },
+  // 1150 rather than the 1600 the executive reports need: this report is a single page that ends
+  // with its own confidentiality footer, and at 1600 a third of the image was empty console.
+  { slug: "reports", path: "/deal-room/reports", title: "My Activity Report", caption: "A personal record of registry and engagement activity.", viewportHeight: 1150 },
   { slug: "profile", path: "/deal-room/profile", title: "My Profile", caption: "Organisation and verification details. Completing these is a precondition of qualification." },
   { slug: "settings", path: "/deal-room/settings", title: "Account", caption: "Account and security settings." },
 ];
