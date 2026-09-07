@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
 import { useDealRoomStore } from "@/context/deal-room-store-context";
 import { useProjectStore } from "@/context/project-store-context";
-import type { InvestmentProject, InvestorEngagement, InvestorEngagementStatus } from "@/lib/types";
+import type { InvestmentProject, InvestorEngagement, InvestorEngagementStatus, MouStatus } from "@/lib/types";
 import { parseCapitalTotalMillions, formatMillions } from "@/lib/utils/capital";
+import { projectMatchesMinistry } from "@/lib/entitlements/ministry-scope";
 import { ReportShell, ReportSection, ReportStat, ReportEmptyState, type ReportStatTone } from "@/components/reports/report-shell";
 import { ROLE_LABELS } from "@/components/dashboard/role-change-modal";
 
@@ -38,14 +39,30 @@ const NEXT_STEP_COPY: Record<InvestorEngagementStatus, string> = {
   rejected: "Review feedback with your case manager",
 };
 
-/** Resolves the millions-of-USD figure backing an engagement's indicative ticket, if any is
- *  derivable — the engagement's own free-text ticketSize first, falling back to the linked
- *  project's headline capitalRequired (a real, already-published figure) when the investor hasn't
- *  logged their own number yet. Returns null (never a fabricated guess) when neither parses. */
-function resolveTicketMillions(engagement: InvestorEngagement, project: InvestmentProject | undefined): number | null {
-  const own = engagement.ticketSize ? parseCapitalTotalMillions(engagement.ticketSize) : null;
-  if (own !== null) return own;
-  return project?.capitalRequired ? parseCapitalTotalMillions(project.capitalRequired) : null;
+/** Where an approved engagement's memorandum has reached, in the same register as NEXT_STEP_COPY. */
+const MOU_NEXT_STEP_COPY: Record<MouStatus, string> = {
+  drafting: "Complete the MOU draft",
+  in_review: "Awaiting counter-approval",
+  both_approved: "Proceed to finalisation",
+  finalized: "Schedule signature",
+  ready_for_signature: "Awaiting signature",
+  executed: "Proceed to definitive agreement",
+};
+
+/**
+ * The next step, read from the memorandum once one exists.
+ *
+ * An engagement stays at `approved` for the whole memorandum lifecycle, so keying the next step off
+ * the engagement status alone told every approved row to "proceed to MOU drafting" — including the
+ * rows the MOU Registry, four sections earlier in the same document, showed as Finalized and
+ * Executed. A reader comparing the two pages concludes the report is not reading the memorandum at
+ * all, which is exactly what it was not doing.
+ */
+function nextStepFor(engagement: InvestorEngagement): string {
+  if (engagement.status === "approved" && engagement.mouStatus) {
+    return MOU_NEXT_STEP_COPY[engagement.mouStatus];
+  }
+  return NEXT_STEP_COPY[engagement.status];
 }
 
 /** Table-cell text for the "Indicative Ticket" column — the investor's own figure verbatim when
@@ -115,8 +132,12 @@ export function PersonalActivityReport() {
       // A national reviewer has no ministryId, and returning nothing gave them an activity report
       // that was permanently empty. Their remit is the whole pipeline, so that is what they get.
       if (!ministryId) return engagements;
+      // projectMatchesMinistry, not a primary-beneficiary test written out again here: a ministry
+      // named as a secondary sponsor holds the same interest in an approach, and its own
+      // Engagements console lists exactly those. Testing the primary alone left the report showing
+      // fewer engagements than the console the reader had just come from.
       const ministryProjectIds = new Set(
-        projects.filter((p) => p.primaryBeneficiaryMinistryId === ministryId).map((p) => p.id)
+        projects.filter((p) => projectMatchesMinistry(p, ministryId)).map((p) => p.id)
       );
       return engagements.filter((e) => ministryProjectIds.has(e.projectId));
     }
@@ -138,19 +159,26 @@ export function PersonalActivityReport() {
     return counts;
   }, [myEngagements]);
 
+  // Only the investor's own stated ticket counts toward the total.
+  //
+  // The cell below still falls back to the project's published ask, clearly labelled, because an
+  // empty column tells a reader nothing about the scale of what is being discussed. But summing
+  // that fallback put the state's own capital requirement into a figure captioned "tracked
+  // indicative capital" — so a ministry report showed US$75 million of apparent investor money
+  // when the investors concerned had stated a ticket on one engagement between them. The two are
+  // different claims and only one of them belongs in a total.
   const capitalTracked = useMemo(() => {
     let sumMillions = 0;
-    let derivedCount = 0;
+    let statedCount = 0;
     for (const e of myEngagements) {
-      const project = projects.find((p) => p.id === e.projectId);
-      const millions = resolveTicketMillions(e, project);
+      const millions = e.ticketSize ? parseCapitalTotalMillions(e.ticketSize) : null;
       if (millions !== null) {
         sumMillions += millions;
-        derivedCount += 1;
+        statedCount += 1;
       }
     }
-    return { sumMillions, derivedCount };
-  }, [myEngagements, projects]);
+    return { sumMillions, statedCount };
+  }, [myEngagements]);
 
   const ndaValue = isNdaExempt ? "Not applicable (staff role)" : ndaAcceptedAt ? "Accepted" : "Pending signature";
   const ndaTone: ReportStatTone = isNdaExempt ? "neutral" : ndaAcceptedAt ? "good" : "warning";
@@ -158,8 +186,12 @@ export function PersonalActivityReport() {
 
   return (
     <ReportShell
-      title="My Activity Report"
-      subtitle="Personal summary of your engagements and account activity on the platform"
+      title={isMinistryScoped ? "Activity Report" : "My Activity Report"}
+      subtitle={
+        isMinistryScoped
+          ? "Investor engagements within your remit, and your account standing on the platform"
+          : "Personal summary of your engagements and account activity on the platform"
+      }
       generatedBy={`${name ?? "—"} (${role ? ROLE_LABELS[role] : "—"})`}
       generatedAt={new Date().toLocaleString()}
     >
@@ -180,11 +212,11 @@ export function PersonalActivityReport() {
           <ReportSection title="Engagement Summary">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <ReportStat label="Total Engagements" value={myEngagements.length} />
-              {capitalTracked.derivedCount > 0 && (
+              {capitalTracked.statedCount > 0 && (
                 <ReportStat
-                  label="Tracked Indicative Capital"
+                  label="Investor-Stated Ticket Value"
                   value={formatMillions(capitalTracked.sumMillions)}
-                  hint={`Across ${capitalTracked.derivedCount} of ${myEngagements.length} engagement(s) with a stated figure`}
+                  hint={`Across ${capitalTracked.statedCount} of ${myEngagements.length} engagement(s) where the investor stated a ticket`}
                 />
               )}
               <ReportStat label="Pending Review" value={pendingCount} tone={pendingCount > 0 ? "warning" : "neutral"} />
@@ -192,7 +224,10 @@ export function PersonalActivityReport() {
             </div>
           </ReportSection>
 
-          <ReportSection title="My Engagements">
+          {/* An oversight reader authors no engagements, so listing other people's approaches under
+              "My Engagements" invited the reasonable question of why their own analytics card said
+              zero. The scope note already explained the difference; the heading contradicted it. */}
+          <ReportSection title={isMinistryScoped ? "Engagements In Your Remit" : "My Engagements"}>
             <p className="mb-2 text-[11px] text-zim-muted">{scopeNote}</p>
             {engagementRows.length > 0 ? (
               <div className="overflow-x-auto">
@@ -219,7 +254,7 @@ export function PersonalActivityReport() {
                         </td>
                         <td className="py-1.5 pr-4 text-zim-charcoal">{ticketCell}</td>
                         <td className="py-1.5 pr-4 text-zim-charcoal">{new Date(engagement.createdAt).toLocaleDateString()}</td>
-                        <td className="py-1.5 pr-4 text-zim-muted">{NEXT_STEP_COPY[engagement.status]}</td>
+                        <td className="py-1.5 pr-4 text-zim-muted">{nextStepFor(engagement)}</td>
                       </tr>
                     ))}
                   </tbody>
