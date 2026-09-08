@@ -184,7 +184,7 @@ export function ContactPageContent() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <Label htmlFor="org">Organization</Label>
+                  <Label htmlFor="org">Organisation</Label>
                   <Input
                     id="org"
                     className="mt-1.5"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -127,6 +127,27 @@ const TONE_STYLES: Record<ReportStatTone, { border: string; value: string; badge
  *  applied to every tile, so the signal stays meaningful. `actionHint` renders only for
  *  critical/warning tones, surfacing the "so what should I do about this" line executives expect
  *  next to a flagged metric. */
+/**
+ * Marks the punctuation inside an address or a long name as a place the line may break.
+ *
+ * `break-words` alone breaks only as a last resort, and only at whatever character happens to sit
+ * at the column edge, which produced "zida.team+demo@zidaproject.co / m" and, worse,
+ * "min- / ict.admin+demo@…" — a leading "min-" reads as a hyphenated word, not as part of an
+ * address. A `<wbr>` after each delimiter gives the browser somewhere better to go, so the break
+ * lands after the "@" or a dot, where a reader already expects a seam. Mid-token breaking stays on
+ * as the fallback for a value with no punctuation at all.
+ */
+function withBreakOpportunities(value: string) {
+  const parts = value.split(/(?<=[@.+\-_/])/);
+  if (parts.length === 1) return value;
+  return parts.map((part, i) => (
+    <Fragment key={i}>
+      {part}
+      {i < parts.length - 1 && <wbr />}
+    </Fragment>
+  ));
+}
+
 export function ReportStat({
   label,
   value,
@@ -156,7 +177,7 @@ export function ReportStat({
         className={`mt-1 font-bold ${styles.value} ${isLongText ? "break-words text-sm" : "truncate text-xl"}`}
         title={typeof value === "string" ? value : undefined}
       >
-        {value}
+        {isLongText ? withBreakOpportunities(value as string) : value}
       </p>
       {hint && <p className="mt-0.5 text-xs text-zim-muted">{hint}</p>}
       {actionHint && tone !== "neutral" && (

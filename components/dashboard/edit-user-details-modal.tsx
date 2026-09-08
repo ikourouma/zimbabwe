@@ -144,7 +144,7 @@ export function EditUserDetailsModal({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <Field label="Organization" value={organization} onChange={setOrganization} />
+          <Field label="Organisation" value={organization} onChange={setOrganization} />
           <Field label="Job title" value={jobTitle} onChange={setJobTitle} />
           <Field label="Phone" value={phone} onChange={setPhone} />
 

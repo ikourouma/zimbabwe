@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ArrowRight, Copy, Download, History, Lock } from "lucide-react";
 import type { AuditLogEntry } from "@/lib/types";
-import { auditActionLabel, entityTypeLabel } from "@/lib/governance/audit-taxonomy";
+import { auditActionLabel, auditEntityIdLabel, entityTypeLabel } from "@/lib/governance/audit-taxonomy";
 import { ROLE_LABELS } from "@/components/dashboard/role-change-modal";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -98,7 +98,7 @@ export function AuditDetailDrawer({ entry, onClose }: AuditDetailDrawerProps) {
                 <MetaRow label="Actor Role" value={entry.actorRole ? ROLE_LABELS[entry.actorRole] : "—"} />
                 <MetaRow label="Actor ID" value={entry.actorUserId ?? "—"} mono />
                 <MetaRow label="Entity" value={entityTypeLabel(entry.entityType)} />
-                <MetaRow label="Entity ID" value={entry.entityId} mono />
+                <MetaRow label="Entity ID" value={auditEntityIdLabel(entry.entityId)} mono />
                 <MetaRow label="Timestamp" value={new Date(entry.createdAt).toISOString()} mono />
               </div>
 

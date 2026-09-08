@@ -45,7 +45,7 @@ const FOLLOW_THROUGH_LABELS: Record<FollowThroughStatus, string> = {
 };
 
 const CORRECTION_FIELD_OPTIONS: { value: CorrectionField; label: string; current: (e: InvestorEngagement) => string | null | undefined }[] = [
-  { value: "investorOrganization", label: "Organization", current: (e) => e.investorOrganization },
+  { value: "investorOrganization", label: "Organisation", current: (e) => e.investorOrganization },
   { value: "ticketSize", label: "Indicative ticket size", current: (e) => e.ticketSize },
   { value: "signatoryTitle", label: "Signatory title", current: (e) => e.signatoryTitle },
 ];
@@ -746,7 +746,7 @@ function EngagementDetailsTab({
 
         <div className="space-y-3">
           <div>
-            <FieldLabel htmlFor="eng-org">Organization</FieldLabel>
+            <FieldLabel htmlFor="eng-org">Organisation</FieldLabel>
             <input id="eng-org" className="dashboard-input" value={organization} onChange={(e) => setOrganization(e.target.value)} />
           </div>
           <div>
@@ -835,7 +835,7 @@ function EngagementDetailsTab({
       )}
 
       <Field label="Investor" value={engagement.investorName} />
-      <Field label="Organization" value={engagement.investorOrganization} />
+      <Field label="Organisation" value={engagement.investorOrganization} />
       <Field label="Indicative Ticket Size" value={engagement.ticketSize} />
       <Field label="Authorized Signatory" value={engagement.signatoryTitle} />
       <Field label="Status" value={engagement.status.replace(/_/g, " ")} />

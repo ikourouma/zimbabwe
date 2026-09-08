@@ -84,6 +84,18 @@ const ENTITY_TYPE_LABELS: Record<string, string> = {
   inquiry: "Inquiry",
 };
 
+/**
+ * The Entity ID column exists to say which record an action touched. Some entities have only one
+ * record, and their id is a placeholder the schema needs rather than an identifier that
+ * distinguishes anything: platform settings live in a row literally keyed "singleton". Showing that
+ * word to an auditor puts a developer's implementation detail into the governance trail, where it
+ * invites the question of what other singletons there might be. There is no "which" to answer, so
+ * the column says so. The raw value is still exported verbatim in the CSV, for machine readers.
+ */
+export function auditEntityIdLabel(entityId: string): string {
+  return entityId === "singleton" ? "—" : entityId;
+}
+
 /** Humanizes any entityType not in the map above, so a new logAuditEvent() call site never shows
  *  a raw snake_case value in the dropdown. */
 export function entityTypeLabel(entityType: string): string {

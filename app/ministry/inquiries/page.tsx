@@ -86,7 +86,7 @@ export default function MinistryInquiriesPage() {
   );
 
   const exportCsv = () => {
-    const header = ["Name", "Email", "Phone", "Organization", "Type", "Status", "Submitted At", "Message"];
+    const header = ["Name", "Email", "Phone", "Organisation", "Type", "Status", "Submitted At", "Message"];
     const lines = visible.map((i) =>
       [
         i.name,

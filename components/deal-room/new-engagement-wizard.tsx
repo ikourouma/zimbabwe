@@ -152,7 +152,7 @@ export function NewEngagementWizard({
     const rows: [string, string][] = [
       ["Project", projectTitle],
       ["Investor", investorName],
-      ["Organization", organization || "—"],
+      ["Organisation", organization || "—"],
       ["Indicative ticket size", ticketSize || "—"],
       ["Authorized signatory", signatoryTitle || "—"],
       ["Notes / thesis", notes || "—"],
@@ -255,7 +255,7 @@ export function NewEngagementWizard({
                 )}
               </div>
               <div>
-                <FieldLabel htmlFor="wiz-org">Organization</FieldLabel>
+                <FieldLabel htmlFor="wiz-org">Organisation</FieldLabel>
                 <input id="wiz-org" className="dashboard-input" value={organization} onChange={(e) => setOrganization(e.target.value)} />
               </div>
             </>
@@ -294,7 +294,7 @@ export function NewEngagementWizard({
               <dl className="rounded-md p-3 space-y-2" style={{ border: "1px solid var(--color-sovereign-border)" }}>
                 <SummaryRow label="Project" value={projectTitle} />
                 <SummaryRow label="Investor" value={investorName} />
-                <SummaryRow label="Organization" value={organization || "—"} />
+                <SummaryRow label="Organisation" value={organization || "—"} />
                 <SummaryRow label="Ticket size" value={ticketSize || "—"} />
                 <SummaryRow label="Signatory" value={signatoryTitle || "—"} />
                 <SummaryRow label="Notes" value={notes || "—"} />

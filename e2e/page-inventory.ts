@@ -4,7 +4,7 @@
  * Shared by the screenshot capture pass and the document generator so a guide can never reference
  * an image that was never captured, and a captured image is never left out of a guide.
  *
- * `slug` becomes the screenshot filename. `caption` is stakeholder-facing prose, not a nav label â€”
+ * `slug` becomes the screenshot filename. `caption` is stakeholder-facing prose, not a nav label —
  * it answers "what am I looking at and why would I come here", which is what the guides need.
  */
 
@@ -74,8 +74,23 @@ export const QUALIFIED_PAGES: PageEntry[] = [
   { slug: "teams", path: "/deal-room/teams", title: "Team", caption: "Colleagues invited to act on this organisation's behalf." },
 ];
 
-/** Government reviewers share the Investor Dashboard but the shell is badged as a reviewer console. */
-export const GOVERNMENT_PAGES: PageEntry[] = [...DEAL_ROOM_BASE, ...DEAL_ROOM_QUALIFIED_ONLY];
+/**
+ * Government reviewers share the Investor Dashboard but the shell is badged as a reviewer console.
+ *
+ * Two pages need more height than the investor's, because the same route renders far more on a
+ * reviewer's account. The report is scoped to the reviewer's whole remit rather than to their own
+ * file, so it lists ten engagements against the investor's three, and it now carries an Investor
+ * column as well; at 1150 the capture stopped in the fourth row and cut off the confidentiality
+ * footer the guide's commentary depends on. The overview's Recent Activity panel is likewise
+ * national rather than personal, and stood empty when the base height was chosen.
+ */
+export const GOVERNMENT_PAGES: PageEntry[] = [...DEAL_ROOM_BASE, ...DEAL_ROOM_QUALIFIED_ONLY].map(
+  (entry) => {
+    if (entry.slug === "reports") return { ...entry, viewportHeight: 1900 };
+    if (entry.slug === "overview") return { ...entry, viewportHeight: 1500 };
+    return entry;
+  }
+);
 
 export const MINISTRY_PAGES: PageEntry[] = [
   { slug: "overview", path: "/ministry", title: "Overview", caption: "Ministry-scoped landing page: pipeline health and recent activity for this ministry only." },
@@ -113,7 +128,7 @@ export const SUPER_ADMIN_PAGES: PageEntry[] = [
   { slug: "inquiries", path: "/super-admin/inquiries", title: "Inquiries", caption: "All enquiries platform-wide, filterable by category and status." },
   { slug: "mou", path: "/super-admin/mou", title: "MOU Registry", caption: "All memoranda platform-wide." },
   { slug: "reports", path: "/super-admin/reports", title: "Reports", caption: "Executive reporting.", viewportHeight: 1600 },
-  { slug: "taxonomies", path: "/super-admin/taxonomies", title: "Taxonomies", caption: "Sectors, ministries, strategic pillars and development goals â€” the classification scheme every project is filed against." },
+  { slug: "taxonomies", path: "/super-admin/taxonomies", title: "Taxonomies", caption: "Sectors, ministries, strategic pillars and development goals — the classification scheme every project is filed against." },
   { slug: "communication", path: "/super-admin/communication", title: "Communication Hub", caption: "Staff messaging." },
   { slug: "settings", path: "/super-admin/settings", title: "Site Settings", caption: "Tenant and site configuration." },
   { slug: "audit", path: "/super-admin/audit", title: "Audit Log", caption: "The governance audit trail: who did what, when, and on whose authority." },

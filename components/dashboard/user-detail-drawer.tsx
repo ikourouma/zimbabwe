@@ -288,7 +288,7 @@ function InstitutionalTab({
       <div className="dashboard-panel p-3">
         <InfoRow label="Role" value={ROLE_LABELS[user.role]} />
         <InfoRow label="Status" value={STATUS_LABELS[user.accountStatus]} />
-        <InfoRow label="Organization" value={user.organization ?? "—"} />
+        <InfoRow label="Organisation" value={user.organization ?? "—"} />
         <InfoRow
           label="Email"
           value={
@@ -428,7 +428,7 @@ function ComplianceTab({
   onRequestRoleChange: (user: AdminUserRecord, nextRole: AccountRole) => void;
 }) {
   const kycChecklist: { label: string; done: boolean }[] = [
-    { label: "Organization on file", done: Boolean(user.organization) },
+    { label: "Organisation on file", done: Boolean(user.organization) },
     { label: "HQ address on file", done: Boolean(dossier?.hqAddress) },
     { label: "Business registration ID on file", done: Boolean(dossier?.businessRegistrationId) },
     { label: "Website on file", done: Boolean(dossier?.websiteUrl) },

@@ -10,6 +10,7 @@ import {
   matchesAuditFilters,
   entityTypeLabel,
   auditActionLabel,
+  auditEntityIdLabel,
 } from "@/lib/governance/audit-taxonomy";
 import { ROLE_LABELS } from "@/components/dashboard/role-change-modal";
 import { AccessGate } from "@/components/dashboard/access-gate";
@@ -53,7 +54,9 @@ export default function SuperAdminAuditLogPage() {
       {
         accessorKey: "entityId",
         header: "Entity ID",
-        cell: ({ row }) => <span className="font-mono text-[11px]">{row.original.entityId}</span>,
+        cell: ({ row }) => (
+          <span className="font-mono text-[11px]">{auditEntityIdLabel(row.original.entityId)}</span>
+        ),
       },
       {
         id: "details",

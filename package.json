@@ -24,7 +24,8 @@
     "e2e": "tsx --env-file=.env.local node_modules/@playwright/test/cli.js test --grep-invert @capture",
     "e2e:report": "tsx node_modules/@playwright/test/cli.js show-report e2e-report",
     "screenshots": "tsx --env-file=.env.local node_modules/@playwright/test/cli.js test --grep @capture",
-    "docs:build": "tsx scripts/build-docs.ts"
+    "docs:build": "tsx scripts/build-docs.ts",
+    "check:encoding": "tsx scripts/repair-mojibake.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1091.0",

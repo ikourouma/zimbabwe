@@ -134,7 +134,7 @@ export function SaveSearchModal({ open, onOpenChange, filters, onSaved }: SaveSe
                 </div>
               </div>
               <div>
-                <FieldLabel>Organization</FieldLabel>
+                <FieldLabel>Organisation</FieldLabel>
                 <input className={fieldClass} value={leadOrg} onChange={(e) => setLeadOrg(e.target.value)} placeholder="Fund / firm (optional)" />
               </div>
             </div>

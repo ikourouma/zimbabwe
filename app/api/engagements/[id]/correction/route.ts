@@ -11,7 +11,7 @@ import type { CorrectionField, MessageActionPayload } from "@/lib/types";
 type RouteParams = { params: Promise<{ id: string }> };
 
 const CORRECTION_FIELD_LABELS: Record<CorrectionField, string> = {
-  investorOrganization: "Organization",
+  investorOrganization: "Organisation",
   ticketSize: "Indicative ticket size",
   signatoryTitle: "Signatory title",
 };

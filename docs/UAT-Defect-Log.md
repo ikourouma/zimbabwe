@@ -79,6 +79,11 @@
 | DEF-039 | A document of record cut off the identity it attributes itself to | Medium | Closed |
 | DEF-040 | An oversight report could not tell two investors apart | Medium | Closed |
 | DEF-041 | Two labels that each carried two meanings | Medium | Closed |
+| DEF-042 | Text rendered as mojibake across the consoles | High | Closed |
+| DEF-043 | American spelling on a document of record | Low | Closed |
+| DEF-044 | Email addresses breaking mid-token on printed reports | Low | Closed |
+| DEF-045 | An implementation detail in the governance trail | Low | Closed |
+| DEF-046 | Government captures cut off mid-content | Medium | Closed |
 
 ## 3. Closed Defects
 
@@ -399,6 +404,40 @@ Once the Activity Report was scoped to a reader's remit rather than their own au
 A console tile read *In Review 8* while the executive report generated from the same data put Under Review at 4. Both were right: the tile aggregates submitted for review, under review and changes requested, and had been given the name of one of the three. It now reads *Under Assessment*.
 
 Separately, the Communication Hub counted a thread under *Active Deals* while labelling it *General question*, so the filter row read *General 0 / Active Deals 1* directly above a thread the same screen called general. *General* now names one thing — the concierge channel and the tab that filters to it — and a project thread carrying no engagement is a *project enquiry*, which is what it is.
+
+### DEF-042 — Text rendered as mojibake across the consoles
+
+**Severity:** High. **Status:** Closed.
+
+Three independent reviews of the walkthrough captures reported the same thing: em dashes rendering as `â€"` and separators as `Â·`. The Communication Hub was the worst affected — the thread list read *"Project enquiry Â· 2 messages"*, the thread pane *"General enquiry â€" project-less concierge thread"*, and the project header bar *"Â· $29.97M"* — but it also reached the investor dashboard's own subtitle, the transcript export's title, and the *Select an opportunity…* placeholder. A reader has no way to tell mangled text from a broken page.
+
+**Root cause.** Not a rendering or serving fault. Seven source files had their non-ASCII characters double-encoded on disk during earlier editing: Windows PowerShell's `Get-Content` decodes a file with no byte-order mark using the system ANSI code page, and `Set-Content -Encoding UTF8` writes one back with a mark. Round-tripping a UTF-8 file through that pair reads each multi-byte character as a run of Windows-1252 characters and re-encodes each of those as UTF-8, so `—` becomes `â€"` and `·` becomes `Â·`. The result is still valid UTF-8 and still compiles, which is why nothing failed and it survived to the screenshots.
+
+**Fix.** `scripts/repair-mojibake.ts` reverses the corruption exactly, since it is a known composition of two encodings. It works run by run rather than whole-file — several files held correct and corrupted text side by side, having been edited by both routes — and replaces a run only when it round-trips to valid UTF-8, so genuine punctuation is never rewritten. It repaired 48 runs across seven files and stripped the byte-order marks. A repo-wide sweep now reports no mojibake sequences and no C1 control characters in any tracked source file.
+
+### DEF-043 — American spelling on a Republic of Zimbabwe document of record
+
+**Severity:** Low. **Status:** Closed.
+
+Both executive report captures labelled the account summary tile *ORGANIZATION*, against British spelling everywhere else in the platform and in the guides. The same spelling appeared on twenty-three user-facing labels, table headers and CSV export columns across sixteen files. All now read *Organisation*. The schema.org `"@type": "Organization"` in the site metadata is a vocabulary term rather than prose and is deliberately unchanged.
+
+### DEF-044 — Email addresses breaking mid-token on printed reports
+
+**Severity:** Low. **Status:** Closed.
+
+DEF-039 stopped long values being truncated, but let them wrap at whatever character met the column edge: the national report showed `zida.team+demo@zidaproject.co` / `m`, and the ministry report `min-` / `ict.admin+demo@zidaproject.co` / `m`. The second is the worse case, because a line ending `min-` reads as a hyphenated word rather than as part of an address. Report tiles now mark the punctuation inside a long value as a preferred break point, so a line ends after an `@` or a dot where a reader already expects a seam. Mid-token breaking remains as the fallback for a value with no punctuation at all.
+
+### DEF-045 — An implementation detail in the governance trail
+
+**Severity:** Low. **Status:** Closed.
+
+The audit log's Entity ID column showed `singleton` against every site-settings change. That is the literal primary key of a single-row table, not an identifier that distinguishes anything, and putting it in front of an auditor invites a question the platform cannot usefully answer. The column now shows an em dash where there is no record to name. The raw value is still exported verbatim in the CSV, where the reader is a machine.
+
+### DEF-046 — Government captures cut off mid-content
+
+**Severity:** Medium. **Status:** Closed.
+
+Two Government Reviewer captures were framed for an investor's version of the same route. The Activity Report stopped part-way through the fourth of ten engagement rows and omitted the confidentiality footer that the guide's commentary discusses; the overview's Recent Activity panel ran past the bottom edge, so a reader could not tell whether it held three entries or thirty. Both were consequences of fixes landing earlier in this pass — the report is now scoped to the reader's whole remit and carries an extra column, and the activity panel only became populated when the feed was made role-aware. The reviewer console now sets its own capture heights instead of inheriting the investor's.
 
 ## 4. Open Defects
 

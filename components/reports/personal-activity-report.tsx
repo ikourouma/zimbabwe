@@ -203,7 +203,7 @@ export function PersonalActivityReport() {
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <ReportStat label="Name" value={name ?? "—"} />
               <ReportStat label="Email" value={email ?? "—"} />
-              <ReportStat label="Organization" value={organization ?? "—"} />
+              <ReportStat label="Organisation" value={organization ?? "—"} />
               <ReportStat label="Role" value={role ? ROLE_LABELS[role] : "—"} />
               <ReportStat label="Confidentiality Framework" value={ndaValue} tone={ndaTone} />
             </div>

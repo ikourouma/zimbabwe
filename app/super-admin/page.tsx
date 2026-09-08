@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts";
@@ -114,7 +114,7 @@ export default function SuperAdminOverviewPage() {
               icon={Inbox}
               accent="muted"
               // category=all bypasses the page's default "Platform / Executive Escalation" scope
-              // so this count (platform-wide, every inquiry type) always matches what's shown â€”
+              // so this count (platform-wide, every inquiry type) always matches what's shown —
               // the old link left the page on its executive-only default, so the number here
               // (all categories) and the list on arrival (executive only) silently disagreed.
               href="/super-admin/inquiries?status=pending&category=all"

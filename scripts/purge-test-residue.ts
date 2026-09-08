@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Removes developer test residue from the demonstration database, and brings denormalized copies
  * of the pilot account names back in line with the roster.
  *
@@ -36,14 +36,14 @@ type Change = { step: string; detail: string; action: "deleted" | "renamed" | "s
 const changes: Change[] = [];
 
 function record(step: string, detail: string, action: Change["action"]) {
-  const mark = action === "skipped" ? "Â·" : COMMIT ? "+" : "~";
+  const mark = action === "skipped" ? "·" : COMMIT ? "+" : "~";
   console.log(`  ${mark} ${step}: ${detail}${action === "skipped" ? " (nothing to do)" : ""}`);
   changes.push({ step, detail, action });
 }
 
 /** Titles and bodies that only a test harness writes. Deliberately anchored to harness vocabulary
  *  ("smoke", "selftest", "phase8") rather than to anything a person might legitimately name a
- *  project â€” "test" alone would match "Testing Laboratory Expansion". */
+ *  project — "test" alone would match "Testing Laboratory Expansion". */
 const HARNESS_PATTERN = "(smoke|selftest|self test|qa residual|phase[0-9]+ )";
 
 // -----------------------------------------------------------------------------------------------
@@ -118,7 +118,7 @@ async function purgeEngagements() {
     record("engagement", "no duplicate approaches", "skipped");
     return;
   }
-  for (const d of dupeRows) record("engagement", `duplicate: ${d.investor_name} â†’ ${d.title}`, "deleted");
+  for (const d of dupeRows) record("engagement", `duplicate: ${d.investor_name} → ${d.title}`, "deleted");
   if (!COMMIT) return;
 
   await seedDb.delete(investorEngagements).where(
@@ -172,7 +172,7 @@ async function realignPilotNames() {
   for (const account of PILOT_ACCOUNTS) {
     const userId = await findAuthUserId(account.email);
     if (!userId) {
-      record("name", `${account.email} â€” no such account`, "skipped");
+      record("name", `${account.email} — no such account`, "skipped");
       continue;
     }
 
@@ -213,13 +213,13 @@ async function realignPilotNames() {
       Number(messageCount?.n ?? 0) + Number(engagementCount?.n ?? 0) + Number(auditCount?.n ?? 0);
 
     if (!authStale && stale === 0) {
-      record("name", `${account.name} â€” already consistent`, "skipped");
+      record("name", `${account.name} — already consistent`, "skipped");
       continue;
     }
 
     record(
       "name",
-      `${current?.name ?? "?"} â†’ ${account.name} (${stale} denormalized row${stale === 1 ? "" : "s"})`,
+      `${current?.name ?? "?"} → ${account.name} (${stale} denormalized row${stale === 1 ? "" : "s"})`,
       "renamed"
     );
     if (!COMMIT) continue;
@@ -258,7 +258,7 @@ async function realignPilotNames() {
   }
 
   // The organisation on the profile is its own copy again, and it read "ZIDA Pilot" for every role
-  // that had no explicit override â€” which put the word Pilot into the user directory's organisation
+  // that had no explicit override — which put the word Pilot into the user directory's organisation
   // column and onto the project owner line of anything these accounts created.
   for (const account of PILOT_ACCOUNTS) {
     const userId = await findAuthUserId(account.email);
@@ -273,7 +273,7 @@ async function realignPilotNames() {
 
     if (!current || current.organization === expected) continue;
 
-    record("organisation", `${account.name}: ${current.organization ?? "â€”"} â†’ ${expected ?? "â€”"}`, "renamed");
+    record("organisation", `${account.name}: ${current.organization ?? "—"} → ${expected ?? "—"}`, "renamed");
     if (!COMMIT) continue;
 
     await seedDb.execute(
@@ -325,7 +325,7 @@ async function realignPilotNames() {
  * and deleted a minute apart, and on an accreditation granted to
  * `e2e+approval-1788662344020@zidaproject.com` with the reason "Automated workflow check." Because
  * the log sorts most recent first, those were also the top entries of Recent Activity on both the
- * ZIDA Admin and Platform Manager landing pages â€” the first thing a reader sees, on the exhibit
+ * ZIDA Admin and Platform Manager landing pages — the first thing a reader sees, on the exhibit
  * both guides offer as proof that every act is attributed.
  *
  * Deleting from an audit trail deserves care, so this is anchored to vocabulary no genuine record
@@ -357,7 +357,7 @@ async function purgeAuditResidue() {
     return;
   }
 
-  for (const r of rows) record("audit", `${r.action} â€” ${r.created_at.slice(0, 10)}`, "deleted");
+  for (const r of rows) record("audit", `${r.action} — ${r.created_at.slice(0, 10)}`, "deleted");
   if (!COMMIT) return;
 
   await seedDb.execute(
@@ -415,7 +415,7 @@ async function backfillProjectTitles() {
 async function main() {
   console.log(
     COMMIT
-      ? "Running in COMMIT mode â€” changes will be written.\n"
+      ? "Running in COMMIT mode — changes will be written.\n"
       : "Running as a DRY RUN. Lines marked ~ are what would change. Re-run with --commit to apply.\n"
   );
 

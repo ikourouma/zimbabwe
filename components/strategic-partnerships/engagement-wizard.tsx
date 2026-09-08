@@ -510,7 +510,7 @@ export function EngagementWizard() {
                 />
               </div>
               <div>
-                <Label>Organization</Label>
+                <Label>Organisation</Label>
                 <input
                   value={form.organization}
                   onChange={(e) => update({ organization: e.target.value })}
@@ -733,7 +733,7 @@ export function EngagementWizard() {
               </p>
               <dl className="space-y-2 text-sm">
                 <SummaryRow label="Name" value={`${form.firstName} ${form.lastName}`} />
-                <SummaryRow label="Organization" value={form.organization} />
+                <SummaryRow label="Organisation" value={form.organization} />
                 <SummaryRow label="Email" value={form.email} />
                 <SummaryRow
                   label="Engagement Type"

@@ -71,7 +71,7 @@ export function MouRegistryView({ basePath }: MouRegistryViewProps) {
   const selectedEngagement = engagements.find((e) => e.id === selectedId) ?? null;
 
   const exportCsv = () => {
-    const header = ["Investor", "Organization", "Project", "Engagement Status", "MOU Stage", "Ticket Size", "Updated At"];
+    const header = ["Investor", "Organisation", "Project", "Engagement Status", "MOU Stage", "Ticket Size", "Updated At"];
     const lines = filteredEngagements.map((e) =>
       [
         e.investorName,

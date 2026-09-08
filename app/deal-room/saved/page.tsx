@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 const VIEW_KEY = "zimbabwe.dealRoom.savedView";
 
 /**
- * Saved Projects â€” the qualified/government investor's personal watchlist, rebuilt (Platform
+ * Saved Projects — the qualified/government investor's personal watchlist, rebuilt (Platform
  * Feedback Batch v4, Phase 1) onto the same registry chrome as /deal-room/pipeline: search +
  * expandable filters (ProjectFiltersBar) on row 1, and Kanban/List/Table/Matrix (PipelineViewSwitcher)
  * on row 2, instead of the old static card grid. Clicking an item opens the shared
@@ -67,7 +67,7 @@ export default function DealRoomSavedPage() {
     return entries.map((e) => byId.get(e.projectId)).filter((p): p is InvestmentProject => Boolean(p));
   }, [entries, projects]);
 
-  // Mirrors /deal-room/pipeline's own persona choice â€” a qualified/government viewer already sees
+  // Mirrors /deal-room/pipeline's own persona choice — a qualified/government viewer already sees
   // every workflow status on the pipeline, so a watchlisted non-published project shouldn't vanish
   // here just because filterProjects' default persona hides anything but "published".
   const savedPersona: DemoPersona = isQualified ? "admin" : "registered";

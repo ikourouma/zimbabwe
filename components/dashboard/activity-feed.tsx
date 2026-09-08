@@ -1,4 +1,4 @@
-﻿import {
+import {
   CheckCircle2,
   FileEdit,
   FileSignature,
@@ -42,18 +42,18 @@ function iconFor(action: string): LucideIcon {
 }
 
 /** A title cut to fit, with an ellipsis to show it was cut. A bare slice closed the quotation mark
- *  straight after the severed word â€” `"Goromonzi Agro Processing Industrial Park (Special Economic "`
- *  â€” which reads as the project's actual name rather than as an abbreviation of it. */
+ *  straight after the severed word — `"Goromonzi Agro Processing Industrial Park (Special Economic "`
+ *  — which reads as the project's actual name rather than as an abbreviation of it. */
 function shortTitle(value: unknown, fallback: string): string {
   const title = String(value ?? fallback);
-  return title.length > 60 ? `${title.slice(0, 59).trimEnd()}â€¦` : title;
+  return title.length > 60 ? `${title.slice(0, 59).trimEnd()}…` : title;
 }
 
 /**
  * A metadata value as a reader's term rather than as the database's.
  *
  * The feed printed stored enums verbatim, so a ministry desk read "changed 'Powertel Fibre Internet
- * (GPON)' from approved to under_review" â€” one side of the same transition formatted and the other
+ * (GPON)' from approved to under_review" — one side of the same transition formatted and the other
  * not, because only one of the two values happens to contain an underscore. Known statuses and
  * roles resolve through the labels the rest of the platform shows; anything else at least loses its
  * underscores.
@@ -87,7 +87,7 @@ function describe(entry: AuditLogEntry): string {
       return `moved engagement with ${String(meta.investorName ?? "an investor")} to ${term(meta.to)}`;
     // Named by project, not by investor. An engagement is nearly always logged by the investor
     // themselves, so naming the investor produced "Grace Mutindi logged a new engagement with
-    // Grace Mutindi" â€” and on her own feed, where the actor renders as "You", "you logged a new
+    // Grace Mutindi" — and on her own feed, where the actor renders as "You", "you logged a new
     // engagement with Grace Mutindi" was worse still. The actor prefix already answers who; the
     // useful second fact is which project.
     case "engagement.created":
@@ -109,7 +109,7 @@ function describe(entry: AuditLogEntry): string {
       return `moved the MOU with ${String(meta.investorName ?? "an investor")} to ${term(meta.to)}`;
     case "mou.approved":
       return `approved the MOU draft with ${String(meta.investorName ?? "an investor")} (${String(meta.approvedBy)} side)${
-        meta.bothApproved ? " â€” both parties have now approved" : ""
+        meta.bothApproved ? " — both parties have now approved" : ""
       }`;
     case "mou.draft_updated":
       return `updated the MOU ${String(meta.field ?? "draft")} with ${String(meta.investorName ?? "an investor")}`;
@@ -122,7 +122,7 @@ function describe(entry: AuditLogEntry): string {
     case "site_settings.updated":
       return "updated site settings";
     // Both message routes have always written this action; nothing described it, so the fallback
-    // rendered it as the literal "message â†’ created" in every feed and notification.
+    // rendered it as the literal "message → created" in every feed and notification.
     case "message.created":
       if (meta.scope === "concierge") {
         return meta.recipientName
@@ -134,7 +134,7 @@ function describe(entry: AuditLogEntry): string {
         : "posted to a project thread";
     default:
       // auditActionLabel turns the identifier into a phrase, so an action nobody has written a
-      // sentence for still reads as English rather than as "taxonomy â†’ removeSector".
+      // sentence for still reads as English rather than as "taxonomy → removeSector".
       return auditActionLabel(entry.action).toLowerCase();
   }
 }
@@ -200,14 +200,14 @@ export function ActivityFeed({ entries, isLoading, emptyMessage = "No recent act
                 <span className="font-medium text-white">{entry.actorName ?? "Someone"}</span> {describe(entry)}
               </p>
               {/* Change-request rationale / reviewer notes stamped on a status change (see
-               *  app/api/projects/[id]/route.ts) â€” the multi-round history the project timeline
+               *  app/api/projects/[id]/route.ts) — the multi-round history the project timeline
                *  used to lose by only keeping the single latest snapshot. */}
               {typeof entry.metadata?.notes === "string" && entry.metadata.notes.trim() !== "" && (
                 <p
                   className="text-xs mt-1 rounded-md px-2 py-1 italic"
                   style={{ backgroundColor: "rgba(255, 211, 0, 0.08)", color: "#fde047" }}
                 >
-                  â€œ{entry.metadata.notes as string}â€
+                  “{entry.metadata.notes as string}”
                 </p>
               )}
               <p className="text-xs mt-1" style={{ color: "var(--color-text-muted)" }} title={new Date(entry.createdAt).toLocaleString()}>

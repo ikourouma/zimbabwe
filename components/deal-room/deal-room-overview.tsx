@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts";
@@ -49,7 +49,7 @@ export function DealRoomOverview() {
   }, [engagements]);
 
   // The same entitlement the pipeline board applies, so the counter and the board it links to
-  // cannot disagree â€” an investor was told 37 projects here and shown 36 on the board one click
+  // cannot disagree — an investor was told 37 projects here and shown 36 on the board one click
   // away, the difference being the archived project the board withholds from them.
   const visibleProjects = useMemo(() => visibleProjectsForRole(projects, role), [projects, role]);
   const publishedCount = visibleProjects.filter((p) => p.projectStatus === "published").length;
@@ -68,13 +68,13 @@ export function DealRoomOverview() {
         <p className="text-sm mt-1 max-w-2xl" style={{ color: "var(--color-text-secondary)" }}>
           {isQualified
             ? "A private workspace for approved investors and government stakeholders to track deals through the governance workflow and log engagement on active projects."
-            : "Your investor dashboard â€” browse published opportunities, save projects to your watchlist, and complete your investment profile to unlock the full Deal Room."}
+            : "Your investor dashboard — browse published opportunities, save projects to your watchlist, and complete your investment profile to unlock the full Deal Room."}
         </p>
       </div>
 
       <GettingStartedCard appState={appState} reviewNotes={reviewNotes} />
 
-      {/* The on-ramp itself â€” shown only at the true starting point (registered, no application
+      {/* The on-ramp itself — shown only at the true starting point (registered, no application
        *  in any state yet). Once an application exists in any form, the checklist above is the
        *  right affordance ("Resume application" / status text), not a second call to action that
        *  would otherwise let a submitted applicant re-open a duplicate (Qualified Investor

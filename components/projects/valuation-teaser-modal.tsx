@@ -127,7 +127,7 @@ export function ValuationTeaserModal({ project, open, onOpenChange }: ValuationT
           </div>
 
           <div>
-            <FieldLabel>Organization</FieldLabel>
+            <FieldLabel>Organisation</FieldLabel>
             <input
               className={fieldClass}
               value={form.organization}

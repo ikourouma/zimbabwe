@@ -98,7 +98,7 @@ export default function SuperAdminInquiriesPage() {
   );
 
   const exportCsv = () => {
-    const header = ["Name", "Email", "Phone", "Organization", "Type", "Status", "Submitted At", "Message"];
+    const header = ["Name", "Email", "Phone", "Organisation", "Type", "Status", "Submitted At", "Message"];
     const lines = filtered.map((i) =>
       [
         i.name,

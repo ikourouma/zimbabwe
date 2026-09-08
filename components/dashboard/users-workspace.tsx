@@ -221,7 +221,7 @@ export function UsersWorkspace({ tier }: { tier: UsersWorkspaceTier }) {
   };
 
   const exportCsv = (rows: AdminUserRecord[], clear: () => void) => {
-    const header = ["Account ID", "Name", "Email", "Role", "Status", "Organization", "Joined"];
+    const header = ["Account ID", "Name", "Email", "Role", "Status", "Organisation", "Joined"];
     const lines = rows.map((r) =>
       [
         formatAccountRef(r.accountSeq),
@@ -278,7 +278,7 @@ export function UsersWorkspace({ tier }: { tier: UsersWorkspaceTier }) {
       },
       {
         accessorKey: "organization",
-        header: "Organization",
+        header: "Organisation",
         cell: ({ row }) => (
           <span className="block max-w-[160px] truncate" title={row.original.organization ?? undefined}>
             {row.original.organization ?? "—"}
