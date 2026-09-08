@@ -71,6 +71,8 @@
 | DEF-031 | The governance trail rendered function names to its auditors | Medium | Closed |
 | DEF-032 | The assurance exhibit was exhibiting the test harness | High | Closed |
 | DEF-033 | A personal report that answered for the wrong person, and totalled the wrong money | High | Closed |
+| DEF-034 | The same investor was shown two different pipeline totals one click apart | Medium | Closed |
+| DEF-035 | Two unrelated investors accepted the confidentiality framework at the same second | Low | Closed |
 
 ## 3. Closed Defects
 
@@ -333,6 +335,20 @@ The report showed a government reviewer TOTAL ENGAGEMENTS 10 and listed other in
 Every approved row's Next Step read *Proceed to MOU drafting*, including rows the MOU Registry showed as Finalised and Executed, because the step was keyed off the engagement status — which stays at approved for the whole memorandum lifecycle. It now reads the memorandum.
 
 And the ministry scope tested only whether a ministry was a project's *primary* beneficiary, having written that predicate out again locally rather than calling the shared one whose own comment asks callers not to. A ministry named as a secondary sponsor holds the same interest in an approach, and its Engagements console lists exactly those, so the report showed fewer engagements than the console the reader had just come from.
+
+### DEF-034 — The same investor was shown two different pipeline totals one click apart
+
+**Severity:** Medium. **Status:** Closed.
+
+Withholding archived projects from investors was applied on the pipeline board and nowhere else, so the Deal Room overview counter continued to report thirty-seven projects in pipeline while the board that counter links to showed thirty-six. The difference was the single archived project, and an investor comparing the two had no way to account for it. Saved Projects had the same gap from the other direction: it kept an Archived filter chip that could never be populated, and would have surfaced a withdrawn project on a watchlist.
+
+The rule now lives in one place — `canSeeArchivedProjects` — and all three screens call it, which is what should have happened when the board was changed. A rule about who may see what is not a property of a screen.
+
+### DEF-035 — Two unrelated investors accepted the confidentiality framework at the same second
+
+**Severity:** Low. **Status:** Closed.
+
+Every demonstration account recorded acceptance at the instant the seed script ran, so the Document Vault showed the qualified and registered investors agreeing to version 1.0 at 5:18:20 PM on the same day. Both investor guides present that timestamp as the evidentiary record of who was bound and when, which is exactly the claim a shared second undermines — it marks the record as generated rather than captured, on the one screen whose argument depends on it being captured. Acceptance is now staggered deterministically from each account's own address, across the preceding fortnight and within working hours: twenty-seven accounts, twenty-seven distinct times. Determinism matters here because a re-seed must not shuffle dates that the guides quote.
 
 ## 4. Open Defects
 
