@@ -117,7 +117,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         return NextResponse.json(
           {
             error:
-              "This account's KYC information is incomplete, so its role cannot become Qualified Investor here. Add organization, phone, HQ address, business registration ID, and corporate website via \"Edit details\" first, or approve their Strategic Partnerships application instead.",
+              "This account's KYC information is incomplete, so its role cannot become Qualified Investor here. Add organisation, phone, HQ address, business registration ID, and corporate website via \"Edit details\" first, or approve their Strategic Partnerships application instead.",
             code: "KYC_INCOMPLETE",
           },
           { status: 400 }

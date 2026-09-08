@@ -84,6 +84,7 @@
 | DEF-044 | Email addresses breaking mid-token on printed reports | Low | Closed |
 | DEF-045 | An implementation detail in the governance trail | Low | Closed |
 | DEF-046 | Government captures cut off mid-content | Medium | Closed |
+| DEF-047 | American spelling inside the accepted non-disclosure text | Low | Open (needs an agreement version) |
 
 ## 3. Closed Defects
 
@@ -419,7 +420,9 @@ Three independent reviews of the walkthrough captures reported the same thing: e
 
 **Severity:** Low. **Status:** Closed.
 
-Both executive report captures labelled the account summary tile *ORGANIZATION*, against British spelling everywhere else in the platform and in the guides. The same spelling appeared on twenty-three user-facing labels, table headers and CSV export columns across sixteen files. All now read *Organisation*. The schema.org `"@type": "Organization"` in the site metadata is a vocabulary term rather than prose and is deliberately unchanged.
+Both executive report captures labelled the account summary tile *ORGANIZATION*, against British spelling everywhere else in the platform and in the guides. The same spelling appeared on twenty-three user-facing labels, table headers and CSV export columns across sixteen files, and on a further eleven strings of body prose and search placeholders — the Getting Started checklist's *"Add your organization and phone number"*, the qualification banner, the search boxes above the enquiry, memorandum, engagement and user tables, the role-change error message, the team-invite email and the privacy policy. All now read *Organisation*.
+
+Two exclusions are deliberate. The schema.org `"@type": "Organization"` in the site metadata is a vocabulary term rather than prose. More importantly, the non-disclosure text in `lib/governance/nda.ts` and the acceptance checkbox beside it still read *organization* and *authorized*: that is a versioned agreement which seeded and pilot accounts have already accepted on the record, and silently editing the wording would leave those recorded acceptances pointing at text that no longer exists. **This one is open** — see DEF-047.
 
 ### DEF-044 — Email addresses breaking mid-token on printed reports
 
@@ -497,6 +500,16 @@ Every home page load requests a hero content block and receives a not-found resp
 **Severity:** Low. **Status:** Open.
 
 Sign-in against the local development server does not complete; the form submits and returns to its initial state. The likely cause is that the port in use is not among the origins the authentication service trusts. Development-only, with no production impact, but it prevents verifying authentication changes locally and forces verification through deployment — which is what allowed DEF-002 to obscure the DEF-001 fix.
+
+### DEF-047 — American spelling inside the accepted non-disclosure text
+
+**Severity:** Low. **Status:** Open, and deliberately so.
+
+The confidentiality framework's own wording still reads *organization*, *authorized* and *unauthorized*, and so does the acceptance checkbox beside it, while the rest of the platform now reads *organisation* and *authorised*. On a Republic of Zimbabwe agreement this is the single place where the inconsistency matters most.
+
+It was left alone rather than swept up with DEF-043 because it is not a label. It is the text of a versioned agreement that seeded and pilot accounts have already accepted, with the acceptance timestamped in the audit trail. Editing it in place would leave those records attesting to wording that no longer exists — a small defect traded for a governance one.
+
+**What closing it requires:** a new version of the agreement, so that acceptances continue to point at the text that was actually accepted, and a decision on whether existing holders must re-accept. That is a decision for ZIDA rather than an implementation detail, which is why it is recorded here rather than fixed. It does not block the demonstration; no screen shows the two spellings side by side.
 
 ## 5. Observations Pending Triage
 

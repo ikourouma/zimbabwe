@@ -397,7 +397,7 @@ export async function approveOrgInvite(
     prefKey: "teamActivity",
     subject: "Your ZIDA team account is now active",
     bodyHtml: `<p>Hi ${current.inviteName},</p>
-      <p>ZIDA has validated your invite from <strong>${ownerProfile?.name ?? "your organization"}</strong> — your account is now active${isMinistryOwner ? " on their ministry desk" : " in their organization"}.</p>
+      <p>ZIDA has validated your invite from <strong>${ownerProfile?.name ?? "your organisation"}</strong> — your account is now active${isMinistryOwner ? " on their ministry desk" : " in their organisation"}.</p>
       <p>Sign in to get started.</p>`,
   });
 

@@ -98,7 +98,7 @@ export function InquiryFiltersBar({
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: "var(--color-text-muted)" }} />
           <Input
-            placeholder="Search by sender name, corporate email, organization, or subject..."
+            placeholder="Search by sender name, corporate email, organisation, or subject..."
             value={filters.search}
             onChange={(e) => update("search", e.target.value)}
             className="pl-9"

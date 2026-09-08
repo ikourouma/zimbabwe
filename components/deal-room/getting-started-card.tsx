@@ -41,7 +41,7 @@ export function GettingStartedCard({
           <div className="min-w-0">
             <p className="text-sm text-white">Complete your profile</p>
             <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-              {profileComplete ? "Organization and contact details on file." : "Add your organization and phone number."}
+              {profileComplete ? "Organisation and contact details on file." : "Add your organisation and phone number."}
             </p>
             {!profileComplete && (
               <Link href="/deal-room/profile" className="text-xs underline" style={{ color: "var(--color-gold)" }}>

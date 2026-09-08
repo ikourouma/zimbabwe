@@ -109,7 +109,7 @@ export function InquiryDecisionModal({ inquiry, action, kycComplete, onConfirm, 
           >
             <ShieldAlert className="h-3.5 w-3.5 mt-0.5 shrink-0" />
             This applicant&apos;s KYC information looks incomplete. The role can only become Qualified Investor
-            once organization, phone, HQ address, business registration ID, and website are all on file —
+            once organisation, phone, HQ address, business registration ID, and website are all on file —
             approving now may be rejected, so consider &ldquo;Request More Info&rdquo; instead.
           </div>
         )}

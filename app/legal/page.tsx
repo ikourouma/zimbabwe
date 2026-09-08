@@ -109,7 +109,7 @@ export default function LegalPage() {
             </p>
             <p>
               <strong className="text-white">2. Information Collection:</strong> The platform collects name,
-              email, organization, and investor profile information during registration, inquiries, and
+              email, organisation, and investor profile information during registration, inquiries, and
               contact flows. Account, inquiry, project, and engagement records are stored in the platform
               database. Authentication is handled by the configured identity provider.
             </p>

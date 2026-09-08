@@ -83,7 +83,7 @@ export function QualificationBanner({ variant, values, onSaveFirst }: Qualificat
 
   const description =
     variant === "overview" && !kycComplete
-      ? "Add your organization, phone, HQ address, business registration ID, and corporate website on My Profile, then request review — your KYC details carry straight into the application, so you only add your investment interest before submitting."
+      ? "Add your organisation, phone, HQ address, business registration ID, and corporate website on My Profile, then request review — your KYC details carry straight into the application, so you only add your investment interest before submitting."
       : kycComplete
         ? "Your company profile is complete. Continue to declare your investment interest and submit for ZIDA review — you won't need to re-enter your KYC details."
         : "Fill in every field in Company & Representative above, then request review — your KYC details carry straight into the application, so you only add your investment interest before submitting.";
