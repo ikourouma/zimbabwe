@@ -51,7 +51,7 @@ const HARNESS_PATTERN = "(smoke|selftest|self test|qa residual|phase[0-9]+ )";
 // -----------------------------------------------------------------------------------------------
 
 async function purgeProjects() {
-  console.log("\n[1/5] Harness projects");
+  console.log("\n[1/6] Harness projects");
 
   const doomed = await seedDb
     .select({ id: projects.id, title: projects.title, status: projects.projectStatus })
@@ -79,7 +79,7 @@ async function purgeProjects() {
 // -----------------------------------------------------------------------------------------------
 
 async function purgeEngagements() {
-  console.log("\n[2/5] Harness engagements");
+  console.log("\n[2/6] Harness engagements");
 
   const doomed = await seedDb
     .select({ id: investorEngagements.id, investorName: investorEngagements.investorName })
@@ -134,7 +134,7 @@ async function purgeEngagements() {
 // -----------------------------------------------------------------------------------------------
 
 async function purgeMessages() {
-  console.log("\n[3/5] Harness messages");
+  console.log("\n[3/6] Harness messages");
 
   const doomed = await seedDb
     .select({ id: projectMessages.id, body: projectMessages.body })
@@ -167,7 +167,7 @@ async function purgeMessages() {
 // -----------------------------------------------------------------------------------------------
 
 async function realignPilotNames() {
-  console.log("\n[4/5] Pilot account names");
+  console.log("\n[4/6] Pilot account names");
 
   for (const account of PILOT_ACCOUNTS) {
     const userId = await findAuthUserId(account.email);
@@ -333,7 +333,7 @@ async function realignPilotNames() {
  * created. It does not touch a row merely because it is old, automated-looking or inconvenient.
  */
 async function purgeAuditResidue() {
-  console.log("\n[5/5] Harness audit trail");
+  console.log("\n[5/6] Harness audit trail");
 
   const doomed = await seedDb.execute<{ id: string; action: string; created_at: string }>(
     sql`SELECT id::text AS id, action, created_at::text
@@ -368,6 +368,50 @@ async function purgeAuditResidue() {
   );
 }
 
+// -----------------------------------------------------------------------------------------------
+// 6. Project titles the trail recorded only as ids
+// -----------------------------------------------------------------------------------------------
+
+/**
+ * Backfills `metadata.projectTitle` on engagement rows that carry only a `projectId`.
+ *
+ * The activity feed now names the project an engagement was logged against, because naming the
+ * investor said nothing when the investor was also the actor. Rows written before that change hold
+ * the id alone, so they fall back to the old sentence — which is why the ZIDA Admin landing page
+ * still opened on five rows of "Grace Mutindi logged a new engagement with Grace Mutindi" after the
+ * fix shipped. The title is recovered by join from the project the row already points at; nothing
+ * is invented and no row is created.
+ */
+async function backfillProjectTitles() {
+  console.log("\n[6/6] Project titles in the trail");
+
+  const [{ n } = { n: "0" }] = (
+    await seedDb.execute<{ n: string }>(
+      sql`SELECT count(*)::text AS n
+          FROM audit_logs a
+          JOIN projects p ON p.id::text = a.metadata ->> 'projectId'
+          WHERE a.action LIKE 'engagement.%' AND a.metadata ->> 'projectTitle' IS NULL`
+    )
+  ).rows;
+
+  if (Number(n) === 0) {
+    record("title", "every engagement row already names its project", "skipped");
+    return;
+  }
+
+  record("title", `${n} engagement row(s) carrying a project id but no title`, "renamed");
+  if (!COMMIT) return;
+
+  await seedDb.execute(
+    sql`UPDATE audit_logs a
+        SET metadata = jsonb_set(a.metadata, '{projectTitle}', to_jsonb(p.title))
+        FROM projects p
+        WHERE p.id::text = a.metadata ->> 'projectId'
+          AND a.action LIKE 'engagement.%'
+          AND a.metadata ->> 'projectTitle' IS NULL`
+  );
+}
+
 async function main() {
   console.log(
     COMMIT
@@ -380,6 +424,7 @@ async function main() {
   await purgeMessages();
   await realignPilotNames();
   await purgeAuditResidue();
+  await backfillProjectTitles();
 
   const deleted = changes.filter((c) => c.action === "deleted").length;
   const renamed = changes.filter((c) => c.action === "renamed").length;
@@ -390,4 +435,6 @@ async function main() {
 }
 
 void main();
+
+
 

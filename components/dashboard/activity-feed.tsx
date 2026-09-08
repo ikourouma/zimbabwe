@@ -38,13 +38,21 @@ function iconFor(action: string): LucideIcon {
   return ACTION_ICON[action] ?? ScrollText;
 }
 
+/** A title cut to fit, with an ellipsis to show it was cut. A bare slice closed the quotation mark
+ *  straight after the severed word — `"Goromonzi Agro Processing Industrial Park (Special Economic "`
+ *  — which reads as the project's actual name rather than as an abbreviation of it. */
+function shortTitle(value: unknown, fallback: string): string {
+  const title = String(value ?? fallback);
+  return title.length > 60 ? `${title.slice(0, 59).trimEnd()}…` : title;
+}
+
 function describe(entry: AuditLogEntry): string {
   const meta = entry.metadata ?? {};
   switch (entry.action) {
     case "project.created":
-      return `created "${String(meta.title ?? "a project").slice(0, 60)}"`;
+      return `created "${shortTitle(meta.title, "a project")}"`;
     case "project.status_changed":
-      return `changed "${String(meta.title ?? "a project").slice(0, 60)}" from ${String(meta.from)} to ${String(meta.to)}`;
+      return `changed "${shortTitle(meta.title, "a project")}" from ${String(meta.from)} to ${String(meta.to)}`;
     case "inquiry.status_changed":
       return `marked inquiry from ${String(meta.applicantEmail ?? "an applicant")} as ${String(meta.status)}${
         meta.roleUpgradedToQualified ? " (role upgraded to qualified)" : ""
@@ -62,14 +70,14 @@ function describe(entry: AuditLogEntry): string {
     // useful second fact is which project.
     case "engagement.created":
       return meta.projectTitle
-        ? `logged a new engagement on "${String(meta.projectTitle).slice(0, 60)}"`
+        ? `logged a new engagement on "${shortTitle(meta.projectTitle, "a project")}"`
         : `logged a new engagement with ${String(meta.investorName ?? "an investor")}`;
     // Same reasoning as engagement.created: parenthesising the investor's own name after their
     // own act read as a second, unrelated party ("Lindiwe Ncube certified and published their
     // engagement (Pilot Qualified Investor)").
     case "engagement.published":
       return meta.projectTitle
-        ? `certified and published their engagement on "${String(meta.projectTitle).slice(0, 60)}"`
+        ? `certified and published their engagement on "${shortTitle(meta.projectTitle, "a project")}"`
         : "certified and published their engagement";
     case "engagement.correction_requested":
       return `requested a correction to the engagement with ${String(meta.investorName ?? "an investor")}`;

@@ -422,6 +422,10 @@ async function seedEngagementsAndMous() {
           actorName: investor.name,
           investorName: investor.name,
           projectId: project.id,
+          // The feed names the project rather than the counterparty, because on a self-initiated
+          // engagement the counterparty is the actor — five rows of "Grace Mutindi logged a new
+          // engagement with Grace Mutindi" opened the ZIDA Admin landing page.
+          projectTitle: project.title,
           status: "approved",
         },
       });
