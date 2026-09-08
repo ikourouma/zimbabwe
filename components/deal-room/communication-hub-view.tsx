@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -43,8 +43,14 @@ const SCOPE_TABS: { id: ScopeFilter; label: string }[] = [
 ];
 
 /**
- * The Communication Hub — one thread list across every channel the signed-in user can see (the
- * project-less General Concierge channel, per-project general questions, and engagement threads),
+ * The Communication Hub â€” one thread list across every channel the signed-in user can see (the
+ * project-less General Concierge channel, per-project enquiries, and engagement threads),
+ *
+ * "General" names exactly one thing here — the concierge channel and the tab that filters to it.
+ * A project thread carrying no engagement used to be subtitled "General question" while being
+ * counted under Active Deals, so the hub read "General 0 / Active Deals 1" above a thread the same
+ * screen labelled as general. Those threads are project enquiries, which is what they are and what
+ * the tab they sit under implies.
  * mirrored into the Deal Room, Admin, and Super Admin consoles (one shared component, role-scoped
  * content). Scope tabs filter the list; investors can always start a General Concierge thread.
  */
@@ -54,7 +60,7 @@ export function CommunicationHubView() {
   const { messages, isLoading, refresh } = useCommunicationHub();
   const { engagements } = useDealRoomStore();
   const { projects, getProject } = useProjectStore();
-  // Ministry Desk management dashboard plan, Part 3 — no concierge channel for ministry_admin
+  // Ministry Desk management dashboard plan, Part 3 â€” no concierge channel for ministry_admin
   // (that stays investor<->ZIDA), so "New Message" gets a project picker instead of the staff
   // broadcast tool / investor desk-routing dropdown. fetchMessagesForActor already ministry-scopes
   // the thread list itself; this just needs the full set of ministry projects to start a new one.
@@ -72,7 +78,7 @@ export function CommunicationHubView() {
   const [lastSeen, setLastSeen] = useState(0);
   const [composeOpen, setComposeOpen] = useState(false);
   // Set when the investor jumps to a project thread via the compose modal before any message
-  // exists yet for it — keeps a synthetic entry in the thread list until the first send lands.
+  // exists yet for it â€” keeps a synthetic entry in the thread list until the first send lands.
   const [pendingProjectId, setPendingProjectId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -96,7 +102,7 @@ export function CommunicationHubView() {
         const existing = map.get(key);
         // A staff-role viewer looking at *their own* thread (ministry_admin's escalation channel
         // to ZIDA, or government's "Message ZIDA" channel) is not triaging someone else's enquiry
-        // — title it like the investor-facing view, not with their own name.
+        // â€” title it like the investor-facing view, not with their own name.
         const isOwnThread = owner === userId;
         if (existing) {
           existing.count += 1;
@@ -127,7 +133,7 @@ export function CommunicationHubView() {
             kind: "project",
             category: m.engagementId ? "engagements" : "deals",
             title: m.projectTitle,
-            subtitle: m.engagementId ? "Engagement thread" : "General question",
+            subtitle: m.engagementId ? "Engagement thread" : "Project enquiry",
             projectId: m.projectId,
             engagementId: m.engagementId ?? undefined,
             latest: m,
@@ -146,7 +152,7 @@ export function CommunicationHubView() {
 
     const list = Array.from(map.values());
 
-    // Investors can always start a General Concierge thread (cold start) — inject a synthetic entry
+    // Investors can always start a General Concierge thread (cold start) â€” inject a synthetic entry
     // if they have none yet.
     if (!isStaff && !list.some((t) => t.kind === "concierge")) {
       list.unshift({
@@ -169,7 +175,7 @@ export function CommunicationHubView() {
         kind: "project",
         category: "deals",
         title: project?.title ?? "Project thread",
-        subtitle: "General question",
+        subtitle: "Project enquiry",
         projectId: pendingProjectId,
         count: 0,
       });
@@ -299,7 +305,7 @@ export function CommunicationHubView() {
                       </div>
                       <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>
                         {thread.subtitle}
-                        {thread.count > 0 ? ` · ${thread.count} message${thread.count === 1 ? "" : "s"}` : ""}
+                        {thread.count > 0 ? ` Â· ${thread.count} message${thread.count === 1 ? "" : "s"}` : ""}
                       </p>
                       {thread.latest ? (
                         <>
@@ -332,11 +338,11 @@ export function CommunicationHubView() {
                   <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
                     {selected.kind === "concierge"
                       ? isStaff
-                        ? "General enquiry — project-less concierge thread"
+                        ? "General enquiry â€” project-less concierge thread"
                         : "Your general channel with the ZIDA deal team"
                       : selectedEngagement
                         ? `Engagement thread with ${selectedEngagement.investorName}`
-                        : "General question thread"}
+                        : "Project enquiry thread"}
                   </p>
                   <ThreadToolbar
                     threadTitle={selected.title}
@@ -349,7 +355,7 @@ export function CommunicationHubView() {
                   />
                 </div>
 
-                {/* Sticky project-context header — on a project-bound thread, keep the deal's key
+                {/* Sticky project-context header â€” on a project-bound thread, keep the deal's key
                  *  metrics in view so staff/investors always have the opportunity context while
                  *  messaging (deep-links to the full project page). */}
                 {selectedProject && (
@@ -366,14 +372,14 @@ export function CommunicationHubView() {
                     <span className="capitalize" style={{ color: "var(--color-text-muted)" }}>
                       {selectedProject.projectStatus.replace(/_/g, " ")}
                     </span>
-                    {/* Parsed headline figure — see formatCapitalHeadline. */}
+                    {/* Parsed headline figure â€” see formatCapitalHeadline. */}
                     {formatCapitalHeadline(selectedProject.capitalRequired) && (
                       <span style={{ color: "var(--color-text-muted)" }} title={selectedProject.capitalRequired}>
-                        · {formatCapitalHeadline(selectedProject.capitalRequired)}
+                        Â· {formatCapitalHeadline(selectedProject.capitalRequired)}
                       </span>
                     )}
                     {selectedProject.province && (
-                      <span style={{ color: "var(--color-text-muted)" }}>· {selectedProject.province}</span>
+                      <span style={{ color: "var(--color-text-muted)" }}>Â· {selectedProject.province}</span>
                     )}
                     <a
                       href={`/projects/${selectedProject.slug}`}
@@ -524,21 +530,21 @@ function ThreadToolbar({
       .map(
         (m) =>
           `<div style="margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid #e5e7eb">
-            <div style="font-size:12px;color:#6b7280">${new Date(m.createdAt).toLocaleString()} · ${escapeHtml(
+            <div style="font-size:12px;color:#6b7280">${new Date(m.createdAt).toLocaleString()} Â· ${escapeHtml(
               m.authorRole
             )}</div>
             <div style="font-weight:600">${escapeHtml(m.authorName)}${
-              m.recipientName ? ` → ${escapeHtml(m.recipientName)}` : ""
+              m.recipientName ? ` â†’ ${escapeHtml(m.recipientName)}` : ""
             }</div>
             <div style="white-space:pre-wrap;margin-top:4px">${escapeHtml(m.body)}</div>
           </div>`
       )
       .join("");
     win.document.write(
-      `<!doctype html><html><head><title>${escapeHtml(threadTitle)} — Transcript</title></head>
+      `<!doctype html><html><head><title>${escapeHtml(threadTitle)} â€” Transcript</title></head>
        <body style="font-family:system-ui,sans-serif;max-width:720px;margin:32px auto;color:#111">
        <h1 style="font-size:18px">${escapeHtml(threadTitle)}</h1>
-       <p style="font-size:12px;color:#6b7280">ZIDA Communication Hub transcript · ${new Date().toLocaleString()}</p>
+       <p style="font-size:12px;color:#6b7280">ZIDA Communication Hub transcript Â· ${new Date().toLocaleString()}</p>
        ${body || "<p>No messages.</p>"}
        </body></html>`
     );
@@ -603,7 +609,7 @@ function ThreadToolbar({
             value={projectId}
             onChange={(e) => setProjectId(e.target.value)}
           >
-            <option value="">Select an opportunity…</option>
+            <option value="">Select an opportunityâ€¦</option>
             {projects.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.title}
@@ -616,10 +622,11 @@ function ThreadToolbar({
             disabled={!projectId || linking}
             className="btn-sovereign text-xs px-3 py-1.5 disabled:opacity-50"
           >
-            {linking ? "Linking…" : "Link"}
+            {linking ? "Linkingâ€¦" : "Link"}
           </button>
         </div>
       )}
     </div>
   );
 }
+

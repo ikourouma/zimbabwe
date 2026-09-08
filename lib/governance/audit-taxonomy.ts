@@ -7,7 +7,7 @@ import { isWithinTimeHorizon, TIME_HORIZON_LABELS, type TimeHorizon } from "@/li
  * `logAuditEvent()` call site's `entityType` (see app/api/**\/route.ts) into one of five
  * mutation-class buckets, so "All" always equals the sum of the five category pills.
  */
-export type AuditCategoryKey = "projects" | "security" | "settings" | "documents" | "messages";
+export type AuditCategoryKey = "projects" | "security" | "settings" | "documents" | "messages" | "other";
 
 export const AUDIT_CATEGORY_LABELS: Record<AuditCategoryKey, string> = {
   projects: "Projects",
@@ -15,9 +15,17 @@ export const AUDIT_CATEGORY_LABELS: Record<AuditCategoryKey, string> = {
   settings: "Site Settings",
   documents: "VDR & Documents",
   messages: "Messages & Hub",
+  other: "Other",
 };
 
-export const AUDIT_CATEGORY_ORDER: AuditCategoryKey[] = ["projects", "security", "settings", "documents", "messages"];
+export const AUDIT_CATEGORY_ORDER: AuditCategoryKey[] = [
+  "projects",
+  "security",
+  "settings",
+  "documents",
+  "messages",
+  "other",
+];
 
 // Every real entityType currently written by logAuditEvent() call sites gets a home here.
 // "engagement" (deal-room lifecycle, MOU drafts, follow-through) reads as project governance, not
@@ -37,12 +45,27 @@ const ENTITY_TYPE_CATEGORY: Record<string, AuditCategoryKey> = {
   project_document: "documents",
   project_message: "messages",
   inquiry: "messages",
+  // Organisational configuration, alongside taxonomy: a case manager assigned to a ministry is a
+  // change to how that ministry is set up on the platform.
+  ministry: "settings",
+  marketing_popup: "settings",
+  // An investor's team invitation is an access grant, and lands where user invites land.
+  org_invite: "security",
 };
 
-/** Falls back to `null` (excluded from every category pill's count, but still visible via the
- *  granular Entity Type filter) for any future entityType not yet added above. */
-export function categorizeEntityType(entityType: string): AuditCategoryKey | null {
-  return ENTITY_TYPE_CATEGORY[entityType] ?? null;
+/**
+ * Falls back to "other" rather than to `null`.
+ *
+ * The header above promises that All equals the sum of the category pills, and a `null` return
+ * broke that promise silently: three entity types written since this map was last extended —
+ * ministry, org_invite and marketing_popup — belonged to no category, so the pills read 45, 9, 14,
+ * 1 and 19 against an All of 93 and an export labelled 93. Five records were reachable only by
+ * clearing the filter, on the exhibit the platform offers to auditors, and nothing anywhere said
+ * so. A visible "Other" pill cannot go quiet in the same way: the next unmapped entity type shows
+ * up as a number someone can ask about.
+ */
+export function categorizeEntityType(entityType: string): AuditCategoryKey {
+  return ENTITY_TYPE_CATEGORY[entityType] ?? "other";
 }
 
 const ENTITY_TYPE_LABELS: Record<string, string> = {

@@ -120,7 +120,12 @@ export const STATUS_COLORS: Record<ProjectStatus, string> = {
 
 /** Statuses that represent a project actively moving through the review pipeline
  *  (as opposed to draft, published, or archived). Shared by the Deal Room card badge
- *  and drawer so the "in review" figure is computed identically in both places. */
+ *  and drawer so the "under assessment" figure is computed identically in both places.
+ *
+ *  The tiles built on this are labelled "Under Assessment" rather than "In Review", because the
+ *  set is three statuses wide while "Under Review" is the name of exactly one of them — the same
+ *  platform was reporting 8 in review on a console and 4 under review in the report generated from
+ *  the same data, and both were right. */
 const IN_REVIEW_STATUSES: ProjectStatus[] = ["submitted_for_review", "under_review", "changes_requested"];
 
 export function getInReviewCount(projects: InvestmentProject[]): number {

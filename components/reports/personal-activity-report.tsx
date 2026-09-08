@@ -235,6 +235,15 @@ export function PersonalActivityReport() {
                   <thead>
                     <tr className="border-b border-zim-border text-left">
                       <th className="py-1.5 pr-4 text-[11px] uppercase tracking-wide text-zim-muted">Project</th>
+                      {/* Only where the reader is not the investor. Two investors may approach the
+                          same project, and without naming them those rows read as one record
+                          duplicated — which is how a ministry report came to list the TelOne
+                          deployment twice, once submitted and once approved, with nothing on the
+                          page to say they were different firms. On an investor's own report every
+                          row is theirs, so the column would repeat their name down the page. */}
+                      {isMinistryScoped && (
+                        <th className="py-1.5 pr-4 text-[11px] uppercase tracking-wide text-zim-muted">Investor</th>
+                      )}
                       <th className="py-1.5 pr-4 text-[11px] uppercase tracking-wide text-zim-muted">Status</th>
                       <th className="py-1.5 pr-4 text-[11px] uppercase tracking-wide text-zim-muted">Indicative Ticket</th>
                       <th className="py-1.5 pr-4 text-[11px] uppercase tracking-wide text-zim-muted">Started</th>
@@ -245,6 +254,12 @@ export function PersonalActivityReport() {
                     {engagementRows.map(({ engagement, project, ticketCell }) => (
                       <tr key={engagement.id} className="border-b border-zim-border/60">
                         <td className="py-1.5 pr-4 font-medium text-zim-charcoal">{project?.title ?? engagement.projectId}</td>
+                        {isMinistryScoped && (
+                          <td className="py-1.5 pr-4 text-zim-charcoal">
+                            {engagement.investorName}
+                            {engagement.investorOrganization ? ` · ${engagement.investorOrganization}` : ""}
+                          </td>
+                        )}
                         <td className="py-1.5 pr-4">
                           <span
                             className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${ENGAGEMENT_STATUS_CHIP[engagement.status]}`}

@@ -141,16 +141,19 @@ export function ReportStat({
   actionHint?: string;
 }) {
   const styles = TONE_STYLES[tone];
-  // Long string values (an email address, an organization name) at text-xl/bold have nowhere to
-  // wrap and will overflow past their grid cell into the neighbor — `min-w-0` lets `truncate`
-  // actually engage inside a CSS grid column, and a smaller size keeps long values legible
-  // instead of just clipping them; numeric/short KPI values (the common case) are unaffected.
+  // Long string values (an email address, an organisation name) at text-xl/bold have nowhere to
+  // wrap and would overflow past their grid cell into the neighbour, so `min-w-0` plus a smaller
+  // size keeps them inside their column. They wrap rather than truncate: these pages carry a
+  // reference number and a print control, and are meant to leave the platform on paper, where the
+  // hover title that used to rescue a clipped value does not exist. An officer's address ending
+  // "…@zidaproj…" on a printed document of record defeats the attribution the document is for.
+  // Numeric and short KPI values (the common case) are unaffected.
   const isLongText = typeof value === "string" && value.length > 18;
   return (
     <div className={`min-w-0 rounded-md border border-zim-border p-3 ${styles.border}`}>
       <p className="text-[11px] uppercase tracking-wide text-zim-muted">{label}</p>
       <p
-        className={`mt-1 truncate font-bold ${styles.value} ${isLongText ? "text-sm" : "text-xl"}`}
+        className={`mt-1 font-bold ${styles.value} ${isLongText ? "break-words text-sm" : "truncate text-xl"}`}
         title={typeof value === "string" ? value : undefined}
       >
         {value}

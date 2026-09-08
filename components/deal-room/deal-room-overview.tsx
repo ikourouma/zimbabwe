@@ -114,7 +114,7 @@ export function DealRoomOverview() {
               href="/deal-room/pipeline?status=published"
             />
             <StatCard
-              label="In Review"
+              label="Under Assessment"
               value={getInReviewCount(visibleProjects)}
               icon={ShieldCheck}
               accent="green"
@@ -171,4 +171,5 @@ export function DealRoomOverview() {
     </div>
   );
 }
+
 

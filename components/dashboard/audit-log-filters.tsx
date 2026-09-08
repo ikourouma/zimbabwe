@@ -204,11 +204,19 @@ export function AuditLogFiltersBar({ entries, filters, onFiltersChange, onExport
         <Pill active={filters.category === "all"} onClick={() => update("category", "all")}>
           All ({countForCategory("all")})
         </Pill>
-        {AUDIT_CATEGORY_ORDER.map((key) => (
-          <Pill key={key} active={filters.category === key} onClick={() => update("category", filters.category === key ? "all" : key)}>
-            {AUDIT_CATEGORY_LABELS[key]} ({countForCategory(key)})
-          </Pill>
-        ))}
+        {AUDIT_CATEGORY_ORDER.map((key) => {
+          const count = countForCategory(key);
+          // "Other" is the catch-all that keeps All equal to the sum of the pills when an entity
+          // type has not yet been classified. When everything is classified it holds nothing, and a
+          // permanently empty pill is just noise — so it appears only when it has something in it,
+          // which is exactly when someone needs to see it.
+          if (key === "other" && count === 0) return null;
+          return (
+            <Pill key={key} active={filters.category === key} onClick={() => update("category", filters.category === key ? "all" : key)}>
+              {AUDIT_CATEGORY_LABELS[key]} ({count})
+            </Pill>
+          );
+        })}
       </div>
     </div>
   );

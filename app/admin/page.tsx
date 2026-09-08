@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts";
@@ -90,7 +90,7 @@ export default function AdminOverviewPage() {
               href="/admin/projects?status=published"
             />
             <StatCard
-              label="In Review"
+              label="Under Assessment"
               value={getInReviewCount(projects)}
               icon={ShieldCheck}
               accent="green"
@@ -152,3 +152,4 @@ export default function AdminOverviewPage() {
     </div>
   );
 }
+
