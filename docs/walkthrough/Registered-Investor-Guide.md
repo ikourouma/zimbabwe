@@ -107,7 +107,7 @@ The vault holds documents that belong to you rather than to a project: your non-
 
 ![The Document Vault. At this tier it holds your own records rather than project material.](docs/screenshots/registered/vault.png)
 
-Four cards make up the vault, and at this tier three of them are still waiting. The NDA certificate card carries the confidentiality acceptance to the second — 6 September 2026 at 5:18:20 pm, against agreement version 1.0. Company & accreditation shows business registration as not uploaded and offers two upload actions, one for a commitment letter and one for a guarantee letter. MOU snapshots and Recent document downloads each report that no records exist yet.
+Four cards make up the vault, and at this tier three of them are still waiting. The NDA certificate card carries the confidentiality acceptance to the second — 5 September 2026 at 8:55:29 am, against agreement version 1.0. Company & accreditation shows business registration as not uploaded and offers two upload actions, one for a commitment letter and one for a guarantee letter. MOU snapshots and Recent document downloads each report that no records exist yet.
 
 Recording a version number alongside a timestamp is a small detail with legal weight: it establishes not merely that an undertaking was accepted, but which text was accepted. The download log will do the same work in reverse, attaching every future release of sensitive project material to a named identity at a known moment. This is what allows an investment authority to circulate feasibility work at all — the vault is the reason confidentiality can be evidenced rather than assumed.
 

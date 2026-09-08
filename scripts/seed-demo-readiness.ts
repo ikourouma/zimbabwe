@@ -129,13 +129,17 @@ function ndaAcceptanceFor(email: string): Date {
   for (const ch of email) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
 
   const daysAgo = 1 + (hash % 14);
-  const hour = 9 + ((hash >> 4) % 8);
+  // Set in UTC, not in the seed process's local time. Node runs this script in UTC while a reader's
+  // browser renders the stored instant in their own zone, so a nine-o'clock local window produced
+  // certificates accepted at 4:55 in the morning on screen. Thirteen hundred to twenty hundred UTC
+  // reads as a working day across the zones this is presented in.
+  const hour = 13 + ((hash >> 4) % 7);
   const minute = (hash >> 8) % 60;
   const second = (hash >> 16) % 60;
 
   const at = new Date();
-  at.setDate(at.getDate() - daysAgo);
-  at.setHours(hour, minute, second, 0);
+  at.setUTCDate(at.getUTCDate() - daysAgo);
+  at.setUTCHours(hour, minute, second, 0);
   return at;
 }
 
