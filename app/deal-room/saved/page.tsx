@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -7,7 +7,7 @@ import { useAuth } from "@/context/auth-context";
 import { useProjectStore } from "@/context/project-store-context";
 import { useWatchlist } from "@/lib/hooks/use-watchlist";
 import type { DemoPersona, InvestmentProject, ProjectFilters } from "@/lib/types";
-import { filterProjects } from "@/lib/entitlements/visibility";
+import { filterProjects, canSeeArchivedProjects } from "@/lib/entitlements/visibility";
 import { STATUS_FILTER_CHIPS, isInReviewStatus, type StatusFilterValue } from "@/lib/governance/project-workflow";
 import { paramsToFilters, syncFiltersToUrl } from "@/lib/utils/project-filters-url";
 import { DealRoomAccessGate } from "@/components/deal-room/deal-room-access-gate";
@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 const VIEW_KEY = "zimbabwe.dealRoom.savedView";
 
 /**
- * Saved Projects — the qualified/government investor's personal watchlist, rebuilt (Platform
+ * Saved Projects â€” the qualified/government investor's personal watchlist, rebuilt (Platform
  * Feedback Batch v4, Phase 1) onto the same registry chrome as /deal-room/pipeline: search +
  * expandable filters (ProjectFiltersBar) on row 1, and Kanban/List/Table/Matrix (PipelineViewSwitcher)
  * on row 2, instead of the old static card grid. Clicking an item opens the shared
@@ -31,7 +31,7 @@ const VIEW_KEY = "zimbabwe.dealRoom.savedView";
  * rather than navigating away to the public opportunity page.
  */
 export default function DealRoomSavedPage() {
-  const { isAuthenticated, isQualified, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isQualified, role, isLoading: authLoading } = useAuth();
   const { projects, isLoading: projectsLoading } = useProjectStore();
   const { entries, isLoading: watchlistLoading } = useWatchlist(isAuthenticated);
   const [filters, setFilters] = useState<ProjectFilters>({});
@@ -67,13 +67,21 @@ export default function DealRoomSavedPage() {
     return entries.map((e) => byId.get(e.projectId)).filter((p): p is InvestmentProject => Boolean(p));
   }, [entries, projects]);
 
-  // Mirrors /deal-room/pipeline's own persona choice — a qualified/government viewer already sees
+  // Mirrors /deal-room/pipeline's own persona choice â€” a qualified/government viewer already sees
   // every workflow status on the pipeline, so a watchlisted non-published project shouldn't vanish
   // here just because filterProjects' default persona hides anything but "published".
   const savedPersona: DemoPersona = isQualified ? "admin" : "registered";
-  const taxonomyFilteredProjects = useMemo(
-    () => filterProjects(savedProjects, filters, savedPersona),
-    [savedProjects, filters, savedPersona]
+  // The same archived rule the pipeline board applies, so a watchlist cannot show a withdrawn
+  // project to an investor the board withholds it from.
+  const canSeeArchived = canSeeArchivedProjects(role);
+  const taxonomyFilteredProjects = useMemo(() => {
+    const scoped = filterProjects(savedProjects, filters, savedPersona);
+    return canSeeArchived ? scoped : scoped.filter((p) => p.projectStatus !== "archived");
+  }, [savedProjects, filters, savedPersona, canSeeArchived]);
+
+  const statusChips = useMemo(
+    () => (canSeeArchived ? STATUS_FILTER_CHIPS : STATUS_FILTER_CHIPS.filter((c) => c.value !== "archived")),
+    [canSeeArchived]
   );
 
   const filteredProjects = useMemo(() => {
@@ -147,7 +155,7 @@ export default function DealRoomSavedPage() {
 
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div className="flex flex-wrap gap-2">
-              {STATUS_FILTER_CHIPS.map((chip) => (
+              {statusChips.map((chip) => (
                 <button
                   key={chip.value}
                   type="button"
@@ -190,3 +198,4 @@ export default function DealRoomSavedPage() {
     </div>
   );
 }
+

@@ -117,6 +117,28 @@ async function signUpWithBackoff(email: string, password: string, name: string) 
 // 1. Accounts
 // ---------------------------------------------------------------------------------------------
 
+/**
+ * A distinct, plausible acceptance time for each account, derived from its address.
+ *
+ * Deterministic so that re-seeding does not shuffle the vault's dates under a guide that quotes
+ * them, and spread across the preceding fortnight during working hours, because accounts are
+ * onboarded one at a time rather than all at once.
+ */
+function ndaAcceptanceFor(email: string): Date {
+  let hash = 0;
+  for (const ch of email) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+
+  const daysAgo = 1 + (hash % 14);
+  const hour = 9 + ((hash >> 4) % 8);
+  const minute = (hash >> 8) % 60;
+  const second = (hash >> 16) % 60;
+
+  const at = new Date();
+  at.setDate(at.getDate() - daysAgo);
+  at.setHours(hour, minute, second, 0);
+  return at;
+}
+
 async function seedAccounts() {
   console.log(`\n[1/8] Accounts (${ALL_ACCOUNTS.length})`);
   const password = demoPassword();
@@ -159,7 +181,13 @@ async function seedAccounts() {
       // acceptance is recorded once per account, only the first stakeholder through each persona
       // would ever see it anyway. The gate is documented in the guides with its own screenshot
       // instead, which shows it to every reader rather than to whoever happened to sign in first.
-      ndaAcceptedAt: new Date(),
+      //
+      // Staggered rather than stamped with the seed's own clock. Every account previously recorded
+      // acceptance at the same instant, so the Document Vault showed two unrelated investors
+      // agreeing to the confidentiality framework at the identical second — and the vault offers
+      // that timestamp as the evidentiary record of who was bound and when, which is precisely the
+      // claim a shared second undermines.
+      ndaAcceptedAt: ndaAcceptanceFor(account.email),
       ndaVersion: NDA_VERSION,
       ndaAcceptedTitle: account.jobTitle,
       ...(account.kyc

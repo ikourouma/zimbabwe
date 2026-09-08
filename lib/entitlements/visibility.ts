@@ -6,6 +6,30 @@ import { DEFAULT_FIELD_VISIBILITY, ENTITLEMENT_GROUPS, groupForField, type Entit
 
 export type AccessLevel = "public" | "registered" | "qualified" | "admin";
 
+/**
+ * Whether a role is shown projects that have been archived.
+ *
+ * Archiving is how a project is withdrawn from the registry, so an archived record is not an
+ * investable proposition and does not belong on an investor's board, in their counters, or behind
+ * a filter chip they can never usefully populate. Staff and government reviewers keep it, because
+ * for them a withdrawn project is still part of the portfolio they are accountable for.
+ *
+ * This lives here rather than being decided per screen: the pipeline board hid archived projects
+ * while the Deal Room overview counter did not, so the same investor was told 36 projects on one
+ * page and 37 one click away.
+ */
+export function canSeeArchivedProjects(role: AccountRole | null | undefined): boolean {
+  return role === "government" || role === "admin" || role === "super_admin";
+}
+
+/** The project set a role is entitled to see, before any user-chosen filtering. */
+export function visibleProjectsForRole(
+  projects: InvestmentProject[],
+  role: AccountRole | null | undefined
+): InvestmentProject[] {
+  return canSeeArchivedProjects(role) ? projects : projects.filter((p) => p.projectStatus !== "archived");
+}
+
 const PERSONA_ACCESS: Record<DemoPersona, AccessLevel> = {
   public: "public",
   registered: "registered",

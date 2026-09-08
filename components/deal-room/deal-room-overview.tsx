@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts";
@@ -16,6 +16,7 @@ import { PlatformStatsPanel } from "@/components/deal-room/platform-stats-panel"
 import { MyAnalyticsCard } from "@/components/deal-room/my-analytics-card";
 import { QualificationBanner } from "@/components/account/qualification-banner";
 import { getInReviewCount } from "@/lib/governance/project-workflow";
+import { visibleProjectsForRole } from "@/lib/entitlements/visibility";
 import { ENGAGEMENT_STATUS_LABELS } from "@/lib/governance/engagement-workflow";
 import type { InvestorEngagementStatus } from "@/lib/types";
 
@@ -47,7 +48,11 @@ export function DealRoomOverview() {
     return FUNNEL_ORDER.map((status) => ({ status: ENGAGEMENT_STATUS_LABELS[status], count: counts[status] ?? 0 }));
   }, [engagements]);
 
-  const publishedCount = projects.filter((p) => p.projectStatus === "published").length;
+  // The same entitlement the pipeline board applies, so the counter and the board it links to
+  // cannot disagree â€” an investor was told 37 projects here and shown 36 on the board one click
+  // away, the difference being the archived project the board withholds from them.
+  const visibleProjects = useMemo(() => visibleProjectsForRole(projects, role), [projects, role]);
+  const publishedCount = visibleProjects.filter((p) => p.projectStatus === "published").length;
   const isLoading = projectsLoading || engagementsLoading;
 
   if (!authLoading && !isAuthenticated) {
@@ -63,13 +68,13 @@ export function DealRoomOverview() {
         <p className="text-sm mt-1 max-w-2xl" style={{ color: "var(--color-text-secondary)" }}>
           {isQualified
             ? "A private workspace for approved investors and government stakeholders to track deals through the governance workflow and log engagement on active projects."
-            : "Your investor dashboard — browse published opportunities, save projects to your watchlist, and complete your investment profile to unlock the full Deal Room."}
+            : "Your investor dashboard â€” browse published opportunities, save projects to your watchlist, and complete your investment profile to unlock the full Deal Room."}
         </p>
       </div>
 
       <GettingStartedCard appState={appState} reviewNotes={reviewNotes} />
 
-      {/* The on-ramp itself — shown only at the true starting point (registered, no application
+      {/* The on-ramp itself â€” shown only at the true starting point (registered, no application
        *  in any state yet). Once an application exists in any form, the checklist above is the
        *  right affordance ("Resume application" / status text), not a second call to action that
        *  would otherwise let a submitted applicant re-open a duplicate (Qualified Investor
@@ -96,7 +101,7 @@ export function DealRoomOverview() {
           <>
             <StatCard
               label="Projects in Pipeline"
-              value={projects.length}
+              value={visibleProjects.length}
               icon={FolderKanban}
               accent="green"
               href="/deal-room/pipeline"
@@ -110,7 +115,7 @@ export function DealRoomOverview() {
             />
             <StatCard
               label="In Review"
-              value={getInReviewCount(projects)}
+              value={getInReviewCount(visibleProjects)}
               icon={ShieldCheck}
               accent="green"
               href="/deal-room/pipeline?status=in_review"
@@ -166,3 +171,4 @@ export function DealRoomOverview() {
     </div>
   );
 }
+

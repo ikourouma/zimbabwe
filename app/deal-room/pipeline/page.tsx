@@ -7,7 +7,7 @@ import { useProjectStore } from "@/context/project-store-context";
 import { roleToWorkflowRole } from "@/lib/auth/role-map";
 import type { DemoPersona, InvestmentProject, ProjectFilters, ProjectStatus, SavedSearch } from "@/lib/types";
 import { STATUS_FILTER_CHIPS, isInReviewStatus, type StatusFilterValue } from "@/lib/governance/project-workflow";
-import { filterProjects } from "@/lib/entitlements/visibility";
+import { filterProjects, canSeeArchivedProjects } from "@/lib/entitlements/visibility";
 import { projectMatchesMinistry } from "@/lib/entitlements/ministry-scope";
 import { paramsToFilters, normalizeFilters, syncFiltersToUrl } from "@/lib/utils/project-filters-url";
 import { useSavedSearches } from "@/lib/hooks/use-saved-searches";
@@ -114,7 +114,7 @@ export default function DealRoomPipelinePage() {
   // All total are computed from the same list — the previous arrangement, where archived projects
   // were absent from the board but present in the total, is precisely the mismatch that made the
   // board disagree with the row above it.
-  const canSeeArchived = role === "government" || role === "admin" || role === "super_admin";
+  const canSeeArchived = canSeeArchivedProjects(role);
   const taxonomyFilteredProjects = useMemo(() => {
     const scoped = filterProjects(projects, filters, pipelinePersona);
     return canSeeArchived ? scoped : scoped.filter((p) => p.projectStatus !== "archived");
