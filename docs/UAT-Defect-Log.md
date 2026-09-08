@@ -73,6 +73,12 @@
 | DEF-033 | A personal report that answered for the wrong person, and totalled the wrong money | High | Closed |
 | DEF-034 | The same investor was shown two different pipeline totals one click apart | Medium | Closed |
 | DEF-035 | Two unrelated investors accepted the confidentiality framework at the same second | Low | Closed |
+| DEF-036 | The national console showed no activity while a single ministry desk showed seven entries | High | Closed |
+| DEF-037 | The assurance exhibit's own filters did not add up to its own total | High | Closed |
+| DEF-038 | Stored enumerations printed as they are stored | Low | Closed |
+| DEF-039 | A document of record cut off the identity it attributes itself to | Medium | Closed |
+| DEF-040 | An oversight report could not tell two investors apart | Medium | Closed |
+| DEF-041 | Two labels that each carried two meanings | Medium | Closed |
 
 ## 3. Closed Defects
 
@@ -349,6 +355,50 @@ The rule now lives in one place — `canSeeArchivedProjects` — and all three s
 **Severity:** Low. **Status:** Closed.
 
 Every demonstration account recorded acceptance at the instant the seed script ran, so the Document Vault showed the qualified and registered investors agreeing to version 1.0 at 5:18:20 PM on the same day. Both investor guides present that timestamp as the evidentiary record of who was bound and when, which is exactly the claim a shared second undermines — it marks the record as generated rather than captured, on the one screen whose argument depends on it being captured. Acceptance is now staggered deterministically from each account's own address, across the preceding fortnight and within working hours: twenty-seven accounts, twenty-seven distinct times. Determinism matters here because a re-seed must not shuffle dates that the guides quote.
+
+### DEF-036 — The national console showed no activity while a single ministry desk showed seven entries
+
+**Severity:** High. **Status:** Closed.
+
+The Government Reviewer's console read *No recent activity yet* on a page whose own counters, six inches above, reported thirty-seven projects in the pipeline, eight under assessment and ten investor engagements. A ministry desk covering one portfolio showed seven entries over the same period. The panel inverted the hierarchy of oversight on the page a national reviewer lands on.
+
+The panel asked the same question of every role: what have *you* done. That is the right question for an investor, whose work here is transacting, and the wrong one for a reviewer, whose work is assessing what other people have done. It is the same distinction that produced DEF-033. The feed is now scoped by remit, using exactly the scopes the audit-log endpoint already grants each role, so nobody's visibility widened; the Deal Room simply stopped asking the narrow question of readers for whom the narrow answer is empty by definition.
+
+### DEF-037 — The assurance exhibit's own filters did not add up to its own total
+
+**Severity:** High. **Status:** Closed.
+
+The Audit Log's category pills read Projects 45, User & Security 9, Site Settings 14, VDR & Documents 1 and Messages & Hub 19. That is eighty-eight. The All pill read ninety-three, and so did the Export CSV button.
+
+Three entity types written since the classification map was last extended — a case manager assigned to a ministry, an investor's team invitation, a marketing overlay — belonged to no category, and the classifier returned null for them. A null meant the record vanished from every pill while remaining in the total and in the export. Five records on the page the platform offers to auditors were reachable only by clearing the filter, and nothing on the page said so. An auditor working category by category, which is how one works, would never have seen them.
+
+The three are now classified. More to the point, the fallback is no longer silent: an entity type nobody has classified lands in a visible *Other* pill, which appears only when it holds something. The next omission will present itself as a number someone can ask about rather than as a discrepancy someone has to notice.
+
+### DEF-038 — Stored enumerations printed as they are stored
+
+**Severity:** Low. **Status:** Closed.
+
+A ministry activity feed read *changed "Powertel Fibre Internet (GPON)" from approved to under_review* — one side of the same transition formatted and the other not, because only one of the two values happens to contain an underscore. Statuses and roles in the feed now resolve through the labels the rest of the platform displays.
+
+### DEF-039 — A document of record cut off the identity it attributes itself to
+
+**Severity:** Medium. **Status:** Closed.
+
+The Activity Report carries a reference number and a print control, and both guides make the point that naming the officer who generated it is what gives the document standing once it leaves the platform. The Account Summary showed *zida.team+demo@zidaproject….* and *Ministry of Information Commu…*. Long values were being truncated with a hover title to recover them, which works on a screen and not on paper — and paper is what this page is for. Long values now wrap.
+
+### DEF-040 — An oversight report could not tell two investors apart
+
+**Severity:** Medium. **Status:** Closed.
+
+Once the Activity Report was scoped to a reader's remit rather than their own authorship, it began listing other parties' engagements — but it had no investor column, because it had never needed one. A ministry report accordingly listed the TelOne Fibre to the Home deployment twice, once submitted and once approved, and the national report listed Goromonzi Agro Processing twice. These are distinct approaches by distinct firms, but the page gave a reader no way to know that, so the rows read as one record duplicated. The column is now shown wherever the reader is not themselves the investor.
+
+### DEF-041 — Two labels that each carried two meanings
+
+**Severity:** Medium. **Status:** Closed.
+
+A console tile read *In Review 8* while the executive report generated from the same data put Under Review at 4. Both were right: the tile aggregates submitted for review, under review and changes requested, and had been given the name of one of the three. It now reads *Under Assessment*.
+
+Separately, the Communication Hub counted a thread under *Active Deals* while labelling it *General question*, so the filter row read *General 0 / Active Deals 1* directly above a thread the same screen called general. *General* now names one thing — the concierge channel and the tab that filters to it — and a project thread carrying no engagement is a *project enquiry*, which is what it is.
 
 ## 4. Open Defects
 
