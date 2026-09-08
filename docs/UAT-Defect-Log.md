@@ -49,6 +49,28 @@
 | DEF-009 | Sign-in page down for real browsers on a pre-fix cached shell | Critical | Awaiting CDN purge |
 | DEF-010 | Inquiry queues silently reported empty while the read was failing | High | Closed |
 | DEF-011 | Demo popup covered the pages it was meant to illustrate | Medium | Closed |
+| DEF-012 | Sign-in and registration pages carried developer instructions | Medium | Closed |
+| DEF-013 | Reviewers were offered controls the server refuses | Medium | Closed |
+| DEF-014 | A placeholder record sat in the national registry | Medium | Closed |
+| DEF-015 | Two guides described entitlements the platform does not enforce | Medium | Closed |
+| DEF-016 | Developer test records were visible in the consoles that carry the strongest arguments | High | Closed |
+| DEF-017 | A completed profile displayed as blank and announced unsaved changes | High | Closed |
+| DEF-018 | Pipeline counts did not add up | Medium | Closed |
+| DEF-019 | Three consoles described authority they do not hold | Low | Closed |
+| DEF-020 | The pipeline could present a months-old bundled snapshot as current | High | Closed |
+| DEF-021 | Three public pages advertised three different catalogue sizes | Medium | Closed |
+| DEF-022 | No card on the pipeline board showed a complete project name | Low | Closed |
+| DEF-023 | The walkthrough disclaimer was written inside the investor's own words | High | Closed |
+| DEF-024 | Analyst working notes were printing on investor-facing cards | High | Closed |
+| DEF-025 | Five engagements and a sent message, beside "No recent activity yet" | Medium | Closed |
+| DEF-026 | A project title cut mid-parenthesis with nothing to mark the cut | Low | Closed |
+| DEF-027 | The demonstration investor was headquartered in Virginia | Medium | Closed |
+| DEF-028 | The activity report contradicted its own summary at the fold | Low | Closed |
+| DEF-029 | A headline figure that did not follow from the caption beneath it | High | Closed |
+| DEF-030 | Every activity feed opened on a sentence about nobody | Medium | Closed |
+| DEF-031 | The governance trail rendered function names to its auditors | Medium | Closed |
+| DEF-032 | The assurance exhibit was exhibiting the test harness | High | Closed |
+| DEF-033 | A personal report that answered for the wrong person, and totalled the wrong money | High | Closed |
 
 ## 3. Closed Defects
 
@@ -271,6 +293,46 @@ The same screen listed each team member as their own authorised representative, 
 **Severity:** Low. **Status:** Closed.
 
 Screenshots are captured at viewport size, which is the honest picture of what a reader meets on arrival. On the report pages it was the wrong picture: each opens with a summary block and then the table of rows behind it, so the capture showed a summary announcing five engagements above a table listing two, with a third sliced through the middle at the page edge. Since the report is the printable artefact — it carries its own reference number and a print control — a reader was being shown a document that appeared to disagree with itself. The report pages now capture at a taller viewport; every other page is unchanged.
+
+### DEF-029 — A headline figure that did not follow from the caption beneath it
+
+**Severity:** High. **Status:** Closed.
+
+The Government Executive Report is the document ZIDA would put in front of a minister, and its command strip carried a Funnel Conversion Rate of 66.7 per cent above a caption reading *1 MOU(s) executed of 10 engagement(s)*. One in ten is ten per cent. The figure was not wrong — it correctly reported six approved engagements out of the nine that have entered the workflow — but it had been given the caption of an entirely different measure, so the one sentence explaining the number appeared to refute it. Anyone checking the arithmetic would conclude the report could not be trusted on any of its other figures either, which is the more expensive failure. The caption now describes the number above it. The count of executed memoranda is worth reporting in its own right and keeps its own tile in the funnel section below.
+
+### DEF-030 — Every activity feed opened on a sentence about nobody
+
+**Severity:** Medium. **Status:** Closed.
+
+The ZIDA Admin and Platform Manager landing pages both open on Recent Activity, offered in both guides as the proof that every act on the platform is attributed to a named person. Five consecutive entries read *Grace Mutindi logged a new engagement with Grace Mutindi*. An engagement is nearly always logged by the investor themselves, so naming the investor as the counterparty named the actor twice and told the reader nothing; on the investor's own feed, where the actor renders as *You*, it was worse still. The feed now names the project the engagement was logged against, which is the fact the actor's name does not already supply. Rows written before the change carried only a project id, so the title has been recovered onto them by join from the project each row already points at.
+
+### DEF-031 — The governance trail rendered function names to its auditors
+
+**Severity:** Medium. **Status:** Closed.
+
+The Audit Log's Action column — the first column an auditor reads — showed the internal identifier with its full stop swapped for an arrow: *message → created*, *taxonomy → removeSector*, *inquiry → status\_changed*. These are function names. The log is offered as evidence in a governance register, and it should read as English there; the identifier is still exported verbatim in the CSV, which is where a machine reads it. The same substitution reached the activity feed, where an entry read *updated a taxonomy entry (removeSector)*.
+
+### DEF-032 — The assurance exhibit was exhibiting the test harness
+
+**Severity:** High. **Status:** Closed.
+
+An earlier pass deleted the test harness's projects, engagements and messages but left the record of them, and because the log sorts most recent first, that record was what the governance register opened on. The top two entries were a sector named *Testing* created and deleted a minute apart. Below them sat an accreditation granted to `e2e+approval-1788662344020@zidaproject.com` with the reason *Automated workflow check.*, and a long tail of activity against *Smoke Ministry Project 1785559386915*. The same rows headed Recent Activity on both landing pages.
+
+One hundred and one rows have been removed. Every one of them recorded an act performed by an automated harness upon a record that has itself already been deleted; the selection is anchored to vocabulary no genuine record carries — harness email patterns, the harness's own reason strings, and the single taxonomy term it created — and not to a row's age or to any judgement about whether it is convenient. Ninety-three records remain and every one of them describes something a person actually did. Eighty-seven stale copies of an account name held in surviving rows' metadata were realigned at the same time, which is what had produced *Lindiwe Ncube logged a new engagement with Pilot Qualified Investor* — the same person under both her names in a single sentence.
+
+### DEF-033 — A personal report that answered for the wrong person, and totalled the wrong money
+
+**Severity:** High. **Status:** Closed.
+
+Four faults on one page, each of which a government reader would have raised.
+
+The report showed a government reviewer TOTAL ENGAGEMENTS 10 and listed other investors' approaches under the heading *My Engagements*, while the My Analytics card on that same account's overview read Engagements 0. Both figures were correct — the scope note beneath the heading explained that an oversight reader sees engagements within their remit rather than their own — but the heading contradicted the note directly above the table it introduced. The title, subtitle and section heading now say whose engagements these are.
+
+*Tracked Indicative Capital* read US$204.3 million *across 10 of 10 engagement(s) with a stated figure*, above rows whose Indicative Ticket column individually read *$15M (project ask)* and *$36.9M (project ask)*. Where an investor had stated no ticket the report fell back to the project's own published capital requirement, which is reasonable in a cell and clearly labelled there, but summing it put the state's own capital requirements into a total a government reader takes as investor money. The tile is now *Investor-Stated Ticket Value* and counts only what investors have actually stated.
+
+Every approved row's Next Step read *Proceed to MOU drafting*, including rows the MOU Registry showed as Finalised and Executed, because the step was keyed off the engagement status — which stays at approved for the whole memorandum lifecycle. It now reads the memorandum.
+
+And the ministry scope tested only whether a ministry was a project's *primary* beneficiary, having written that predicate out again locally rather than calling the shared one whose own comment asks callers not to. A ministry named as a secondary sponsor holds the same interest in an approach, and its Engagements console lists exactly those, so the report showed fewer engagements than the console the reader had just come from.
 
 ## 4. Open Defects
 
