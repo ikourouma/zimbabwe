@@ -87,11 +87,20 @@ function repair(text: string): { fixed: string; runs: number } {
   return { fixed, runs };
 }
 
+/**
+ * Files that quote the corrupted sequences on purpose, to explain them. This script's own header
+ * gives "â€”" and "Â·" as worked examples, and the defect log's DEF-042 entry shows a reader what
+ * was actually on screen. Repairing those would delete the evidence and the explanation, and would
+ * do it silently every time the check ran.
+ */
+const DOCUMENTS_THE_CORRUPTION = new Set(["scripts/repair-mojibake.ts", "docs/UAT-Defect-Log.md"]);
+
 // Only files git already tracks, so an untracked scratch file can never be rewritten by accident.
 const tracked = execSync("git ls-files", { encoding: "utf8" })
   .split("\n")
   .map((f) => f.trim())
-  .filter((f) => /\.(ts|tsx|js|jsx|md|json|css)$/.test(f));
+  .filter((f) => /\.(ts|tsx|js|jsx|md|json|css)$/.test(f))
+  .filter((f) => !DOCUMENTS_THE_CORRUPTION.has(f));
 
 let changed = 0;
 let skipped = 0;
