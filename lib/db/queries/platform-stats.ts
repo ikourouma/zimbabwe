@@ -3,41 +3,47 @@ import { db } from "@/lib/db/client";
 import { auditLogs, investorEngagements, projectMessages, projectWatchlist, projects } from "@/lib/db/schema";
 import { fetchUserRoleCounts } from "@/lib/db/queries/users";
 import { getSectorById, getSectorDisplayName } from "@/lib/data/taxonomies";
-import { parseCapitalTotalMillions } from "@/lib/utils/capital";
 import type { MyAnalyticsSnapshot, PlatformStats } from "@/lib/types";
 
 /**
  * Safe, no-PII aggregate marketplace stats (Investor Dashboard Expansion plan, Phase 3) — modeled
  * on `fetchUserRoleCounts`'s "aggregate counts only" pattern so it's safe to expose to any
  * authenticated role, not just staff. Powers the Investor Dashboard Overview's platform panel.
+ *
+ * Project Data Standardisation, Phase 2 — the capital total is a SQL `SUM` over the structured
+ * `capital_total_usd` column (populated by scripts/migrate-financial-fields.ts), not a JavaScript
+ * loop re-parsing the free-text `capitalRequired` field on every request.
  */
 export async function fetchPlatformStats(): Promise<PlatformStats> {
-  const publishedRows = await db
-    .select({ sectorId: projects.sectorId, capitalRequired: projects.capitalRequired })
+  const bySector = await db
+    .select({
+      sectorId: projects.sectorId,
+      count: sql<number>`count(*)::int`,
+      capitalUsd: sql<string>`coalesce(sum(${projects.capitalTotalUsd}), 0)`,
+    })
     .from(projects)
-    .where(eq(projects.projectStatus, "published"));
+    .where(eq(projects.projectStatus, "published"))
+    .groupBy(projects.sectorId);
 
-  let totalCapitalRepresentedMillions = 0;
-  const sectorCounts = new Map<string, number>();
-  for (const row of publishedRows) {
-    const millions = row.capitalRequired ? parseCapitalTotalMillions(row.capitalRequired) : null;
-    if (millions !== null) totalCapitalRepresentedMillions += millions;
-    sectorCounts.set(row.sectorId, (sectorCounts.get(row.sectorId) ?? 0) + 1);
-  }
-
-  const projectsBySector = Array.from(sectorCounts.entries())
-    .map(([sectorId, count]) => ({
-      sectorId,
-      sectorName: getSectorDisplayName(getSectorById(sectorId)) ?? sectorId,
-      count,
-    }))
+  let publishedProjectCount = 0;
+  let totalCapitalUsd = 0;
+  const projectsBySector = bySector
+    .map((row) => {
+      publishedProjectCount += row.count;
+      totalCapitalUsd += parseFloat(row.capitalUsd);
+      return {
+        sectorId: row.sectorId,
+        sectorName: getSectorDisplayName(getSectorById(row.sectorId)) ?? row.sectorId,
+        count: row.count,
+      };
+    })
     .sort((a, b) => b.count - a.count);
 
   const { counts } = await fetchUserRoleCounts();
 
   return {
-    publishedProjectCount: publishedRows.length,
-    totalCapitalRepresentedMillions: Math.round(totalCapitalRepresentedMillions),
+    publishedProjectCount,
+    totalCapitalRepresentedMillions: Math.round(totalCapitalUsd / 1_000_000),
     projectsBySector,
     qualifiedInvestorCount: counts.qualified ?? 0,
   };

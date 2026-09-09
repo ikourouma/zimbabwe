@@ -211,6 +211,14 @@ export interface InvestmentProject {
   province?: string;
   district?: string;
   capitalRequired?: string;
+  /** Project Data Standardisation, Phase 2 — structured figures alongside the free text above.
+   *  `capitalRequired` remains the source note and audit trail back to the ZIDA deck; every
+   *  aggregate (platform-stats, site-stats, the executive report, the capital filters) reads
+   *  these once scripts/migrate-financial-fields.ts has run against a record. Undefined on any
+   *  record the migration could not confidently resolve, or that predates it. */
+  capitalTotalUsd?: number;
+  capitalEquityUsd?: number;
+  capitalDebtUsd?: number;
   financingType?: string;
   projectReadiness: string;
   projectStatus: ProjectStatus;
@@ -220,6 +228,18 @@ export interface InvestmentProject {
   roi?: string;
   paybackPeriod?: string;
   projectedRevenue?: string;
+  /** Structured counterparts of the five return-metric text fields above — same rationale as
+   *  `capitalTotalUsd`. */
+  irrPct?: number;
+  npvUsd?: number;
+  roiPct?: number;
+  paybackMonths?: number;
+  projectedRevenueUsd?: number;
+  projectedRevenueYears?: number;
+  /** A genuine source-deck transcription note (the kind Phase 1 moved out of the numeric fields
+   *  themselves) — kept visibly separate from every field above so a caveat about a figure is
+   *  never mistaken for part of the figure. */
+  financialDataCaveat?: string;
   investmentSource?: string;
   capitalStructure?: string;
   shareholderContribution?: string;
@@ -245,6 +265,10 @@ export interface InvestmentProject {
    *  entitlement against `visibilityLevel` (and NDA acceptance for qualified_investor-tier docs). */
   documentRecords?: ProjectDocumentRecord[];
   sourceReference?: string;
+  /** Project Data Standardisation, Phase 2 — see lib/governance/record-standard.ts. Undefined on
+   *  any record predating the column; `isZidaCatalogueRecord`/`recordStandardOf` fall back to the
+   *  sourceReference heuristic in that case, so nothing reading tier needs to null-check twice. */
+  recordStandard?: "catalogue_seed" | "full_template";
   dataVerificationStatus: DataVerificationStatus;
   reviewerNotes?: string;
   createdBy: string;

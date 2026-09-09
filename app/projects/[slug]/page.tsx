@@ -181,7 +181,7 @@ export default function ProjectDetailPage({
             {timelineDate && <> · {timelineLabel} {timelineDate}</>}
           </p>
           <div className="mt-2">
-            <RecordStandardBadge sourceReference={project.sourceReference} />
+            <RecordStandardBadge sourceReference={project.sourceReference} recordStandard={project.recordStandard} />
           </div>
         </div>
 

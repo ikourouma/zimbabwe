@@ -18,6 +18,19 @@ function toIso(value: Date | null | undefined): string | undefined {
   return value ? value.toISOString() : undefined;
 }
 
+// Drizzle's pg-core `numeric()` column reads back as a string (avoiding float precision loss on
+// the round trip), so every structured financial field needs converting at the app boundary —
+// same rationale as `toIso`/`toDate` below for timestamps.
+function toNum(value: string | null | undefined): number | undefined {
+  if (value === null || value === undefined) return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function toNumStr(value: number | null | undefined): string | null {
+  return value === null || value === undefined ? null : String(value);
+}
+
 export function mapDbProjectToApp(row: ProjectRow, relations: ProjectRelations): InvestmentProject {
   return {
     id: row.id,
@@ -41,6 +54,9 @@ export function mapDbProjectToApp(row: ProjectRow, relations: ProjectRelations):
     province: row.province ?? undefined,
     district: row.district ?? undefined,
     capitalRequired: row.capitalRequired ?? undefined,
+    capitalTotalUsd: toNum(row.capitalTotalUsd),
+    capitalEquityUsd: toNum(row.capitalEquityUsd),
+    capitalDebtUsd: toNum(row.capitalDebtUsd),
     financingType: row.financingType ?? undefined,
     projectReadiness: row.projectReadiness,
     projectStatus: row.projectStatus,
@@ -50,6 +66,13 @@ export function mapDbProjectToApp(row: ProjectRow, relations: ProjectRelations):
     roi: row.roi ?? undefined,
     paybackPeriod: row.paybackPeriod ?? undefined,
     projectedRevenue: row.projectedRevenue ?? undefined,
+    irrPct: toNum(row.irrPct),
+    npvUsd: toNum(row.npvUsd),
+    roiPct: toNum(row.roiPct),
+    paybackMonths: row.paybackMonths ?? undefined,
+    projectedRevenueUsd: toNum(row.projectedRevenueUsd),
+    projectedRevenueYears: row.projectedRevenueYears ?? undefined,
+    financialDataCaveat: row.financialDataCaveat ?? undefined,
     investmentSource: row.investmentSource ?? undefined,
     capitalStructure: row.capitalStructure ?? undefined,
     shareholderContribution: row.shareholderContribution ?? undefined,
@@ -73,6 +96,7 @@ export function mapDbProjectToApp(row: ProjectRow, relations: ProjectRelations):
       createdAt: d.createdAt.toISOString(),
     })),
     sourceReference: row.sourceReference ?? undefined,
+    recordStandard: row.recordStandard ?? undefined,
     dataVerificationStatus: row.dataVerificationStatus,
     reviewerNotes: row.reviewerNotes ?? undefined,
     createdBy: row.createdBy,
@@ -112,6 +136,9 @@ export function mapAppProjectToDbRow(project: Partial<InvestmentProject>) {
     province: project.province ?? null,
     district: project.district ?? null,
     capitalRequired: project.capitalRequired ?? null,
+    capitalTotalUsd: toNumStr(project.capitalTotalUsd),
+    capitalEquityUsd: toNumStr(project.capitalEquityUsd),
+    capitalDebtUsd: toNumStr(project.capitalDebtUsd),
     financingType: project.financingType ?? null,
     projectReadiness: project.projectReadiness,
     projectStatus: project.projectStatus,
@@ -121,6 +148,13 @@ export function mapAppProjectToDbRow(project: Partial<InvestmentProject>) {
     roi: project.roi ?? null,
     paybackPeriod: project.paybackPeriod ?? null,
     projectedRevenue: project.projectedRevenue ?? null,
+    irrPct: toNumStr(project.irrPct),
+    npvUsd: toNumStr(project.npvUsd),
+    roiPct: toNumStr(project.roiPct),
+    paybackMonths: project.paybackMonths ?? null,
+    projectedRevenueUsd: toNumStr(project.projectedRevenueUsd),
+    projectedRevenueYears: project.projectedRevenueYears ?? null,
+    financialDataCaveat: project.financialDataCaveat ?? null,
     investmentSource: project.investmentSource ?? null,
     capitalStructure: project.capitalStructure ?? null,
     shareholderContribution: project.shareholderContribution ?? null,
@@ -136,6 +170,7 @@ export function mapAppProjectToDbRow(project: Partial<InvestmentProject>) {
     jobsDirect: project.jobsDirect ?? null,
     jobsIndirect: project.jobsIndirect ?? null,
     sourceReference: project.sourceReference ?? null,
+    recordStandard: project.recordStandard ?? null,
     dataVerificationStatus: project.dataVerificationStatus,
     reviewerNotes: project.reviewerNotes ?? null,
     createdBy: project.createdBy,

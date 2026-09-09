@@ -112,6 +112,9 @@ export async function POST(request: Request) {
       strategicPillarIds: body.strategicPillarIds ?? [],
       sdgIds: body.sdgIds ?? [],
       documents: body.documents ?? [],
+      // Project Data Standardisation, Phase 2 — everything created through this route is, by
+      // definition, not one of the 32 ZIDA catalogue records, regardless of who created it.
+      recordStandard: "full_template",
     });
 
     // Auto-generate a slug for investor submissions (never trust a client-chosen slug for
@@ -159,6 +162,17 @@ export async function POST(request: Request) {
         jobsDirect: row.jobsDirect,
         jobsIndirect: row.jobsIndirect,
         sourceReference: row.sourceReference,
+        capitalTotalUsd: row.capitalTotalUsd,
+        capitalEquityUsd: row.capitalEquityUsd,
+        capitalDebtUsd: row.capitalDebtUsd,
+        irrPct: row.irrPct,
+        npvUsd: row.npvUsd,
+        roiPct: row.roiPct,
+        paybackMonths: row.paybackMonths,
+        projectedRevenueUsd: row.projectedRevenueUsd,
+        projectedRevenueYears: row.projectedRevenueYears,
+        financialDataCaveat: row.financialDataCaveat,
+        recordStandard: row.recordStandard!,
         dataVerificationStatus: row.dataVerificationStatus!,
         reviewerNotes: row.reviewerNotes,
         createdBy: row.createdBy!,

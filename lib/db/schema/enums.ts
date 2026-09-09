@@ -7,6 +7,13 @@ export const entityStatusEnum = pgEnum("entity_status", ["active", "inactive", "
 
 export const pipelineTypeEnum = pgEnum("pipeline_type", ["zida_catalogue", "policy_initiative"]);
 
+// Project Data Standardisation, Phase 2 — the tier a record was captured under. "catalogue_seed"
+// is the closed set of 32 records seeded from the ZIDA 2025 Projects deck (lib/data/seed-raw.ts);
+// "full_template" is anything filed through the project wizard against the full data standard.
+// Distinct from pipelineType above, which is about investability (catalogue vs. illustrative
+// policy initiative), not data provenance — a project can be any combination of the two.
+export const recordStandardEnum = pgEnum("record_standard", ["catalogue_seed", "full_template"]);
+
 export const projectStatusEnum = pgEnum("project_status", [
   "draft",
   "submitted_for_review",

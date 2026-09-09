@@ -7,8 +7,18 @@ import {
   sdgs,
   subsectors,
 } from "@/lib/data/taxonomies";
-import { parseCapitalTotalMillions, formatMillions } from "@/lib/utils/capital";
+import { formatMillions } from "@/lib/utils/capital";
 import type { InvestmentProject, Ministry, Sector, StrategicPillar } from "@/lib/types";
+
+/** Project Data Standardisation, Phase 2 — capital ranges read the structured `capitalTotalUsd`
+ *  column (populated by scripts/migrate-financial-fields.ts) instead of re-parsing the free-text
+ *  `capitalRequired` field on every render. A project with no resolved figure yet (an un-migrated
+ *  draft, or one of the handful of source-deck contradictions the migration script leaves null
+ *  and flags via `financialDataCaveat`) is excluded from the range, same as an unparseable string
+ *  was before. */
+function capitalMillionsOf(project: InvestmentProject): number | null {
+  return typeof project.capitalTotalUsd === "number" ? project.capitalTotalUsd / 1_000_000 : null;
+}
 
 interface ComputeSiteStatsInput {
   projects: InvestmentProject[];
@@ -63,7 +73,7 @@ export function getSectorStats(sectorId: string, projects: InvestmentProject[] =
   // real, live investable opportunity yet, so it must never inflate an aggregate range shown
   // to investors (see getPillarStats/getMinistryStats/getSdgStats for the same rule).
   const capitals = published
-    .map((p) => parseCapitalTotalMillions(p.capitalRequired))
+    .map((p) => capitalMillionsOf(p))
     .filter((n): n is number => n !== null);
 
   return {
@@ -93,7 +103,7 @@ export function getPillarStats(pillarId: string, projects: InvestmentProject[] =
   const published = pillarProjects.filter((p) => p.projectStatus === "published");
   // Published-only: see the comment in getSectorStats.
   const capitals = published
-    .map((p) => parseCapitalTotalMillions(p.capitalRequired))
+    .map((p) => capitalMillionsOf(p))
     .filter((n): n is number => n !== null);
 
   return {
@@ -156,7 +166,7 @@ export function getMinistryStats(ministryId: string, projects: InvestmentProject
   const published = ministryProjects.filter((p) => p.projectStatus === "published");
   // Published-only: see the comment in getSectorStats.
   const capitals = published
-    .map((p) => parseCapitalTotalMillions(p.capitalRequired))
+    .map((p) => capitalMillionsOf(p))
     .filter((n): n is number => n !== null);
 
   return {
@@ -172,7 +182,7 @@ export function getSdgStats(sdgId: string, projects: InvestmentProject[] = zimba
   const published = sdgProjects.filter((p) => p.projectStatus === "published");
   // Published-only: see the comment in getSectorStats.
   const capitals = published
-    .map((p) => parseCapitalTotalMillions(p.capitalRequired))
+    .map((p) => capitalMillionsOf(p))
     .filter((n): n is number => n !== null);
 
   return {
@@ -196,7 +206,7 @@ export function getLargestCapitalProject(projects: InvestmentProject[]) {
   let best: InvestmentProject | null = null;
   let bestVal = -1;
   for (const p of projects) {
-    const val = parseCapitalTotalMillions(p.capitalRequired);
+    const val = capitalMillionsOf(p);
     if (val !== null && val > bestVal) {
       bestVal = val;
       best = p;

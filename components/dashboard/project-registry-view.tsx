@@ -219,7 +219,11 @@ export function ProjectRegistryView({ basePath }: ProjectRegistryViewProps) {
                 Investor
               </span>
             )}
-            <RecordStandardBadge sourceReference={row.original.sourceReference} className="text-[10px]" />
+            <RecordStandardBadge
+              sourceReference={row.original.sourceReference}
+              recordStandard={row.original.recordStandard}
+              className="text-[10px]"
+            />
           </span>
         ),
       },

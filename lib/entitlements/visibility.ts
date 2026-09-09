@@ -1,10 +1,32 @@
 import type { DataVerificationStatus, DemoPersona, InvestmentProject, ProjectFilters, UpdatedWithin, VisibilityLevel } from "@/lib/types";
 import type { AccountRole } from "@/lib/auth/types";
 import { classifyFinancingType, getFinancingBuckets } from "@/lib/utils/financing-type";
-import { parseCapitalTotalMillions, matchesCapitalBracket } from "@/lib/utils/capital";
+import { CAPITAL_BRACKETS } from "@/lib/utils/capital";
+import type { CapitalBracket } from "@/lib/types";
 import { DEFAULT_FIELD_VISIBILITY, ENTITLEMENT_GROUPS, groupForField, type EntitlementGroupId, type FieldVisibilityMatrix } from "@/lib/entitlements/matrix";
 
 export type AccessLevel = "public" | "registered" | "qualified" | "admin";
+
+/**
+ * Project Data Standardisation, Phase 2 — capital bracket/min/max filtering reads the structured
+ * `capitalTotalUsd` column (via scripts/migrate-financial-fields.ts) rather than re-parsing the
+ * free-text `capitalRequired` field at request time. A project with no resolved figure (an
+ * un-migrated draft, or one of the handful of source-deck contradictions carried in that script's
+ * OVERRIDES table) is treated the same way the old text parser treated unparseable text: excluded
+ * from every numeric bracket, and the only project that matches "assessment_pending".
+ */
+function capitalMillionsOf(project: InvestmentProject): number | null {
+  return typeof project.capitalTotalUsd === "number" ? project.capitalTotalUsd / 1_000_000 : null;
+}
+
+function matchesCapitalBracket(project: InvestmentProject, bracket: CapitalBracket): boolean {
+  const millions = capitalMillionsOf(project);
+  if (bracket === "assessment_pending") return millions === null;
+  if (millions === null) return false;
+  const def = CAPITAL_BRACKETS.find((b) => b.key === bracket);
+  if (!def) return false;
+  return millions >= def.min && (def.max === null || millions < def.max);
+}
 
 /**
  * Whether a role is shown projects that have been archived.
@@ -230,17 +252,17 @@ export function filterProjects(
     );
   }
   if (filters.capitalBracket) {
-    result = result.filter((p) => matchesCapitalBracket(p.capitalRequired, filters.capitalBracket!));
+    result = result.filter((p) => matchesCapitalBracket(p, filters.capitalBracket!));
   }
   if (filters.minCapitalMillions) {
     result = result.filter((p) => {
-      const capital = parseCapitalTotalMillions(p.capitalRequired);
+      const capital = capitalMillionsOf(p);
       return capital !== null && capital >= filters.minCapitalMillions!;
     });
   }
   if (filters.maxCapitalMillions) {
     result = result.filter((p) => {
-      const capital = parseCapitalTotalMillions(p.capitalRequired);
+      const capital = capitalMillionsOf(p);
       return capital !== null && capital <= filters.maxCapitalMillions!;
     });
   }

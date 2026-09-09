@@ -11,19 +11,21 @@ import { isZidaCatalogueRecord } from "@/lib/governance/record-standard";
  */
 export function RecordStandardBadge({
   sourceReference,
+  recordStandard,
   className,
 }: {
   sourceReference?: string | null;
+  recordStandard?: "catalogue_seed" | "full_template" | null;
   className?: string;
 }) {
-  if (!isZidaCatalogueRecord(sourceReference)) return null;
+  if (!isZidaCatalogueRecord({ sourceReference, recordStandard })) return null;
 
   return (
     <span
       className={cn("status-badge status-badge-pending", className)}
       title="Seeded from the ZIDA 2025 Projects deck and pending official validation — not yet captured against the platform's full project data standard."
     >
-      ZIDA Catalogue
+      Catalogue Seed
     </span>
   );
 }

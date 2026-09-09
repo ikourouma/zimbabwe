@@ -23,7 +23,7 @@ import { useMouSummary } from "@/lib/hooks/use-mou-summary";
 import { useDocumentDownloadCount } from "@/lib/hooks/use-document-download-count";
 import { useAuth } from "@/context/auth-context";
 import type { AccountRole } from "@/lib/auth/types";
-import type { InvestorEngagementStatus, ProjectStatus } from "@/lib/types";
+import type { InvestmentProject, InvestorEngagementStatus, ProjectStatus } from "@/lib/types";
 import { parseCapitalTotalMillions, formatMillions } from "@/lib/utils/capital";
 import { bucketProvinceLabel } from "@/lib/utils/province";
 import {
@@ -120,6 +120,16 @@ function conversionTone(pct: number | null): ReportStatTone {
   return pct < CONVERSION_RATE_WARNING_MIN ? "warning" : "good";
 }
 
+/** Project Data Standardisation, Phase 2 — this report's *project* capital aggregation (Total
+ *  Pipeline Value, the Sector and Provincial charts) reads the structured `capitalTotalUsd`
+ *  column instead of re-parsing `capitalRequired` text on every render — see
+ *  scripts/migrate-financial-fields.ts. `parseCapitalTotalMillions` stays imported below for the
+ *  Investor Capital Coverage tile, which aggregates engagement *ticket sizes* — a free-text field
+ *  on a different table this plan does not touch. */
+function projectCapitalMillions(project: InvestmentProject): number | null {
+  return typeof project.capitalTotalUsd === "number" ? project.capitalTotalUsd / 1_000_000 : null;
+}
+
 /**
  * Comprehensive, high-level report for the government — surfaced via /admin/reports,
  * /super-admin/reports, and the "National Executive Briefing" tab on /deal-room/reports (Platform
@@ -131,12 +141,14 @@ function conversionTone(pct: number | null): ReportStatTone {
  * by a 403. Intentionally window.print()-based rather than a new PDF pipeline dependency.
  *
  * Government Executive Report Overhaul: fixed a report-side parsing bug that concatenated/mis-
- * scaled free-text capital figures into nonsensical totals (e.g. "$112.8T") — capital aggregation
- * now reuses the same `parseCapitalTotalMillions`/`formatMillions` parser already used correctly
- * on 7+ other pages (see lib/utils/capital.ts, lib/data/site-stats.ts). Also adds strategic
- * metrics (capital coverage, review turnaround, provincial distribution, employment impact) and
- * chart visuals — all derived from existing data, plus the two additions explicitly approved:
- * jobsDirect/jobsIndirect columns and the MOU summary endpoint.
+ * scaled free-text capital figures into nonsensical totals (e.g. "$112.8T"). Project Data
+ * Standardisation, Phase 2 then moved *project* capital aggregation off that parser entirely —
+ * see `projectCapitalMillions` above, which reads the structured `capitalTotalUsd` column. The
+ * Investor Capital Coverage tile still uses `parseCapitalTotalMillions`/`formatMillions` (see
+ * lib/utils/capital.ts), because it aggregates engagement *ticket sizes*, a free-text field this
+ * plan didn't touch. Also adds strategic metrics (capital coverage, review turnaround, provincial
+ * distribution, employment impact) and chart visuals — all derived from existing data, plus the
+ * two additions explicitly approved: jobsDirect/jobsIndirect columns and the MOU summary endpoint.
  */
 export function GovernmentExecutiveReport() {
   const { name, role } = useAuth();
@@ -165,7 +177,7 @@ export function GovernmentExecutiveReport() {
   // concatenating multiple distinct dollar figures) — `null` means unparseable/"assessment
   // pending", excluded from sums rather than silently coerced to a garbage number.
   const capitalByProject = useMemo(
-    () => projects.map((p) => ({ project: p, millions: parseCapitalTotalMillions(p.capitalRequired) })),
+    () => projects.map((p) => ({ project: p, millions: projectCapitalMillions(p) })),
     [projects]
   );
   const unassessedCount = useMemo(() => capitalByProject.filter((c) => c.millions === null).length, [capitalByProject]);
@@ -204,7 +216,7 @@ export function GovernmentExecutiveReport() {
       .map((s) => {
         const sectorProjects = projects.filter((p) => p.sectorId === s.id);
         const capitalMillions = sectorProjects.reduce(
-          (sum, p) => sum + (parseCapitalTotalMillions(p.capitalRequired) ?? 0),
+          (sum, p) => sum + (projectCapitalMillions(p) ?? 0),
           0
         );
         return { name: s.shortName ?? s.name, count: sectorProjects.length, capitalMillions };
@@ -341,7 +353,7 @@ export function GovernmentExecutiveReport() {
       const key = bucketProvinceLabel(p.province?.trim() || "");
       const entry = map.get(key) ?? { count: 0, capitalMillions: 0 };
       entry.count += 1;
-      entry.capitalMillions += parseCapitalTotalMillions(p.capitalRequired) ?? 0;
+      entry.capitalMillions += projectCapitalMillions(p) ?? 0;
       map.set(key, entry);
     }
     const all = Array.from(map.entries()).map(([name, v]) => ({ name, ...v }));

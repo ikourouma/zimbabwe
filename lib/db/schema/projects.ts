@@ -1,8 +1,9 @@
-import { boolean, integer, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, integer, numeric, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import {
   dataVerificationStatusEnum,
   pipelineTypeEnum,
   projectStatusEnum,
+  recordStandardEnum,
   visibilityLevelEnum,
 } from "./enums";
 import { agencies, ministries, sdgs, sectors, strategicPillars, subsectors } from "./taxonomies";
@@ -42,6 +43,15 @@ export const projects = pgTable("projects", {
   province: text("province"),
   district: text("district"),
   capitalRequired: text("capital_required"),
+  // Project Data Standardisation, Phase 2 — structured figures alongside the free text above.
+  // `capitalRequired` stays the source note and audit trail back to the ZIDA deck; these are what
+  // every aggregate (platform-stats, site-stats, the executive report, the capital filters) reads
+  // once the migration in scripts/migrate-financial-fields.ts has run. Nullable: a catalogue record
+  // with a figure the migration script cannot confidently resolve is left null here rather than
+  // guessed, and a brand-new draft has nothing to parse yet either way.
+  capitalTotalUsd: numeric("capital_total_usd"),
+  capitalEquityUsd: numeric("capital_equity_usd"),
+  capitalDebtUsd: numeric("capital_debt_usd"),
   financingType: text("financing_type"),
   projectReadiness: text("project_readiness").notNull(),
   projectStatus: projectStatusEnum("project_status").notNull().default("draft"),
@@ -51,6 +61,17 @@ export const projects = pgTable("projects", {
   roi: text("roi"),
   paybackPeriod: text("payback_period"),
   projectedRevenue: text("projected_revenue"),
+  // Structured counterparts of the five return-metric text fields above — same rationale as
+  // capitalTotalUsd. `financialDataCaveat` is where a genuine source-deck transcription note (the
+  // kind Phase 1 moved out of the numeric fields themselves) lives instead, so a caveat is always
+  // visibly a caveat and never mistaken for part of a number.
+  irrPct: numeric("irr_pct"),
+  npvUsd: numeric("npv_usd"),
+  roiPct: numeric("roi_pct"),
+  paybackMonths: integer("payback_months"),
+  projectedRevenueUsd: numeric("projected_revenue_usd"),
+  projectedRevenueYears: integer("projected_revenue_years"),
+  financialDataCaveat: text("financial_data_caveat"),
   investmentSource: text("investment_source"),
   capitalStructure: text("capital_structure"),
   shareholderContribution: text("shareholder_contribution"),
@@ -70,6 +91,11 @@ export const projects = pgTable("projects", {
   jobsDirect: integer("jobs_direct"),
   jobsIndirect: integer("jobs_indirect"),
   sourceReference: text("source_reference"),
+  // Project Data Standardisation, Phase 2 — nullable for the pre-migration window between this
+  // column landing and the backfill script (scripts/migrate-financial-fields.ts --commit) running;
+  // every write path from that point on sets it explicitly (catalogue_seed only for the 32 seeded
+  // records — see lib/governance/record-standard.ts — full_template for everything else).
+  recordStandard: recordStandardEnum("record_standard"),
   dataVerificationStatus: dataVerificationStatusEnum("data_verification_status")
     .notNull()
     .default("unverified"),
