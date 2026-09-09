@@ -249,7 +249,7 @@ export const enMessages = {
     implementingEntity: "Implementing Entity",
     projectRef: "Project Ref",
     source: "Source",
-    defaultSource: "ZIDA 2025 Project Catalogue",
+    defaultSource: "Filed directly on the platform",
     published: "Published",
     lastUpdated: "Last updated",
     statTiles: {

@@ -255,7 +255,7 @@ export const frMessages: SiteMessages = {
     implementingEntity: "Entité de mise en œuvre",
     projectRef: "Réf. projet",
     source: "Source",
-    defaultSource: "Catalogue de projets ZIDA 2025",
+    defaultSource: "Déposé directement sur la plateforme",
     published: "Publié",
     lastUpdated: "Dernière mise à jour",
     statTiles: {

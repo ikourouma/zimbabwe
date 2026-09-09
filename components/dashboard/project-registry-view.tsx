@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { DataTable } from "@/components/dashboard/data-table";
 import { ProjectDetailDrawer } from "@/components/dashboard/project-detail-drawer";
 import { StatusBadge } from "@/components/projects/status-badge";
+import { RecordStandardBadge } from "@/components/projects/record-standard-badge";
 import { ProjectFiltersBar } from "@/components/projects/project-filters";
 import { DealRoomKanban } from "@/components/deal-room/deal-room-kanban";
 import { PipelineViewSwitcher, type PipelineView } from "@/components/deal-room/pipeline-view-switcher";
@@ -218,6 +219,7 @@ export function ProjectRegistryView({ basePath }: ProjectRegistryViewProps) {
                 Investor
               </span>
             )}
+            <RecordStandardBadge sourceReference={row.original.sourceReference} className="text-[10px]" />
           </span>
         ),
       },

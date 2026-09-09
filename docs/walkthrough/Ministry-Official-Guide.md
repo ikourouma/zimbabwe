@@ -226,6 +226,11 @@ There is one further rule: an investor's proposal that is still in **draft** is 
 
 1. Open **Ministry Pipeline** at `https://zidaproject.com/ministry/projects`.
 2. Create a new project.
+
+![New Project, step one. Primary Beneficiary Ministry is pre-set to ICT and locked, with the note "Locked to your own ministry — Ministry Admins create projects on behalf of their designated ministry only."](docs/screenshots/workflows/ministry-project-wizard.png)
+
+The lock is visible before you have typed anything: the ministry field carries a value already and cannot be opened, and the line beneath it states the rule the rest of this process depends on. Everything else on this first step — title, sector, subsector, project owner, location, readiness level — is exactly the form a ZIDA Admin fills in on your behalf if you ask them to; the only difference is that theirs offers every ministry and yours offers one.
+
 3. Complete the project detail: title, description, sector, province, capital requirement, readiness level, and financing type.
 4. Set the strategic alignment — the national pillar and development goals the project contributes to.
 5. Upload supporting documents: feasibility work, technical studies, land documentation.

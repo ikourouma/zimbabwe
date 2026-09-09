@@ -39,6 +39,7 @@ import { DeepDiveShell } from "@/components/layout/deep-dive-shell";
 import { ExecutiveCard } from "@/components/system/executive-card";
 import { RegistrationPrompt } from "@/components/shared/registration-prompt";
 import { StatusBadge } from "@/components/projects/status-badge";
+import { RecordStandardBadge } from "@/components/projects/record-standard-badge";
 import { ProjectCard } from "@/components/projects/project-card";
 import { WatchlistButton } from "@/components/projects/watchlist-button";
 import { SdgBadge } from "@/components/ui/sdg-badge";
@@ -179,6 +180,9 @@ export default function ProjectDetailPage({
             {verificationLabel}
             {timelineDate && <> · {timelineLabel} {timelineDate}</>}
           </p>
+          <div className="mt-2">
+            <RecordStandardBadge sourceReference={project.sourceReference} />
+          </div>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[1fr_340px]">

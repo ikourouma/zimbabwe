@@ -248,6 +248,11 @@ This exists because a submitted proposal is evidence in a review that is already
 
 1. Open a published project.
 2. Select **Raise engagement**, or start from **Engagements** at `https://zidaproject.com/deal-room/engagements`.
+
+![Start an Engagement, step one of four — Parties & Project. Investor name is taken from your verified account and cannot be edited here.](docs/screenshots/workflows/engagement-wizard-step-1.png)
+
+Four steps carry you from project selection to submission — Parties & Project, Investment Details, Review, Submit — and the first is deliberately thin: choose the project, and your own name and organisation populate from the verified profile behind your account rather than a text box you could mistype. Cancel is always available and discards nothing that has not been saved.
+
 3. Complete the engagement detail: your intent, the structure you envisage, indicative capital, and your timeline.
 4. Save as **draft**. Drafts are yours to revise.
 5. When ready, **submit**. You will be asked to certify the accuracy of what you have declared before submission completes.
@@ -270,6 +275,11 @@ A memorandum becomes available only once its engagement is **approved**.
 
 1. Open **MOU Registry** at `https://zidaproject.com/deal-room/mou`.
 2. Open the memorandum for your approved engagement. It starts in **drafting**.
+
+![The memorandum panel for the Kumusha Power Project, in Drafting, with Investor Pending and ZIDA Pending markers and the full term set: parties, project reference, indicative capital, effective date, purpose, scope of collaboration, non-binding clause, governing law, and term bullets.](docs/screenshots/workflows/mou-panel.png)
+
+Every clause that will eventually sit in the exported Word document is a field here, not prose composed freehand — parties, indicative capital, purpose, scope of collaboration, the non-binding clause, governing law, and a bulleted list of terms such as *"ZIDA facilitates land allocation within 90 days"* and *"Investor commits indicative capital within 12 months"*. The status pills across the top — Drafting, In Review, Both Parties Approved, Finalized, Ready for Signature — sit above two pending markers naming each side by role rather than by person, so it is always visible whose approval the document is still waiting on. Save Draft and Submit for Review sit at the foot of the panel while it remains in drafting.
+
 3. Edit your side of the content — parties, purpose, scope, indicative capital, key terms — while it remains in drafting.
 4. Use the comment thread for points of negotiation rather than editing contested text back and forth.
 5. ZIDA submits it for review when both sides are ready.

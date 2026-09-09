@@ -77,6 +77,14 @@ Projects opens on the Master Sovereign Project Registry, and the filter row is i
 
 Nothing on this page is scoped to a ministry, which is what makes it ZIDA's view rather than a departmental one. The counts are not a report anyone compiled; they are the records themselves, filtered, so the number published cannot drift from the number actually on the registry. For an investor asking what Zimbabwe currently has in preparation, the answer is drawn from the same table the agency works in every day, and the capital column makes the declared scale of that pipeline legible without a separate exercise: each requirement is resolved to a single headline figure — CICADA Macadamia and Avocado Plantation Expansion at US$39.5 million — with the requirement as it was transcribed held on the project's own page, and a dash where no figure has yet been recorded, as it is against three of the ten rows on this first page.
 
+The **+ Create Project** control in the black top bar is the same entry point every project on this registry passed through once, including the ones filed by a ministry. It opens a five-step wizard rather than a single form:
+
+![New Project. Step one of the five-step wizard — the same form a ministry uses to file into its own portfolio, open here to any ministry.](docs/screenshots/workflows/project-wizard-step-1.png)
+
+Step one alone asks for the primary beneficiary ministry, any co-sponsoring ministries, the project title, sector and subsector, project owner, location and readiness level — the six fields that must be present before the record can be saved at all. Financial detail, the narrative summary and supporting documents follow on the steps after. Progress saves automatically once those six are filled, and nothing about the draft is visible anywhere else on the platform until it is deliberately submitted for review or published — a half-completed project sitting in this wizard is not a risk to the registry's integrity.
+
+Because this is the identical wizard a ministry uses, a project ZIDA files on a ministry's behalf and a project the ministry files itself are indistinguishable on the record afterwards — the same six-field gate, the same review path, the same publication step. Filing on a ministry's behalf is a convenience this role has and ministries do not; it is not a different or lesser process.
+
 ### Review Queue
 
 ![The Review Queue. New submissions, amendment requests and ministry association requests on one surface.](docs/screenshots/admin/review.png)
@@ -241,8 +249,18 @@ This is the entitlement decision. Approving it grants commercial access to finan
 
 1. Open **Inquiries** at `https://zidaproject.com/admin/inquiries`.
 2. Open the **Qualified Investor Applications** tab to isolate applications from general enquiries.
+
+![Inquiries, filtered to the Qualified Investor Applications tab. Three applications, all pending, all carrying a KYC marker.](docs/screenshots/workflows/inquiries-investor-queue.png)
+
+The tab does more than filter the list: the page's own subtitle changes from a plain count of enquiries to *"3 Qualified Investor applications — approving one grants Deal Room access"*, which is the platform stating the consequence of the decision before you have opened a single card.
+
 3. Filter status to **pending**.
 4. Open an application and review the applicant: organisation, business registration identifier, headquarters, website, and their stated investment interest.
+
+![The application detail drawer for Sandile Nkomo of Meridian Frontier Capital — routed desk, sector and ticket size, headquarters address, business registration identifier and corporate website, and the applicant's own message, alongside the three decisions available.](docs/screenshots/workflows/application-detail-drawer.png)
+
+Every field a decision depends on sits in this one drawer rather than requiring a separate lookup: the routed desk, the sector and indicative ticket, the full headquarters address, the business registration identifier, the corporate website, and the applicant's own stated interest. A banner above the three decision buttons states the consequence in the same sentence a decision would otherwise leave implicit — approving upgrades the account to Qualified Investor immediately, and only once KYC is complete.
+
 5. Cross-check in **Users & Roles** if you need the fuller accreditation dossier.
 6. Decide:
 
@@ -251,6 +269,10 @@ This is the entitlement decision. Approving it grants commercial access to finan
 | Approve | Account upgraded to Qualified Investor immediately | Approval email; new sections appear on next sign-in |
 | Request changes | Application returns to the applicant, editable | Email with your note |
 | Decline | Account stays at registered tier | Email with your reason |
+
+![The Approve as Qualified Investor confirmation, with the required justification field that is recorded in the audit log.](docs/screenshots/workflows/application-approval-dialog.png)
+
+Approve, Request Changes and Decline each open a confirmation carrying a justification field marked required — this is not a courtesy prompt; the dialog will not submit without it, and the text entered is what a future audit or a disputed decision will read back. Cancel and Approve sit side by side in the same footer, worth knowing before you click if this is your first time on this screen.
 
 7. All three send an email automatically. Every decision is recorded in the audit trail against your name.
 
