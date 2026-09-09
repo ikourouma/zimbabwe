@@ -4,6 +4,7 @@ import { classifyFinancingType, getFinancingBuckets } from "@/lib/utils/financin
 import { CAPITAL_BRACKETS } from "@/lib/utils/capital";
 import type { CapitalBracket } from "@/lib/types";
 import { DEFAULT_FIELD_VISIBILITY, ENTITLEMENT_GROUPS, groupForField, type EntitlementGroupId, type FieldVisibilityMatrix } from "@/lib/entitlements/matrix";
+import { provinceNameFromId } from "@/lib/governance/province-resolver";
 
 export type AccessLevel = "public" | "registered" | "qualified" | "admin";
 
@@ -26,6 +27,20 @@ function matchesCapitalBracket(project: InvestmentProject, bracket: CapitalBrack
   const def = CAPITAL_BRACKETS.find((b) => b.key === bracket);
   if (!def) return false;
   return millions >= def.min && (def.max === null || millions < def.max);
+}
+
+/**
+ * Project Data Standardisation, Phase 3 — province filtering reads the structured
+ * `provinceIds` junction (via scripts/migrate-project-provinces.ts / resolveProvinceIds) rather
+ * than substring-matching the free-text `province` column. A project with no resolved province
+ * id (nothing has run the resolver against it yet) falls back to the old substring match so it
+ * doesn't just vanish from every filter.
+ */
+function matchesProvinceFilter(project: InvestmentProject, provinceName: string): boolean {
+  if (project.provinceIds?.length) {
+    return project.provinceIds.some((id) => provinceNameFromId(id) === provinceName);
+  }
+  return project.province?.toLowerCase().includes(provinceName.toLowerCase()) ?? false;
 }
 
 /**
@@ -231,7 +246,7 @@ export function filterProjects(
     );
   }
   if (filters.province) {
-    result = result.filter((p) => p.province?.toLowerCase().includes(filters.province!.toLowerCase()));
+    result = result.filter((p) => matchesProvinceFilter(p, filters.province!));
   }
   if (filters.financingType?.length) {
     result = result.filter((p) => filters.financingType!.includes(classifyFinancingType(p.financingType)));
@@ -296,10 +311,21 @@ function getUpdatedWithinCutoff(within: UpdatedWithin, now: Date = new Date()): 
   return now.getTime() - days * 24 * 60 * 60 * 1000;
 }
 
+/**
+ * Project Data Standardisation, Phase 3 — sourced from the canonical `provinceIds` junction
+ * instead of the raw free-text `province` column, so the filter dropdown offers the ten real
+ * provinces a project can actually be linked to rather than one entry per unique multi-province
+ * string (e.g. "Mashonaland East / Manicaland / Masvingo" used to show up as its own option).
+ * Falls back to the free-text value for any project the resolver hasn't reached yet.
+ */
 export function getUniqueProvinces(projects: InvestmentProject[]): string[] {
   const provinces = new Set<string>();
   for (const p of projects) {
-    if (p.province) provinces.add(p.province);
+    if (p.provinceIds?.length) {
+      for (const id of p.provinceIds) provinces.add(provinceNameFromId(id));
+    } else if (p.province) {
+      provinces.add(p.province);
+    }
   }
   return Array.from(provinces).sort();
 }

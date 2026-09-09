@@ -322,7 +322,8 @@ export const frMessages: SiteMessages = {
     roi: "ROI",
     paybackPeriod: "Délai de retour",
     projectedRevenue: "Revenus projetés",
-    notDisclosed: "Non divulgué",
+    notStatedInCatalogue: "Non précisé dans le catalogue source",
+    notYetSupplied: "Pas encore fourni",
     unlockCostBreakdownLead: "La ventilation complète des coûts",
     unlockFinancialFiguresLead: "Les chiffres complets de performance financière",
     unlockRegisteredSuffix:

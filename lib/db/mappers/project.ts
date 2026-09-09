@@ -10,6 +10,7 @@ export interface ProjectRelations {
   sdgIds: string[];
   secondaryBeneficiaryMinistryIds: string[];
   regulatorIds: string[];
+  provinceIds: string[];
   documents: DocumentRow[];
   teamAssignedUserIds: string[];
 }
@@ -53,6 +54,7 @@ export function mapDbProjectToApp(row: ProjectRow, relations: ProjectRelations):
     location: row.location,
     province: row.province ?? undefined,
     district: row.district ?? undefined,
+    provinceIds: relations.provinceIds.length ? relations.provinceIds : undefined,
     capitalRequired: row.capitalRequired ?? undefined,
     capitalTotalUsd: toNum(row.capitalTotalUsd),
     capitalEquityUsd: toNum(row.capitalEquityUsd),

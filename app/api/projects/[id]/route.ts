@@ -17,6 +17,7 @@ import { resolveOrCreatePendingSubsector } from "@/lib/db/queries/taxonomies";
 import { fetchCaseManagerCandidates, fetchGovernmentOfficialsForMinistry } from "@/lib/db/queries/users";
 import { notifyUser } from "@/lib/email/notify";
 import { canTransition, validateRequiredFields } from "@/lib/governance/project-workflow";
+import { meetsPublicationMinimum, scoreProjectCompleteness } from "@/lib/governance/project-completeness";
 import { resolveProjectWorkflowRole } from "@/lib/auth/project-workflow-role";
 import { isVisibleToMinistryAdmin } from "@/lib/entitlements/ministry-scope";
 import type { InvestmentProject, ProjectStatus } from "@/lib/types";
@@ -279,6 +280,26 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         if (!valid) {
           return NextResponse.json(
             { error: `Cannot submit — missing required field(s): ${missing.join(", ")}` },
+            { status: 400 }
+          );
+        }
+      }
+
+      // Project Data Standardisation, Phase 3 — server-side minimum before publication. The
+      // eight-field check above only ever gated draft -> submitted_for_review, and only for the
+      // "creator" workflow role at that — the approved -> published step itself had no
+      // server-side data-quality floor at all, relying entirely on the (staff-only, client-side)
+      // wizard UI. Checked against the full merged record, same rationale as above. Never applies
+      // to a catalogue_seed record (see meetsPublicationMinimum) — the 32 ZIDA deck imports are a
+      // distinct, pre-standard tier by design (Phase 1's catalogue badge).
+      if (body.projectStatus === "published") {
+        const merged = { ...existing, ...body };
+        if (!meetsPublicationMinimum(merged)) {
+          const { score, missing } = scoreProjectCompleteness(merged);
+          return NextResponse.json(
+            {
+              error: `Cannot publish — this project is only ${score}% complete against the full data standard. Missing: ${missing.join(", ")}`,
+            },
             { status: 400 }
           );
         }

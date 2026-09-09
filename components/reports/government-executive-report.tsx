@@ -25,7 +25,7 @@ import { useAuth } from "@/context/auth-context";
 import type { AccountRole } from "@/lib/auth/types";
 import type { InvestmentProject, InvestorEngagementStatus, ProjectStatus } from "@/lib/types";
 import { parseCapitalTotalMillions, formatMillions } from "@/lib/utils/capital";
-import { bucketProvinceLabel } from "@/lib/utils/province";
+import { provinceNameFromId } from "@/lib/governance/province-resolver";
 import {
   ReportShell,
   ReportSection,
@@ -341,26 +341,29 @@ export function GovernmentExecutiveReport() {
 
   // --- Provincial Pipeline Distribution --------------------------------------------------------
   // Published projects only, same "only a live investable opportunity backs a displayable
-  // estimate" rule already used in lib/data/site-stats.ts. `province` is free text pending a
-  // canonical FK (see BACKLOG.md) — `bucketProvinceLabel` cleans deck-validation notes out of the
-  // display label and folds any multi-province string (e.g. "Midlands / Manicaland") into one
-  // "Multi-Province / National" bucket, rather than one illegible bar per unique combination.
-  // Capped to Top 5 single provinces + Multi-Province/National + Unspecified + a rolled-up
-  // "Other" tail, so the chart stays legible regardless of how many distinct provinces appear.
+  // estimate" rule already used in lib/data/site-stats.ts. Project Data Standardisation, Phase 3
+  // — reads the structured `provinceIds` junction (lib/db/schema/projects.ts, resolved by
+  // resolveProvinceIds) instead of parsing the free-text `province` column: a project spanning
+  // several provinces now contributes its capital to each one it actually touches, rather than
+  // being folded into one illegible "Multi-Province / National" bucket. `province` stays the
+  // display column everywhere else; this is the one place that reads the junction directly.
+  // Capped to Top 5 provinces + Unspecified + a rolled-up "Other" tail, so the chart stays
+  // legible regardless of how many distinct provinces appear.
   const provincialData = useMemo(() => {
     const map = new Map<string, { count: number; capitalMillions: number }>();
     for (const p of projects.filter((p) => p.projectStatus === "published")) {
-      const key = bucketProvinceLabel(p.province?.trim() || "");
-      const entry = map.get(key) ?? { count: 0, capitalMillions: 0 };
-      entry.count += 1;
-      entry.capitalMillions += projectCapitalMillions(p) ?? 0;
-      map.set(key, entry);
+      const capitalMillions = projectCapitalMillions(p) ?? 0;
+      const names = p.provinceIds?.length ? p.provinceIds.map(provinceNameFromId) : ["Unspecified"];
+      for (const key of names) {
+        const entry = map.get(key) ?? { count: 0, capitalMillions: 0 };
+        entry.count += 1;
+        entry.capitalMillions += capitalMillions;
+        map.set(key, entry);
+      }
     }
     const all = Array.from(map.entries()).map(([name, v]) => ({ name, ...v }));
-    const pinned = all.filter((r) => r.name === "Multi-Province / National" || r.name === "Unspecified");
-    const singleProvinces = all
-      .filter((r) => r.name !== "Multi-Province / National" && r.name !== "Unspecified")
-      .sort((a, b) => b.capitalMillions - a.capitalMillions);
+    const pinned = all.filter((r) => r.name === "Unspecified");
+    const singleProvinces = all.filter((r) => r.name !== "Unspecified").sort((a, b) => b.capitalMillions - a.capitalMillions);
 
     const top5 = singleProvinces.slice(0, 5);
     const tail = singleProvinces.slice(5);
@@ -747,9 +750,9 @@ export function GovernmentExecutiveReport() {
                 <li>{unassessedCount} project(s) are excluded from capital totals — no parseable capital figure has been assessed yet.</li>
               )}
               <li>
-                Provincial distribution aggregates any project spanning multiple provinces or national scope into a
-                single &quot;Multi-Province / National&quot; bucket, and rolls provinces beyond the top 5 by capital into
-                &quot;Other&quot; — every published project is still counted, just grouped for legibility.
+                Provincial distribution attributes a project spanning multiple provinces to each one it actually
+                touches (so project and capital counts across provinces can sum to more than the published total),
+                and rolls provinces beyond the top 5 by capital into &quot;Other&quot; for legibility.
               </li>
               <li>Document Downloads reflects real, timestamped download events recorded from this release onward; it is not backfilled.</li>
             </ul>

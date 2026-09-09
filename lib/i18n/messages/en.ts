@@ -315,7 +315,11 @@ export const enMessages = {
     roi: "ROI",
     paybackPeriod: "Payback Period",
     projectedRevenue: "Projected Revenue",
-    notDisclosed: "Not disclosed",
+    // Project Data Standardisation, Phase 3 — replaces the old single "Not disclosed" label, which
+    // covered a genuinely absent source-deck figure and a gap in a full_template record alike.
+    // Locked/blurred rows for an unqualified viewer stay a separate, unaffected "locked" case.
+    notStatedInCatalogue: "Not stated in source catalogue",
+    notYetSupplied: "Not yet supplied",
     unlockCostBreakdownLead: "The full cost breakdown",
     unlockFinancialFiguresLead: "Full financial performance figures",
     unlockRegisteredSuffix: "unlock once our team verifies your investor status — your registration is on file.",

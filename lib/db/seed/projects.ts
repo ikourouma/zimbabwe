@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import {
   projectDocuments,
   projectPillars,
+  projectProvinces,
   projectRegulators,
   projectSdgs,
   projectSecondaryMinistries,
@@ -9,6 +10,7 @@ import {
   siteSettings,
 } from "@/lib/db/schema";
 import { zimbabweProjects } from "@/lib/data/zimbabwe-projects";
+import { resolveProvinceIds } from "@/lib/governance/province-resolver";
 import { seedDb } from "./db";
 import { mapProjectToDbRow } from "./map-project";
 
@@ -43,6 +45,7 @@ export async function seedProjects() {
     await seedDb.delete(projectSdgs).where(eq(projectSdgs.projectId, projectId));
     await seedDb.delete(projectSecondaryMinistries).where(eq(projectSecondaryMinistries.projectId, projectId));
     await seedDb.delete(projectRegulators).where(eq(projectRegulators.projectId, projectId));
+    await seedDb.delete(projectProvinces).where(eq(projectProvinces.projectId, projectId));
     await seedDb.delete(projectDocuments).where(eq(projectDocuments.projectId, projectId));
 
     if (project.strategicPillarIds.length) {
@@ -59,6 +62,14 @@ export async function seedProjects() {
       await seedDb.insert(projectSecondaryMinistries).values(
         project.secondaryBeneficiaryMinistryIds.map((ministryId) => ({ projectId, ministryId }))
       );
+    }
+
+    // Project Data Standardisation, Phase 3 — same auto-derive-from-free-text rule as
+    // syncProjectRelations (lib/db/queries/projects.ts), so a reseed never leaves the junction
+    // stale relative to `province`.
+    const { ids: provinceIds } = resolveProvinceIds(project.province);
+    if (provinceIds.length) {
+      await seedDb.insert(projectProvinces).values(provinceIds.map((provinceId) => ({ projectId, provinceId })));
     }
 
     if (project.documents.length) {

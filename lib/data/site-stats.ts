@@ -67,7 +67,12 @@ export function getSectorStats(sectorId: string, projects: InvestmentProject[] =
   const sectorProjects = projects.filter((p) => p.sectorId === sectorId);
   const published = sectorProjects.filter((p) => p.projectStatus === "published");
   const sectorSubsectors = new Set(sectorProjects.map((p) => p.subsectorId).filter(Boolean));
-  const provinces = new Set(sectorProjects.map((p) => p.province).filter(Boolean));
+  // Project Data Standardisation, Phase 3 — reads the structured provinceIds junction where
+  // present (a multi-province project counts under every province it touches, not the one
+  // combined free-text string it used to collapse to) rather than the raw `province` column.
+  const provinces = new Set(
+    sectorProjects.flatMap((p) => (p.provinceIds?.length ? p.provinceIds : p.province ? [p.province] : []))
+  );
 
   // Only published projects back a displayable estimate — an unreviewed/draft figure isn't a
   // real, live investable opportunity yet, so it must never inflate an aggregate range shown

@@ -1,8 +1,9 @@
 import { relations } from "drizzle-orm";
-import { agencies, contactReasons, ministries, sdgs, sectors, strategicPillars, subsectors } from "./taxonomies";
+import { agencies, contactReasons, ministries, provinces, sdgs, sectors, strategicPillars, subsectors } from "./taxonomies";
 import { projectDocuments } from "./documents";
 import {
   projectPillars,
+  projectProvinces,
   projectRegulators,
   projectSdgs,
   projectSecondaryMinistries,
@@ -57,6 +58,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   sdgLinks: many(projectSdgs),
   secondaryMinistryLinks: many(projectSecondaryMinistries),
   regulatorLinks: many(projectRegulators),
+  provinceLinks: many(projectProvinces),
   documents: many(projectDocuments),
   inquiries: many(strategicInquiries),
   investorEngagements: many(investorEngagements),
@@ -84,6 +86,15 @@ export const projectSecondaryMinistriesRelations = relations(projectSecondaryMin
 export const projectRegulatorsRelations = relations(projectRegulators, ({ one }) => ({
   project: one(projects, { fields: [projectRegulators.projectId], references: [projects.id] }),
   agency: one(agencies, { fields: [projectRegulators.agencyId], references: [agencies.id] }),
+}));
+
+export const projectProvincesRelations = relations(projectProvinces, ({ one }) => ({
+  project: one(projects, { fields: [projectProvinces.projectId], references: [projects.id] }),
+  province: one(provinces, { fields: [projectProvinces.provinceId], references: [provinces.id] }),
+}));
+
+export const provincesRelations = relations(provinces, ({ many }) => ({
+  projectLinks: many(projectProvinces),
 }));
 
 export const projectDocumentsRelations = relations(projectDocuments, ({ one }) => ({

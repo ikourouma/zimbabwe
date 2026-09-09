@@ -6,7 +6,7 @@ import {
   recordStandardEnum,
   visibilityLevelEnum,
 } from "./enums";
-import { agencies, ministries, sdgs, sectors, strategicPillars, subsectors } from "./taxonomies";
+import { agencies, ministries, provinces, sdgs, sectors, strategicPillars, subsectors } from "./taxonomies";
 
 // Mirrors InvestmentProject (lib/types/index.ts, ~40 fields) — new entity tables (as opposed to
 // the pre-existing-string-id taxonomy tables) use uuid primary keys, per PRODUCTION_MIGRATION_PLAN.md.
@@ -176,4 +176,24 @@ export const projectRegulators = pgTable(
       .references(() => agencies.id, { onDelete: "cascade" }),
   },
   (t) => [primaryKey({ columns: [t.projectId, t.agencyId] })]
+);
+
+// Project Data Standardisation, Phase 3 — mirrors project_secondary_ministries above. The
+// twelve seeded records that pack several provinces into one string (e.g. "Mashonaland East /
+// Manicaland / Masvingo") get one row per province here instead of one illegible free-text blob;
+// `projects.province` stays untouched as the display column (see BACKLOG.md's "Full province
+// data migration"). Populated automatically from `projects.province` on every write — see
+// resolveProvinceIds in lib/governance/province-resolver.ts — and backfilled once for the
+// pre-existing catalogue rows by scripts/migrate-project-provinces.ts.
+export const projectProvinces = pgTable(
+  "project_provinces",
+  {
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    provinceId: text("province_id")
+      .notNull()
+      .references(() => provinces.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.projectId, t.provinceId] })]
 );

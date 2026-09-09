@@ -68,7 +68,7 @@ interface ProjectWizardProps {
  */
 export function ProjectWizard({ initial, basePath, lockedMinistryId }: ProjectWizardProps) {
   const router = useRouter();
-  const { ministries, sectors } = useTaxonomyStore();
+  const { ministries, sectors, provinces } = useTaxonomyStore();
   const mode: "create" | "edit" = initial ? "edit" : "create";
 
   const [projectId, setProjectId] = useState<string | undefined>(initial?.id);
@@ -394,6 +394,28 @@ export function ProjectWizard({ initial, basePath, lockedMinistryId }: ProjectWi
               placeholder="e.g. Feasibility study complete"
             />
           </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label>Province</Label>
+              <select
+                className="dashboard-input"
+                value={form.province ?? ""}
+                onChange={(e) => update({ province: e.target.value || undefined })}
+              >
+                <option value="">Select province</option>
+                {provinces.map((p) => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+            <div>
+              <Label>District</Label>
+              <input
+                className="dashboard-input"
+                value={form.district ?? ""}
+                onChange={(e) => update({ district: e.target.value || undefined })}
+                placeholder="e.g. Chegutu"
+              />
+            </div>
+          </div>
         </>
       )}
 
@@ -418,6 +440,84 @@ export function ProjectWizard({ initial, basePath, lockedMinistryId }: ProjectWi
             Government-created projects capture E1 financials only. Detailed financial model and company
             capability fields (E2/E3) apply to investor-submitted proposals.
           </p>
+          <div>
+            <Label>Return Metrics (optional)</Label>
+            <p className="mb-2 text-[11px]" style={{ color: "var(--color-text-muted)" }}>
+              Structured figures — recorded as numbers, not prose, so they can be aggregated and filtered platform-wide.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label>IRR (%)</Label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className="dashboard-input"
+                  value={form.irrPct ?? ""}
+                  onChange={(e) => update({ irrPct: e.target.value === "" ? undefined : Number(e.target.value) })}
+                  placeholder="e.g. 18.5"
+                />
+              </div>
+              <div>
+                <Label>NPV (US$)</Label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  className="dashboard-input"
+                  value={form.npvUsd ?? ""}
+                  onChange={(e) => update({ npvUsd: e.target.value === "" ? undefined : Number(e.target.value) })}
+                  placeholder="e.g. 2860000"
+                />
+              </div>
+              <div>
+                <Label>ROI (%)</Label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className="dashboard-input"
+                  value={form.roiPct ?? ""}
+                  onChange={(e) => update({ roiPct: e.target.value === "" ? undefined : Number(e.target.value) })}
+                  placeholder="e.g. 22"
+                />
+              </div>
+              <div>
+                <Label>Payback Period (months)</Label>
+                <input
+                  type="number"
+                  step="1"
+                  min={0}
+                  className="dashboard-input"
+                  value={form.paybackMonths ?? ""}
+                  onChange={(e) => update({ paybackMonths: e.target.value === "" ? undefined : Number(e.target.value) })}
+                  placeholder="e.g. 36"
+                />
+              </div>
+              <div>
+                <Label>Projected Revenue (US$)</Label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  className="dashboard-input"
+                  value={form.projectedRevenueUsd ?? ""}
+                  onChange={(e) => update({ projectedRevenueUsd: e.target.value === "" ? undefined : Number(e.target.value) })}
+                  placeholder="e.g. 5000000"
+                />
+              </div>
+              <div>
+                <Label>Projected Revenue Period (years)</Label>
+                <input
+                  type="number"
+                  step="1"
+                  min={0}
+                  className="dashboard-input"
+                  value={form.projectedRevenueYears ?? ""}
+                  onChange={(e) => update({ projectedRevenueYears: e.target.value === "" ? undefined : Number(e.target.value) })}
+                  placeholder="e.g. 5"
+                />
+              </div>
+            </div>
+          </div>
           <div>
             <Label>Development Impact (one item per line)</Label>
             <textarea
@@ -579,7 +679,21 @@ export function ProjectWizard({ initial, basePath, lockedMinistryId }: ProjectWi
             />
             <SummaryRow label="Project Owner" value={form.projectOwner || "—"} />
             <SummaryRow label="Location" value={form.location || "—"} />
+            <SummaryRow label="Province" value={form.province || "—"} />
+            <SummaryRow label="District" value={form.district || "—"} />
             <SummaryRow label="Capital Required" value={form.capitalRequired || "—"} />
+            <SummaryRow label="IRR" value={typeof form.irrPct === "number" ? `${form.irrPct}%` : "—"} />
+            <SummaryRow label="NPV" value={typeof form.npvUsd === "number" ? `US$${form.npvUsd.toLocaleString()}` : "—"} />
+            <SummaryRow label="ROI" value={typeof form.roiPct === "number" ? `${form.roiPct}%` : "—"} />
+            <SummaryRow label="Payback Period" value={typeof form.paybackMonths === "number" ? `${form.paybackMonths} months` : "—"} />
+            <SummaryRow
+              label="Projected Revenue"
+              value={
+                typeof form.projectedRevenueUsd === "number"
+                  ? `US$${form.projectedRevenueUsd.toLocaleString()}${typeof form.projectedRevenueYears === "number" ? ` over ${form.projectedRevenueYears}y` : ""}`
+                  : "—"
+              }
+            />
             <SummaryRow label="Visibility" value={(form.visibilityLevel ?? "public").replace(/_/g, " ")} />
             <SummaryRow label="Documents" value={String(documents.length + stagedDocs.length)} />
             {mode === "edit" && initial && <SummaryRow label="Current Status" value={STATUS_LABELS[initial.projectStatus]} />}

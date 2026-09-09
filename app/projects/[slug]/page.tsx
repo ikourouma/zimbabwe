@@ -32,8 +32,10 @@ import {
   getMinistryById,
 } from "@/lib/data/taxonomies";
 import { canViewProject, accessLevelForRole, canAccessVisibilityLevel } from "@/lib/entitlements/visibility";
+import { isZidaCatalogueRecord } from "@/lib/governance/record-standard";
 import { classifyFinancingType } from "@/lib/utils/financing-type";
 import { parseCapitalTotalMillions, parseCapitalBreakdown, formatMillions } from "@/lib/utils/capital";
+import { displayIrr, displayNpv, displayPaybackPeriod, displayProjectedRevenue, displayRoi } from "@/lib/utils/financial-display";
 import { getRelevantGlossaryTerms } from "@/lib/data/glossary";
 import { DeepDiveShell } from "@/components/layout/deep-dive-shell";
 import { ExecutiveCard } from "@/components/system/executive-card";
@@ -79,6 +81,13 @@ export default function ProjectDetailPage({
 
   const project = getProjectBySlug(slug);
   if (!project) notFound();
+
+  // Project Data Standardisation, Phase 3 — "Not disclosed" collapsed two different situations
+  // into one label: a genuinely absent figure in the source deck vs. a gap in a full_template
+  // record the wizard should have caught. The empty-state text now names which one it is (the
+  // locked/blurred treatment for an unqualified viewer stays a separate, unaffected case — see
+  // FinRow's own `locked` branch below).
+  const financialsNotDisclosedLabel = isZidaCatalogueRecord(project) ? pd.notStatedInCatalogue : pd.notYetSupplied;
 
   if (!canViewProject(persona, project) && !isAdmin) {
     return (
@@ -310,15 +319,15 @@ export default function ProjectDetailPage({
             <ExecutiveCard>
               <ExecutiveCard.Header overline={pd.financialPerformance} title={pd.financialPerformanceData} />
               <dl className="grid gap-4 sm:grid-cols-2">
-                <FinRow label={pd.irr} value={project.irr} locked={authLoading || !showQualifiedFinancials} notDisclosed={pd.notDisclosed} />
-                <FinRow label={pd.npv} value={project.npv} locked={authLoading || !showQualifiedFinancials} notDisclosed={pd.notDisclosed} />
-                <FinRow label={pd.roi} value={project.roi} locked={authLoading || !showQualifiedFinancials} notDisclosed={pd.notDisclosed} />
-                <FinRow label={pd.paybackPeriod} value={project.paybackPeriod} locked={authLoading || !showQualifiedFinancials} notDisclosed={pd.notDisclosed} />
+                <FinRow label={pd.irr} value={displayIrr(project) ?? undefined} locked={authLoading || !showQualifiedFinancials} notDisclosed={financialsNotDisclosedLabel} />
+                <FinRow label={pd.npv} value={displayNpv(project) ?? undefined} locked={authLoading || !showQualifiedFinancials} notDisclosed={financialsNotDisclosedLabel} />
+                <FinRow label={pd.roi} value={displayRoi(project) ?? undefined} locked={authLoading || !showQualifiedFinancials} notDisclosed={financialsNotDisclosedLabel} />
+                <FinRow label={pd.paybackPeriod} value={displayPaybackPeriod(project) ?? undefined} locked={authLoading || !showQualifiedFinancials} notDisclosed={financialsNotDisclosedLabel} />
                 <FinRow
                   label={pd.projectedRevenue}
-                  value={project.projectedRevenue}
+                  value={displayProjectedRevenue(project) ?? undefined}
                   locked={authLoading || !showQualifiedFinancials}
-                  notDisclosed={pd.notDisclosed}
+                  notDisclosed={financialsNotDisclosedLabel}
                   className="sm:col-span-2"
                 />
               </dl>

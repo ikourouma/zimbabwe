@@ -85,6 +85,13 @@
 | DEF-045 | An implementation detail in the governance trail | Low | Closed |
 | DEF-046 | Government captures cut off mid-content | Medium | Closed |
 | DEF-047 | American spelling inside the accepted non-disclosure text | Low | Open (needs an agreement version) |
+| DEF-048 | A parser that picks the first figure understated two projects by $140.5M combined | High | Closed |
+| DEF-049 | Source-deck transcription errors baked into numeric fields, including a $2.86 trillion hospital | High | Closed |
+| DEF-050 | Every capital total on the platform was produced by parsing English sentences at runtime | Medium | Closed |
+| DEF-051 | Five return-metric fields existed on every project but could not be entered through any reachable route | Medium | Closed |
+| DEF-052 | Twelve multi-province projects had no queryable link to the province taxonomy | Medium | Closed |
+| DEF-053 | The eight-field submission check never reached the approved-to-published step at all | High | Closed |
+| DEF-054 | "Not disclosed" conflated three different reasons a figure could be missing | Low | Closed |
 
 ## 3. Closed Defects
 
@@ -442,6 +449,62 @@ The audit log's Entity ID column showed `singleton` against every site-settings 
 
 Two Government Reviewer captures were framed for an investor's version of the same route. The Activity Report stopped part-way through the fourth of ten engagement rows and omitted the confidentiality footer that the guide's commentary discusses; the overview's Recent Activity panel ran past the bottom edge, so a reader could not tell whether it held three entries or thirty. Both were consequences of fixes landing earlier in this pass — the report is now scoped to the reader's whole remit and carries an extra column, and the activity panel only became populated when the feed was made role-aware. The reviewer console now sets its own capture heights instead of inheriting the investor's.
 
+### DEF-048 — A parser that picks the first figure understated two projects by $140.5M combined
+
+**Severity:** High. **Status:** Closed.
+
+The capital-required parser (`lib/utils/capital.ts`) takes the first dollar figure it finds in a project's free-text description, on the (usually correct) assumption that the first figure is the total. Two records violate that assumption. Lanforce Biogas Expansion listed "Phase 1 US$1,050,000; Phase 2 US$500,000" and showed **$1.05M**, a true ask of **$1.55M**. Lot 1 Jafuta Estate itemised seven components and showed **$81.6M**, a true total of **$221.6M**. Both figures feed every platform-wide capital aggregate — the Platform Snapshot, the executive report's Total Pipeline Value, the capital bracket filters — so the understatement was not confined to the two project pages.
+
+**Fix.** An explicit total was added to each project's source string in `lib/data/seed-raw.ts`, which the existing parser already honours once one is present. No parser change was required; the inputs were incomplete, not the logic. Combined, this restored $140.5M to every aggregate that reads capital.
+
+### DEF-049 — Source-deck transcription errors baked into numeric fields, including a $2.86 trillion hospital
+
+**Severity:** High. **Status:** Closed.
+
+Five records carried a transcription error from the source deck inside a field the platform treats as numeric prose and renders verbatim to qualified investors. The worst: the Masuwe hospital, a US$15M project, showed an NPV of `"US$2,860,000 million"` — $2.86 trillion, roughly the GDP of Switzerland, on a rural hospital. The other four were smaller-magnitude versions of the same failure mode: a stray unit word or duplicated figure surviving from the deck into a field a reader has no reason to distrust.
+
+**Fix.** Each commentary/error was moved out of the numeric-looking field and, where genuinely uncertain, into the new `financial_data_caveat` column added in Phase 2 (§DEF-050) rather than silently corrected — a transcription error the platform cannot independently verify is a caveat to disclose, not a number to guess at.
+
+### DEF-050 — Every capital total on the platform was produced by parsing English sentences at runtime
+
+**Severity:** Medium. **Status:** Closed.
+
+Every capital figure shown anywhere on the platform — cards, the pipeline table, the registry, the executive report, the Platform Snapshot — was produced by re-parsing a free-text sentence (`capitalRequired`, `irr`, `npv`, `roi`, `paybackPeriod`, `projectedRevenue`) on every request. This is how DEF-048 and DEF-049 were able to reach production undetected: a parsing heuristic has no way to flag its own confidence, so an understated or transcribed-wrong figure looks identical to a correct one downstream.
+
+**Fix.** Ten structured numeric columns (`capital_total_usd`, `irr_pct`, `npv_usd`, `roi_pct`, `payback_months`, `projected_revenue_usd`/`_years`, plus equity/debt splits) were added to `projects` alongside the existing text, which stays as the source note and audit trail. `scripts/migrate-financial-fields.ts` parsed every existing record once, with an explicit override table for the handful of records the parser could not confidently resolve, and every downstream consumer (`lib/db/queries/platform-stats.ts`, `lib/data/site-stats.ts`, the executive report, the capital bracket filters in `lib/entitlements/visibility.ts`) now reads the numeric columns instead of re-parsing prose. The parser in `lib/utils/capital.ts` retires from a runtime dependency to a one-time migration tool.
+
+### DEF-051 — Five return-metric fields existed on every project but could not be entered through any reachable route
+
+**Severity:** Medium. **Status:** Closed.
+
+`irr`, `npv`, `roi`, `paybackPeriod` and `projectedRevenue` were real columns that rendered on the project detail page for any of the 32 seeded records, but the only form that could set them — `components/admin/project-form.tsx` — was not imported by any route. Every "new project" path went through `components/admin/project-wizard.tsx`, which had no inputs for any of the five. A ZIDA-created project could reach Published with a Financial Performance panel that could never be filled in.
+
+**Fix.** The wizard's Financials step gained the five return metrics as structured numeric inputs (§DEF-050 covers the storage side), and the orphaned form was deleted once its fields had a home.
+
+### DEF-052 — Twelve multi-province projects had no queryable link to the province taxonomy
+
+**Severity:** Medium. **Status:** Closed.
+
+`province` was — and remains — a free-text column, and twelve of the 32 seeded records pack several provinces into one string, e.g. "Mashonaland East / Manicaland / Masvingo". The province filter dropdown surfaced these combined strings as their own options rather than the provinces they actually named, and the executive report's provincial rollup could only fold every multi-province record into one "Multi-Province / National" bucket — a project's capital was invisible to the bar for any single province it was actually in.
+
+**Fix.** A `project_provinces` junction (mirroring the existing `project_secondary_ministries` pattern) links each project to every canonical province it names, resolved automatically from the free-text field by `lib/governance/province-resolver.ts` on every write and backfilled once for the 32 existing records by `scripts/migrate-project-provinces.ts`. Two tokens the automatic parser could not place on its own ("Matabeleland" alone, ambiguous between North and South; a title-slide contradiction on the Hwange solar project) are recorded as explicit, reviewable overrides in that same file rather than guessed. `province` itself is unchanged and stays the display column.
+
+### DEF-053 — The eight-field submission check never reached the approved-to-published step at all
+
+**Severity:** High. **Status:** Closed.
+
+`validateRequiredFields` (`lib/governance/project-workflow.ts`) blocks a creator from submitting a project with fewer than eight core fields filled in — but only that one transition, and only for the `creator` workflow role. Nothing enforced any floor at all on the `approved -> published` step, and the wizard's own step-gating is client-side. A staff user could publish a project with no capital figure, no return metric, and no supporting document, and the public registry would show it exactly as if it were complete.
+
+**Fix.** `lib/governance/project-completeness.ts` scores a project against the full thirteen-field data standard (see `docs/Project-Data-Standard.md`) and `PATCH /api/projects/[id]` now refuses `approved -> published` for any `full_template` project scoring below 70%, returning the specific missing fields in the error. `catalogue_seed` records are exempt by design — the standard did not exist when they were captured.
+
+### DEF-054 — "Not disclosed" conflated three different reasons a figure could be missing
+
+**Severity:** Low. **Status:** Closed.
+
+The Financial Performance panel on the project detail page showed the identical label, "Not disclosed", whether a figure was genuinely absent from the ZIDA source deck, missing from an otherwise-standard project the wizard should have caught, or simply withheld because the viewer had not cleared the qualified-investor gate. A reader could not tell "this was never captured" from "this was overlooked" from "you are not entitled to see this yet".
+
+**Fix.** The withheld case already had its own visual treatment (a blurred, locked placeholder) and was unaffected. The other two now read "Not stated in source catalogue" for a `catalogue_seed` record and "Not yet supplied" for a `full_template` record, selected from the project's own `record_standard`.
+
 ## 4. Open Defects
 
 ### DEF-009 — Sign-in page down for real browsers on a pre-fix cached shell
@@ -539,6 +602,7 @@ The fifteen forbidden-console assertions are the coverage that previously did no
 | Network traces captured during failing runs | Request sequences, cache headers, and build fingerprints |
 | Direct database read of pilot account state | DEF-006 |
 | Platform codebase | Authoritative source for expected roles, routes and transitions |
+| Project Data Standardisation initiative, September 2026 | DEF-048 through DEF-054 — found while auditing the seeded project dataset and the creation wizard against a written data standard, not by browser automation |
 
 **Important validation note**
 

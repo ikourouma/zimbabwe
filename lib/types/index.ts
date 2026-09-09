@@ -210,6 +210,14 @@ export interface InvestmentProject {
   location: string;
   province?: string;
   district?: string;
+  /** Project Data Standardisation, Phase 3 — read-only, derived from the `project_provinces`
+   *  junction (mirrors `secondaryBeneficiaryMinistryIds`/`regulatorIds` above). Resolved
+   *  automatically from `province` on every write by resolveProvinceIds
+   *  (lib/governance/province-resolver.ts) — there is no separate client input for it. `province`
+   *  itself stays the free-text display column; this is what filtering and the executive report's
+   *  provincial rollup read instead of parsing that prose. Undefined when `province` is empty or
+   *  resolves to no canonical province at all. */
+  provinceIds?: string[];
   capitalRequired?: string;
   /** Project Data Standardisation, Phase 2 — structured figures alongside the free text above.
    *  `capitalRequired` remains the source note and audit trail back to the ZIDA deck; every

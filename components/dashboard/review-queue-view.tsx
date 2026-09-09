@@ -22,7 +22,9 @@ import { projectMatchesMinistry } from "@/lib/entitlements/ministry-scope";
 import type { InvestmentProject, ProjectMessageWithProject, ProjectStatus } from "@/lib/types";
 import { STATUS_LABELS } from "@/lib/governance/project-workflow";
 import { labelForAmendableField } from "@/lib/governance/amendable-fields";
+import { displayIrr, displayNpv, displayPaybackPeriod, displayProjectedRevenue, displayRoi } from "@/lib/utils/financial-display";
 import { StatusBadge } from "@/components/projects/status-badge";
+import { CompletenessBadge, CompletenessDetail } from "@/components/projects/completeness-badge";
 import { ReviewActions } from "@/components/dashboard/review-actions";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { useProjectHistory } from "@/lib/hooks/use-project-history";
@@ -86,7 +88,10 @@ function SubmissionCard({
             </p>
           )}
         </div>
-        <StatusBadge status={project.projectStatus} />
+        <div className="flex items-center gap-2 shrink-0">
+          <CompletenessBadge project={project} />
+          <StatusBadge status={project.projectStatus} />
+        </div>
       </div>
       <p className="text-sm mb-3" style={{ color: "var(--color-text-secondary)" }}>
         {project.opportunitySummary}
@@ -133,11 +138,11 @@ function SubmissionCard({
           <Field label="Capital Required" value={project.capitalRequired} />
           <Field label="Financing Type" value={project.financingType} />
           <Field label="Readiness" value={project.projectReadiness} />
-          <Field label="IRR" value={project.irr} />
-          <Field label="NPV" value={project.npv} />
-          <Field label="ROI" value={project.roi} />
-          <Field label="Payback Period" value={project.paybackPeriod} />
-          <Field label="Projected Revenue" value={project.projectedRevenue} />
+          <Field label="IRR" value={displayIrr(project)} />
+          <Field label="NPV" value={displayNpv(project)} />
+          <Field label="ROI" value={displayRoi(project)} />
+          <Field label="Payback Period" value={displayPaybackPeriod(project)} />
+          <Field label="Projected Revenue" value={displayProjectedRevenue(project)} />
           <Field label="Direct Jobs" value={project.jobsDirect} />
           <Field label="Indirect Jobs" value={project.jobsIndirect} />
           {project.developmentImpact && project.developmentImpact.length > 0 && (
@@ -145,6 +150,9 @@ function SubmissionCard({
               <Field label="Development Impact" value={project.developmentImpact.join(", ")} />
             </div>
           )}
+          <div className="col-span-2 sm:col-span-3 pt-2" style={{ borderTop: "1px solid var(--color-sovereign-border)" }}>
+            <CompletenessDetail project={project} />
+          </div>
         </div>
       )}
 

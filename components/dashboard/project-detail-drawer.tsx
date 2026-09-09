@@ -4,6 +4,7 @@ import type { InvestmentProject, Ministry, ProjectStatus } from "@/lib/types";
 import type { WorkflowRole } from "@/lib/governance/project-workflow";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { StatusBadge } from "@/components/projects/status-badge";
+import { CompletenessBadge, CompletenessDetail } from "@/components/projects/completeness-badge";
 import { ReviewActions } from "@/components/dashboard/review-actions";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { EngagementStatusPill } from "@/components/deal-room/engagement-status-pill";
@@ -532,6 +533,7 @@ export function ProjectDetailDrawer({
                   {project.investorSubmitted && (
                     <span className="status-badge status-badge-info">Investor-Submitted Proposal</span>
                   )}
+                  {workflowRole && <CompletenessBadge project={project} />}
                 </div>
                 <div className="flex items-center gap-2">
                   {/* Clearly-visible Edit affordance (Platform Feedback Batch v3, Phase 5) — moved
@@ -799,6 +801,19 @@ export function ProjectDetailDrawer({
                   >
                     <span className="font-medium">Reviewer notes: </span>
                     {project.reviewerNotes}
+                  </div>
+                )}
+                {/* Project Data Standardisation, Phase 3 — completeness against the full data
+                 *  standard, staff-only (an investor doesn't decide publication readiness). */}
+                {workflowRole && (
+                  <div className="rounded-md p-3" style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid var(--color-sovereign-border)" }}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-[11px] uppercase tracking-wide" style={{ color: "var(--color-text-muted)" }}>
+                        Data Completeness
+                      </p>
+                      <CompletenessBadge project={project} />
+                    </div>
+                    <CompletenessDetail project={project} />
                   </div>
                 )}
               </TabsContent>

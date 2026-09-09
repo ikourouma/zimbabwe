@@ -3,6 +3,7 @@ import { db } from "@/lib/db/client";
 import {
   projectDocuments,
   projectPillars,
+  projectProvinces,
   projectRegulators,
   projectSdgs,
   projectSecondaryMinistries,
@@ -10,10 +11,11 @@ import {
   projects,
 } from "@/lib/db/schema";
 import { mapDbProjectToApp, type ProjectRelations } from "@/lib/db/mappers/project";
+import { resolveProvinceIds } from "@/lib/governance/province-resolver";
 import type { InvestmentProject } from "@/lib/types";
 
 async function loadRelations(projectId: string): Promise<ProjectRelations> {
-  const [pillars, sdgs, secondary, regulators, documents, team] = await Promise.all([
+  const [pillars, sdgs, secondary, regulators, provinceLinks, documents, team] = await Promise.all([
     db.select({ pillarId: projectPillars.pillarId }).from(projectPillars).where(eq(projectPillars.projectId, projectId)),
     db.select({ sdgId: projectSdgs.sdgId }).from(projectSdgs).where(eq(projectSdgs.projectId, projectId)),
     db
@@ -24,6 +26,10 @@ async function loadRelations(projectId: string): Promise<ProjectRelations> {
       .select({ agencyId: projectRegulators.agencyId })
       .from(projectRegulators)
       .where(eq(projectRegulators.projectId, projectId)),
+    db
+      .select({ provinceId: projectProvinces.provinceId })
+      .from(projectProvinces)
+      .where(eq(projectProvinces.projectId, projectId)),
     db.select().from(projectDocuments).where(eq(projectDocuments.projectId, projectId)),
     db.select({ userId: projectTeamAssignments.userId }).from(projectTeamAssignments).where(eq(projectTeamAssignments.projectId, projectId)),
   ]);
@@ -33,6 +39,7 @@ async function loadRelations(projectId: string): Promise<ProjectRelations> {
     sdgIds: sdgs.map((s) => s.sdgId),
     secondaryBeneficiaryMinistryIds: secondary.map((m) => m.ministryId),
     regulatorIds: regulators.map((r) => r.agencyId),
+    provinceIds: provinceLinks.map((p) => p.provinceId),
     documents,
     teamAssignedUserIds: team.map((t) => t.userId),
   };
@@ -116,6 +123,18 @@ export async function syncProjectRelations(
       await db
         .insert(projectRegulators)
         .values(partial.regulatorIds.map((agencyId) => ({ projectId, agencyId })));
+    }
+  }
+
+  // Project Data Standardisation, Phase 3 — provinceIds has no client-facing input of its own
+  // (see the doc comment on InvestmentProject.provinceIds); it's re-derived from `province`
+  // itself whenever that field is part of the write, so the junction can never drift from the
+  // free text sitting beside it.
+  if (partial.province !== undefined) {
+    await db.delete(projectProvinces).where(eq(projectProvinces.projectId, projectId));
+    const { ids } = resolveProvinceIds(partial.province);
+    if (ids.length) {
+      await db.insert(projectProvinces).values(ids.map((provinceId) => ({ projectId, provinceId })));
     }
   }
 

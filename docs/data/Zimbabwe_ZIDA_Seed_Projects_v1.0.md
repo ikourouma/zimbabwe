@@ -8,6 +8,10 @@
 
 ---
 
+> **Historical document — not the current model.** This file is the original build specification the seed data was drafted against, kept for provenance rather than as a live reference. It has visibly drifted from the platform it describes: the beneficiary-ministry mappings below are placeholder strings (§2.3, carried through every project entry in §4 as `beneficiaryMinistryPlaceholder`), while `lib/data/seed-raw.ts` has long since carried real ministry names and IDs; it also predates the structured numeric financial columns, the `record_standard` tier, and the province taxonomy binding added by the Project Data Standardisation initiative. **For the current field set a project must carry, see `docs/Project-Data-Standard.md`.** Read what follows as "what this dataset was drafted from", not "what the platform currently enforces".
+
+---
+
 ## 1. Important Implementation Notes for Cursor
 
 This file should be used to seed the first MVP project registry. It intentionally reflects Zimbabwe's existing ZIDA project catalogue so the demo shows that Afronovation is paying attention to what Zimbabwe and ZIDA have already prepared.
