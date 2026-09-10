@@ -3,6 +3,7 @@ import { handleRouteError } from "@/lib/api/route-helpers";
 import { getCurrentUser } from "@/lib/auth/session";
 import { logAuditEvent } from "@/lib/db/queries/audit";
 import { updateUserProfile } from "@/lib/db/queries/users";
+import { fetchOrgOwnership } from "@/lib/db/queries/org-team";
 
 interface Body {
   from: string;
@@ -52,6 +53,22 @@ export async function PATCH(request: Request) {
       if (body[key] !== undefined) updates[key] = typeof body[key] === "string" ? body[key]!.trim() || null : body[key];
     }
 
+    // Organisation identity is set once, canonically, by the account that created the org (see
+    // approveOrgInvite, which copies the owner's `organization` onto each teammate's profile at
+    // approval time). Without this guard a teammate could independently rename their own copy,
+    // silently drifting from the owner and from every other teammate — the field looks per-user
+    // but is meant to describe one shared organisation. Only the owner and ZIDA/platform staff may
+    // change it; anyone else uses "Request a change" (POST /api/account/profile/organization-request)
+    // instead. Owners themselves (and accounts with no org relationship at all) are unaffected.
+    let organizationBlocked = false;
+    if (updates.organization !== undefined && user.role !== "admin" && user.role !== "super_admin") {
+      const ownership = await fetchOrgOwnership(user.userId);
+      if (ownership) {
+        delete updates.organization;
+        organizationBlocked = true;
+      }
+    }
+
     const updated = await updateUserProfile(user.userId, updates);
     await logAuditEvent({
       actorUserId: user.userId,
@@ -62,7 +79,7 @@ export async function PATCH(request: Request) {
       metadata: { fields: Object.keys(updates) },
     });
 
-    return NextResponse.json(updated);
+    return NextResponse.json({ ...updated, organizationBlocked });
   } catch (error) {
     return handleRouteError(error);
   }

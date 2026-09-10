@@ -453,6 +453,7 @@ export function ProjectDetailDrawer({
   const { ministries } = useTaxonomyStore();
   const {
     name,
+    organization,
     userId: viewerUserId,
     isQualified,
     isAdmin: isAdminReal,
@@ -883,6 +884,7 @@ export function ProjectDetailDrawer({
         projects={[{ id: project.id, title: project.title }]}
         defaultProjectId={project.id}
         defaultInvestorName={name ?? ""}
+        defaultOrganization={organization ?? ""}
         canSelfInitiate
         addEngagement={addEngagement}
         publishEngagement={publishEngagement}

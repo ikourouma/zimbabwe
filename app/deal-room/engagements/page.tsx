@@ -35,7 +35,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 const VIEW_KEY = "zimbabwe.dealRoom.engagementsView";
 
 export default function DealRoomEngagementsPage() {
-  const { isAuthenticated, isQualified, role, name, ministryId, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isQualified, role, name, organization, ministryId, isLoading: authLoading } = useAuth();
   const { engagements, updateEngagementStatus, addEngagement, refresh, isLoading } = useDealRoomStore();
   const { projects, getProject } = useProjectStore();
   const [createOpen, setCreateOpen] = useState(false);
@@ -309,6 +309,7 @@ export default function DealRoomEngagementsPage() {
         onOpenChange={setCreateOpen}
         projects={projects.map((p) => ({ id: p.id, title: p.title }))}
         defaultInvestorName={name ?? ""}
+        defaultOrganization={organization ?? ""}
         canSelfInitiate={canSelfInitiate && !canManage}
         addEngagement={addEngagement}
         publishEngagement={publishEngagement}

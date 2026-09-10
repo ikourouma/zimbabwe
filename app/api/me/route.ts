@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { roleToPersona } from "@/lib/auth/role-map";
+import { fetchOrgOwnership } from "@/lib/db/queries/org-team";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -17,6 +18,11 @@ export async function GET() {
     });
   }
 
+  // Non-null only when this account is someone else's active team member — an org owner (or
+  // anyone with no org relationship at all) gets null and keeps full edit rights over their own
+  // `organization` field. Powers the read-only + "Request a change" treatment on My Profile.
+  const ownership = await fetchOrgOwnership(user.userId);
+
   return NextResponse.json({
     authenticated: true,
     userId: user.userId,
@@ -26,6 +32,7 @@ export async function GET() {
     accountStatus: user.accountStatus,
     persona: roleToPersona(user.role),
     organization: user.organization,
+    organizationOwnerName: ownership?.ownerName ?? null,
     ministryId: user.ministryId,
     ndaAcceptedAt: user.ndaAcceptedAt,
     notificationPrefs: user.notificationPrefs,

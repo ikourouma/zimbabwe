@@ -95,6 +95,28 @@ export const PERSONAS: PilotPersona[] = [
     forbidden: ["/admin", "/super-admin", "/deal-room"],
     ministryId: "min-agriculture",
   },
+  {
+    // Third and fourth ministry. Until these existed, landing.spec.ts and console-access.spec.ts
+    // had never actually signed into min-energy.admin+demo or min-industry.admin+demo — half the
+    // ministry roster was seeded and documented but never exercised by anything automated, which
+    // is exactly the gap that let a real regression on either account go unnoticed.
+    key: "ministry-energy",
+    email: "min-energy.admin+demo@zidaproject.com",
+    role: "ministry_admin",
+    label: "Ministry Official (Energy)",
+    landing: "/ministry",
+    forbidden: ["/admin", "/super-admin", "/deal-room"],
+    ministryId: "min-energy",
+  },
+  {
+    key: "ministry-industry",
+    email: "min-industry.admin+demo@zidaproject.com",
+    role: "ministry_admin",
+    label: "Ministry Official (Industry)",
+    landing: "/ministry",
+    forbidden: ["/admin", "/super-admin", "/deal-room"],
+    ministryId: "min-industry",
+  },
 ];
 
 export function personaByKey(key: string): PilotPersona {

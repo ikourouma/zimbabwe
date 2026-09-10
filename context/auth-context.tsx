@@ -14,6 +14,8 @@ interface MeResponse {
   email?: string;
   name?: string;
   organization?: string | null;
+  /** Set only when this account is someone else's active team member — see fetchOrgOwnership(). */
+  organizationOwnerName?: string | null;
   ministryId?: string | null;
   ndaAcceptedAt?: string | null;
   notificationPrefs?: NotificationPreferences;
@@ -52,6 +54,10 @@ interface AuthContextValue {
   email: string | null;
   name: string | null;
   organization: string | null;
+  /** Set only when this account is someone else's active team member — the name of the org owner
+   *  who alone (plus staff) may change the shared `organization` field. Null for owners and for
+   *  anyone with no org relationship. */
+  organizationOwnerName: string | null;
   /** Set for `government` and `ministry_admin` accounts tied to a specific beneficiary ministry —
    *  used to scope "my activity" views (see PersonalActivityReport) and, for `ministry_admin`, the
    *  entire /ministry console's data visibility (see lib/entitlements/ministry-scope.ts). Null for
@@ -95,6 +101,7 @@ const PUBLIC_DEFAULT: AuthContextValue = {
   email: null,
   name: null,
   organization: null,
+  organizationOwnerName: null,
   ministryId: null,
   ndaAcceptedAt: null,
   notificationPrefs: DEFAULT_NOTIFICATION_PREFERENCES,
@@ -139,6 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: me.email ?? null,
         name: me.name ?? null,
         organization: me.organization ?? null,
+        organizationOwnerName: me.organizationOwnerName ?? null,
         ministryId: me.ministryId ?? null,
         ndaAcceptedAt: me.ndaAcceptedAt ?? null,
         notificationPrefs: me.notificationPrefs ?? DEFAULT_NOTIFICATION_PREFERENCES,
@@ -168,6 +176,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: null,
         name: null,
         organization: null,
+        organizationOwnerName: null,
         ministryId: null,
         ndaAcceptedAt: null,
         notificationPrefs: DEFAULT_NOTIFICATION_PREFERENCES,
@@ -204,6 +213,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: null,
         name: null,
         organization: null,
+        organizationOwnerName: null,
         ministryId: null,
         ndaAcceptedAt: null,
         notificationPrefs: DEFAULT_NOTIFICATION_PREFERENCES,

@@ -463,6 +463,27 @@ export async function isProjectTeamMember(projectId: string, userId: string): Pr
   return Boolean(row);
 }
 
+/**
+ * The owner of the team `userId` belongs to, if any — the reverse of `fetchOrgInvitesByOwner`.
+ * `organization` is copied from the owner onto a teammate's own `profiles` row once, at approval
+ * time (see `approveOrgInvite`), and nothing since then has stopped a teammate from independently
+ * renaming their own copy. This is the lookup the profile PATCH route and the My Profile page use
+ * to tell "I am the org's owner" apart from "I joined someone else's org" — only the former (plus
+ * staff) may change the organisation name; the latter can only request a change from the owner.
+ */
+export async function fetchOrgOwnership(userId: string): Promise<{ ownerUserId: string; ownerName: string } | null> {
+  const rows = await db.execute<{ owner_user_id: string; owner_name: string | null; owner_email: string }>(sql`
+    SELECT oi.owner_user_id, u.name AS owner_name, u.email AS owner_email
+    FROM org_invites oi
+    JOIN neon_auth."user" u ON u.id::text = oi.owner_user_id
+    WHERE oi.invited_user_id = ${userId} AND oi.status = 'active'
+    LIMIT 1
+  `);
+  const row = rows.rows[0];
+  if (!row) return null;
+  return { ownerUserId: row.owner_user_id, ownerName: row.owner_name ?? row.owner_email };
+}
+
 /** True once `userId` is one of `ownerUserId`'s own validated (`active`) team members — the shared
  *  guard behind every "assign one of my teammates to X" mutation (proposal co-editor, engagement
  *  Delegate) so an owner can never grant access to someone else's teammate. */

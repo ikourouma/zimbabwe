@@ -61,6 +61,7 @@ export function ProfileView() {
     userId,
     avatarKey,
     organization,
+    organizationOwnerName,
     jobTitle,
     phone,
     hqAddress,
@@ -154,7 +155,14 @@ export function ProfileView() {
           <MinistryIdentityCard ministryId={ministryId} variant="designated" />
         ) : (
           <>
-            <CompanyDetailsCard form={form} setField={setField} dirty={dirty} saving={saving} onSave={saveCompany} />
+            <CompanyDetailsCard
+              form={form}
+              setField={setField}
+              dirty={dirty}
+              saving={saving}
+              onSave={saveCompany}
+              organizationOwnerName={organizationOwnerName}
+            />
 
             <ComplianceCard
               role={role}
@@ -328,12 +336,16 @@ function CompanyDetailsCard({
   dirty,
   saving,
   onSave,
+  organizationOwnerName,
 }: {
   form: CompanyForm;
   setField: (key: keyof CompanyForm) => (v: string) => void;
   dirty: boolean;
   saving: boolean;
   onSave: () => void;
+  /** Set only when this account is someone else's active team member — locks the organisation
+   *  name field and swaps it for a "Request a change" control instead. */
+  organizationOwnerName: string | null;
 }) {
   return (
     <section className="dashboard-panel p-5">
@@ -345,7 +357,11 @@ function CompanyDetailsCard({
         or file an application.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <LabeledInput label="Company / entity name" value={form.organization} onChange={setField("organization")} />
+        {organizationOwnerName ? (
+          <OrganizationRequestChangeField value={form.organization} ownerName={organizationOwnerName} />
+        ) : (
+          <LabeledInput label="Company / entity name" value={form.organization} onChange={setField("organization")} />
+        )}
         <LabeledInput label="Corporate phone" value={form.phone} onChange={setField("phone")} />
         <LabeledInput
           label="Authorized representative"
@@ -399,11 +415,13 @@ function LabeledInput({
   value,
   onChange,
   placeholder,
+  disabled,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  disabled?: boolean;
 }) {
   return (
     <div>
@@ -414,9 +432,98 @@ function LabeledInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        disabled={disabled}
         className={executiveFieldClassName}
-        style={executiveFieldStyle(!!value)}
+        style={{ ...executiveFieldStyle(!!value), ...(disabled ? { opacity: 0.6, cursor: "not-allowed" } : {}) }}
       />
+    </div>
+  );
+}
+
+/**
+ * Replaces the editable "Company / entity name" field for a team member (someone else's active
+ * org invitee). `organization` is set once, canonically, by the account that created the org —
+ * PATCH /api/account/profile silently drops any change to it from a non-owner, so an editable
+ * input here would be misleading. This shows the value read-only and offers the one action a
+ * team member actually has: ask the owner to fix it.
+ */
+function OrganizationRequestChangeField({ value, ownerName }: { value: string; ownerName: string }) {
+  const [open, setOpen] = useState(false);
+  const [note, setNote] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const send = async () => {
+    setSending(true);
+    try {
+      const res = await fetch("/api/account/profile/organization-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note: note.trim() || undefined }),
+      });
+      if (!res.ok) throw new Error("Request failed");
+      setSent(true);
+      setOpen(false);
+      toast.success(`${ownerName} has been notified.`);
+    } catch {
+      toast.error("Could not send the request. Please try again.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="sm:col-span-2">
+      <label className={executiveLabelClassName} style={{ color: "var(--color-text-muted)" }}>
+        Company / entity name
+      </label>
+      <input value={value} disabled className={executiveFieldClassName} style={{ ...executiveFieldStyle(!!value), opacity: 0.6, cursor: "not-allowed" }} />
+      <p className="text-[11px] mt-1" style={{ color: "var(--color-text-muted)" }}>
+        Only {ownerName}, your organisation&apos;s admin, or ZIDA staff can change this — it&apos;s shared by your
+        whole team.
+      </p>
+      {sent ? (
+        <p className="text-[11px] mt-1 inline-flex items-center gap-1" style={{ color: "#34d399" }}>
+          <Check className="h-3 w-3" /> Request sent to {ownerName}.
+        </p>
+      ) : open ? (
+        <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-start">
+          <input
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Optional note — what should it say instead?"
+            className={executiveFieldClassName}
+            style={executiveFieldStyle(!!note)}
+          />
+          <div className="flex gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={send}
+              disabled={sending}
+              className="px-3 py-2 rounded text-xs font-semibold bg-[#FFD300] text-black hover:brightness-95 disabled:opacity-40 transition inline-flex items-center gap-1.5 whitespace-nowrap"
+            >
+              {sending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              Send request
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="px-3 py-2 rounded text-xs font-medium border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 transition"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="mt-1.5 text-[11px] underline"
+          style={{ color: "var(--color-gold)" }}
+        >
+          Request a change
+        </button>
+      )}
     </div>
   );
 }

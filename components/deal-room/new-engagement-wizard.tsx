@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Check, Printer, Send } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -21,6 +22,10 @@ interface NewEngagementWizardProps {
   /** Pre-selects a project (e.g. when launched from that project's drawer). */
   defaultProjectId?: string;
   defaultInvestorName: string;
+  /** The investor's own organisation of record, from their verified profile — prefills the
+   *  Organisation field so a self-initiating investor never has to retype what their profile
+   *  already holds. Staff logging on someone's behalf get an empty, freely-editable field. */
+  defaultOrganization?: string;
   /** Qualified investor self-initiating: locked-name flow requiring a certification attestation to
    *  publish. Staff (admin/gov) log on an investor's behalf (editable name, no certification), but
    *  still choose Save Draft vs Publish so every engagement supports the draft lifecycle. */
@@ -48,6 +53,7 @@ export function NewEngagementWizard({
   projects,
   defaultProjectId = "",
   defaultInvestorName,
+  defaultOrganization = "",
   canSelfInitiate,
   addEngagement,
   publishEngagement,
@@ -56,7 +62,7 @@ export function NewEngagementWizard({
   const [step, setStep] = useState(0);
   const [projectId, setProjectId] = useState(defaultProjectId);
   const [investorName, setInvestorName] = useState(defaultInvestorName);
-  const [organization, setOrganization] = useState("");
+  const [organization, setOrganization] = useState(defaultOrganization);
   const [ticketSize, setTicketSize] = useState("");
   const [signatoryTitle, setSignatoryTitle] = useState("");
   const [notes, setNotes] = useState("");
@@ -69,7 +75,7 @@ export function NewEngagementWizard({
     setStep(0);
     setProjectId(defaultProjectId);
     setInvestorName(defaultInvestorName);
-    setOrganization("");
+    setOrganization(defaultOrganization);
     setTicketSize("");
     setSignatoryTitle("");
     setNotes("");
@@ -256,7 +262,21 @@ export function NewEngagementWizard({
               </div>
               <div>
                 <FieldLabel htmlFor="wiz-org">Organisation</FieldLabel>
-                <input id="wiz-org" className="dashboard-input" value={organization} onChange={(e) => setOrganization(e.target.value)} />
+                <input
+                  id="wiz-org"
+                  className="dashboard-input"
+                  value={organization}
+                  onChange={(e) => setOrganization(e.target.value)}
+                  disabled={canSelfInitiate}
+                />
+                {canSelfInitiate && (
+                  <p className="text-[11px] mt-1" style={{ color: "var(--color-text-muted)" }}>
+                    Taken from your verified account.{" "}
+                    <Link href="/deal-room/profile" className="underline" style={{ color: "var(--color-gold)" }}>
+                      Not right? Update it on your profile.
+                    </Link>
+                  </p>
+                )}
               </div>
             </>
           )}
