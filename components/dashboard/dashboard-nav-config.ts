@@ -22,6 +22,7 @@ import {
   FileArchive,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/types";
+import type { Ministry } from "@/lib/types";
 
 export type { DashboardConsole } from "@/lib/auth/console-access";
 export { consolesForRole, isConsoleAllowedForRole, consoleFromPathname } from "@/lib/auth/console-access";
@@ -150,4 +151,47 @@ export function getConsoleMeta(console: DashboardConsole, role: AccountRole | nu
     return { ...base, label: "Government Reviewer Console", badge: "Government Reviewer" };
   }
   return base;
+}
+
+/**
+ * Persona identity for the sidebar header — a specific ministry/organisation name in place of the
+ * generic `CONSOLE_META` badge ("Ministry Official", "Investor Workspace"), which never varied by
+ * *which* ministry or *which* firm a signed-in user actually belongs to. Confirmed gap raised in
+ * the September 2026 demo-prep review: a min-energy admin and a min-ict admin saw an identical
+ * header, and so did every investor firm regardless of name.
+ *
+ * `ministryId` (not the free-text `organization` string) is the authoritative source for a
+ * ministry role: `organization` is only reliably populated for the seeded +demo cohort, not for a
+ * ministry_admin created later through CreateUserModal, where it's an optional free-text field.
+ * `ministries` is the live taxonomy list from useTaxonomyStore(), so the name always matches
+ * whatever the Taxonomies console currently has on file for that ministry.
+ *
+ * admin/super_admin deliberately keep their existing fixed badge ("ZIDA Admin"/"Platform Ops") —
+ * there is exactly one ZIDA and one platform owner, so there's no cross-entity ambiguity to
+ * resolve the way there is across 4 ministries or many investor firms.
+ *
+ * Returns null when nothing resolves (e.g. a brand-new `registered` investor with no organisation
+ * on file yet) so the caller can fall back to the generic badge rather than render a blank line.
+ */
+export function resolveConsoleIdentity(
+  role: AccountRole | null,
+  organization: string | null,
+  ministryId: string | null,
+  ministries: Ministry[],
+): string | null {
+  const ministryName = ministryId ? ministries.find((m) => m.id === ministryId)?.name ?? null : null;
+
+  if (role === "ministry_admin") return ministryName;
+
+  if (role === "government") {
+    // Affiliated, never ministry-exclusive — same distinction MinistryIdentityCard's "affiliated"
+    // variant draws on the My Profile page, so a national reviewer never reads as if they were
+    // locked to one ministry's own staff.
+    if (ministryName) return `Affiliated: ${ministryName}`;
+    return organization || null;
+  }
+
+  if (role === "qualified" || role === "registered") return organization || null;
+
+  return null;
 }

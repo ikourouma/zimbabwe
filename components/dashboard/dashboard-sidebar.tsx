@@ -9,8 +9,11 @@ import {
   CONSOLE_META,
   consolesForRole,
   getConsoleMeta,
+  resolveConsoleIdentity,
   type DashboardConsole,
 } from "@/components/dashboard/dashboard-nav-config";
+import { useAuth } from "@/context/auth-context";
+import { useTaxonomyStore } from "@/context/taxonomy-store-context";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,6 +55,11 @@ export function DashboardSidebar({
   const pathname = usePathname();
   const meta = getConsoleMeta(activeConsole, role);
   const switchableConsoles = consolesForRole(role).filter((c) => c !== activeConsole);
+  const { organization, ministryId } = useAuth();
+  const { ministries } = useTaxonomyStore();
+  // Falls back to the generic meta.badge when nothing resolves (e.g. a brand-new registered
+  // investor with no organisation on file yet), so the header line is never blank.
+  const identity = resolveConsoleIdentity(role, organization, ministryId, ministries) ?? meta.badge;
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -70,9 +78,9 @@ export function DashboardSidebar({
             <div
               className="flex h-9 w-9 mx-auto items-center justify-center rounded-md text-sm font-bold text-white"
               style={{ backgroundColor: "rgba(0,100,0,0.3)", border: "1px solid var(--color-sovereign-border)" }}
-              title={meta.label}
+              title={`${meta.label} — ${identity}`}
             >
-              {meta.badge.slice(0, 1)}
+              {identity.slice(0, 1)}
             </div>
           ) : switchableConsoles.length > 0 ? (
             <DropdownMenu>
@@ -82,10 +90,10 @@ export function DashboardSidebar({
                   className="w-full flex items-center justify-between gap-2 rounded-md px-3 py-2 text-left transition-colors hover:bg-white/5"
                   style={{ border: "1px solid var(--color-sovereign-border)" }}
                 >
-                  <span>
+                  <span className="min-w-0">
                     <span className="block text-sm font-semibold text-white">{meta.label}</span>
-                    <span className="block text-[11px]" style={{ color: "var(--color-text-muted)" }}>
-                      {meta.badge}
+                    <span className="block text-[11px] truncate" style={{ color: "var(--color-text-muted)" }} title={identity}>
+                      {identity}
                     </span>
                   </span>
                   <ChevronsUpDown className="h-3.5 w-3.5 shrink-0" style={{ color: "var(--color-text-muted)" }} />
@@ -108,10 +116,10 @@ export function DashboardSidebar({
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div>
+            <div className="min-w-0">
               <span className="block text-sm font-semibold text-white">{meta.label}</span>
-              <span className="block text-[11px]" style={{ color: "var(--color-text-muted)" }}>
-                {meta.badge}
+              <span className="block text-[11px] truncate" style={{ color: "var(--color-text-muted)" }} title={identity}>
+                {identity}
               </span>
             </div>
           )}
