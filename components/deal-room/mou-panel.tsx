@@ -112,6 +112,7 @@ export function MouPanel({ engagementId, investorName, engagementOwnerId, engage
         className="inline-flex items-center gap-0.5 text-[10px] rounded px-1 py-0.5 transition-colors hover:bg-white/10"
         style={{ color: count > 0 ? "var(--color-gold)" : "var(--color-text-muted)" }}
         title="View/add review comments on this field"
+        aria-label={count > 0 ? `View or add review comments (${count} unresolved)` : "View or add review comments"}
       >
         <MessageSquare className="h-3 w-3" />
         {count > 0 && count}
@@ -299,7 +300,7 @@ export function MouPanel({ engagementId, investorName, engagementOwnerId, engage
 
       {/* Dual-approval status */}
       {!isExecuted && (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <ApprovalCard label="Investor" approvedAt={mou.investorApprovedAt} approvedBy={mou.investorApprovedBy} />
           <ApprovalCard label="ZIDA" approvedAt={mou.zidaApprovedAt} approvedBy={mou.zidaApprovedBy} />
         </div>
@@ -320,7 +321,7 @@ export function MouPanel({ engagementId, investorName, engagementOwnerId, engage
 
         {canEdit && isDrafting ? (
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {CONTENT_FIELDS.map((f) => (
                 <div key={f.key}>
                   <label className="text-xs font-medium mb-1 flex items-center gap-1" style={{ color: "var(--color-text-muted)" }}>
@@ -335,7 +336,7 @@ export function MouPanel({ engagementId, investorName, engagementOwnerId, engage
                 </div>
               ))}
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {PROSE_FIELDS.map((f) => (
                 <div key={f.key}>
                   <label className="text-xs font-medium mb-1 flex items-center gap-1" style={{ color: "var(--color-text-muted)" }}>
@@ -453,7 +454,7 @@ export function MouPanel({ engagementId, investorName, engagementOwnerId, engage
         <div className="space-y-2 rounded-lg p-3" style={{ backgroundColor: "rgba(255,211,0,0.06)", border: "1px solid rgba(255,211,0,0.25)" }}>
           <p className="text-[11px] uppercase tracking-wide" style={{ color: "#fde047" }}>Signature</p>
           {isExecuted && mou.signatureMetadata ? (
-            <div className="grid grid-cols-2 gap-3 text-sm" style={{ color: "var(--color-text-secondary)" }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm" style={{ color: "var(--color-text-secondary)" }}>
               <div>
                 <p className="text-white font-medium">{mou.signatureMetadata.investorSignedBy}</p>
                 <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>{mou.signatureMetadata.investorSignedRole} — {mou.signatureMetadata.investorSignedDate}</p>
@@ -463,7 +464,7 @@ export function MouPanel({ engagementId, investorName, engagementOwnerId, engage
                 <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>{mou.signatureMetadata.zidaSignedRole} — {mou.signatureMetadata.zidaSignedDate}</p>
               </div>
               {mou.signatureMetadata.methodOrLocation && (
-                <p className="col-span-2 text-xs italic" style={{ color: "var(--color-text-muted)" }}>
+                <p className="sm:col-span-2 text-xs italic" style={{ color: "var(--color-text-muted)" }}>
                   {mou.signatureMetadata.methodOrLocation}
                 </p>
               )}
@@ -591,7 +592,7 @@ export function MouPanel({ engagementId, investorName, engagementOwnerId, engage
             No live e-signature capture yet — record who signed, in what capacity, when, and where/how the wet or
             digital signature took place off-platform.
           </p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-medium mb-1 block" style={{ color: "var(--color-text-muted)" }}>Investor Signatory</label>
               <input className="dashboard-input" value={signature.investorSignedBy ?? ""} onChange={(e) => setSignature({ ...signature, investorSignedBy: e.target.value })} />
@@ -616,7 +617,7 @@ export function MouPanel({ engagementId, investorName, engagementOwnerId, engage
               <label className="text-xs font-medium mb-1 block" style={{ color: "var(--color-text-muted)" }}>ZIDA Signed Date</label>
               <input type="date" className="dashboard-input" value={signature.zidaSignedDate ?? ""} onChange={(e) => setSignature({ ...signature, zidaSignedDate: e.target.value })} />
             </div>
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <label className="text-xs font-medium mb-1 block" style={{ color: "var(--color-text-muted)" }}>Method / Location</label>
               <input
                 className="dashboard-input"

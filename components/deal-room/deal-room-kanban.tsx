@@ -183,6 +183,7 @@ export function DealRoomKanban({
                               onMessageClick(project);
                             }}
                             title="Ask ZIDA a question"
+                            aria-label="Ask ZIDA a question"
                             className="rounded-full p-1 hover:bg-white/10 transition-colors shrink-0"
                           >
                             <MessageCircle className="h-3.5 w-3.5" style={{ color: "var(--color-text-muted)" }} />

@@ -259,6 +259,11 @@ function AmendmentCard({
 
       {fields.length > 0 && (
         <div className="rounded-lg overflow-hidden mb-3" style={{ border: "1px solid var(--color-sovereign-border)" }}>
+          {/* The outer overflow-hidden above clips to the rounded border; without this inner
+              overflow-x-auto wrapper, a narrow viewport with long Current/Proposed values had no
+              scroll mechanism at all and the table content was simply cut off (whitespace-nowrap
+              on the field name column made this worse). */}
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr style={{ backgroundColor: "rgba(255,255,255,0.04)" }}>
@@ -291,6 +296,7 @@ function AmendmentCard({
               })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

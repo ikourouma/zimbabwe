@@ -25,7 +25,11 @@
     "e2e:report": "tsx node_modules/@playwright/test/cli.js show-report e2e-report",
     "screenshots": "tsx --env-file=.env.local node_modules/@playwright/test/cli.js test --grep @capture",
     "docs:build": "tsx scripts/build-docs.ts",
-    "check:encoding": "tsx scripts/repair-mojibake.ts"
+    "check:encoding": "tsx scripts/repair-mojibake.ts",
+    "audit:lighthouse": "tsx scripts/audit-lighthouse.ts",
+    "audit:mobile": "tsx --env-file=.env.local node_modules/@playwright/test/cli.js test --project=mobile audit-layout",
+    "audit:errors": "tsx --env-file=.env.local node_modules/@playwright/test/cli.js test --project=mobile audit-errors",
+    "audit:a11y": "tsx --env-file=.env.local node_modules/@playwright/test/cli.js test --project=mobile audit-a11y"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1091.0",
@@ -57,6 +61,7 @@
     "tailwind-merge": "^3.3.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/eslintrc": "^3.3.1",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.1.7",

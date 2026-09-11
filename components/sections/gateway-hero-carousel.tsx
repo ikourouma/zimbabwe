@@ -10,6 +10,17 @@ import type { HomeHeroContent, HomeHeroSlide } from "@/lib/types";
 
 export function GatewayHeroCarousel() {
   const { locale, messages: t } = useLocale();
+  // The very first paint must not start at opacity: 0. `hasMounted` is false during the initial
+  // render (before any effect has run), so the first slide's motion.div reads `initial={false}`
+  // at ITS mount and renders already-visible — the LCP candidate (the headline inside) is then
+  // paintable as soon as HTML/CSS arrives, instead of waiting on a mount + 0.8s fade. Framer only
+  // reads `initial` once, at mount, so flipping this to true afterwards does not retroactively
+  // animate the already-visible first slide — it only takes effect for slides mounted after this
+  // point, i.e. every slide change from here on keeps its intended cross-fade.
+  const [hasMounted, setHasMounted] = useState(false);
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
   // Phase 1 marketing CMS override (Super Admin → Settings → Page Content) — English only for
   // now; other locales keep showing their translated defaults until this is extended.
   const [override, setOverride] = useState<HomeHeroSlide[] | null>(null);
@@ -66,7 +77,7 @@ export function GatewayHeroCarousel() {
           <AnimatePresence mode="wait">
             <motion.div
               key={slide.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={hasMounted ? { opacity: 0, y: 20 } : false}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
@@ -87,7 +98,10 @@ export function GatewayHeroCarousel() {
                     width={64}
                     height={64}
                     className="object-contain"
-                    priority
+                    // Not `priority`: the header logo (SiteLogoLockup) already preloads this same
+                    // 97KB PNG above the fold, so a second priority preload of the identical file
+                    // is a wasted preload slot rather than a genuine LCP improvement — this icon,
+                    // inside the hero card, is not the page's LCP candidate (the headline text is).
                     sizes="64px"
                   />
                 </div>

@@ -590,7 +590,7 @@ export function ProjectDetailDrawer({
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field label="Project Owner" value={project.projectOwner} />
                   <Field label="Location" value={project.location} />
                   <Field label="Capital Required" value={project.capitalRequired} />

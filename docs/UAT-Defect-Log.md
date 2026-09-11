@@ -92,6 +92,14 @@
 | DEF-052 | Twelve multi-province projects had no queryable link to the province taxonomy | Medium | Closed |
 | DEF-053 | The eight-field submission check never reached the approved-to-published step at all | High | Closed |
 | DEF-054 | "Not disclosed" conflated three different reasons a figure could be missing | Low | Closed |
+| DEF-055 | The NDA gate had no way to reach its own accept button on a phone | Critical | Closed |
+| DEF-056 | An amendment's own comparison table had no way to be read on a phone | High | Closed |
+| DEF-057 | Two-column forms left half their fields unreadable on a phone | Medium | Closed |
+| DEF-058 | Two icon-only actions had no name a screen reader could announce | Medium | Closed |
+| DEF-059 | The hero card's map icon competed with the header logo for the same preload slot | Low | Closed |
+| DEF-060 | Eleven visible labels in the engagement wizard were not attached to their fields | High | Closed |
+| DEF-061 | The hero headline waited on its own entrance animation before it could be measured as painted | Medium | Closed |
+| DEF-062 | The SDG badge colours the platform must use fail contrast against white text | Low | Open (needs a design decision) |
 
 ## 3. Closed Defects
 
@@ -505,7 +513,77 @@ The Financial Performance panel on the project detail page showed the identical 
 
 **Fix.** The withheld case already had its own visual treatment (a blurred, locked placeholder) and was unaffected. The other two now read "Not stated in source catalogue" for a `catalogue_seed` record and "Not yet supplied" for a `full_template` record, selected from the project's own `record_standard`.
 
+### DEF-055 — The NDA gate had no way to reach its own accept button on a phone
+
+**Severity:** Critical. **Status:** Closed, verified against a clean local build; awaiting deploy.
+
+Radix locks page scroll while a dialog is open, and [components/ui/dialog.tsx](../components/ui/dialog.tsx) positioned its content as a single fixed, padded panel with no `max-height` and no scroll mechanism of its own. Any dialog taller than the viewport simply ran off both edges of the screen with nothing to scroll — and the tallest, most consequential dialog on the platform is the Deal Room's NDA clickwrap: clauses, KYC fields, and the accept button a qualified investor must reach before doing anything else in the Deal Room. On a phone, that button was off-screen and unreachable. This is the gate the whole pilot's confidentiality position rests on, on the device class most external stakeholders will actually use.
+
+**Fix.** `DialogContent` now renders an unscrolled outer frame — capped at `calc(100svh - 2rem)`, holding only the close button, which must stay reachable regardless of scroll position — around an inner `overflow-y-auto` div that carries the padding and does the scrolling. `svh` rather than `dvh` deliberately: `dvh` recalculates as mobile browser chrome shows and hides, which would resize the dialog under the user's thumb mid-scroll on iOS. A dialog that already fits the viewport is visually unchanged. Checked against all 27 existing `DialogContent` call sites; several already carried their own `max-h-[85vh] overflow-y-auto` as a workaround for this exact defect, which is now harmless redundancy rather than a conflict.
+
+### DEF-056 — An amendment's own comparison table had no way to be read on a phone
+
+**Severity:** High. **Status:** Closed, verified against a clean local build; awaiting deploy.
+
+The Current/Proposed comparison table on an amendment card ([components/dashboard/review-queue-view.tsx](../components/dashboard/review-queue-view.tsx)) sat inside a container whose only overflow handling was `overflow-hidden` — there to clip content to the card's rounded border, not to scroll it. The field-name column carried `whitespace-nowrap`. On a narrow viewport the combination simply cut the table off rather than making it scrollable: a reviewer comparing what changed in a governance amendment could not read what the table itself was reporting.
+
+**Fix.** Added an inner `overflow-x-auto` wrapper around the table, inside the existing bordered container. The border and rounded corners are unaffected; the table itself now scrolls horizontally instead of clipping.
+
+### DEF-057 — Two-column forms left half their fields unreadable on a phone
+
+**Severity:** Medium. **Status:** Closed, verified against a clean local build; awaiting deploy.
+
+Five `grid-cols-2` layouts — the MOU panel's dual-approval status, content and prose fields, signature display and signature-capture dialog ([components/deal-room/mou-panel.tsx](../components/deal-room/mou-panel.tsx)), the Create User dialog's name and organisation fields ([components/dashboard/create-user-modal.tsx](../components/dashboard/create-user-modal.tsx)), and the project detail drawer's Owner/Location row ([components/dashboard/project-detail-drawer.tsx](../components/dashboard/project-detail-drawer.tsx)) — forced two columns at every viewport width, including a phone. Labels and values that fit comfortably at desktop width were compressed into illegibility below.
+
+**Fix.** All five converted to `grid-cols-1 sm:grid-cols-2`, one column below the `sm` breakpoint. Two `col-span-2` children inside the MOU panel (a signature method/location note and its equivalent capture field) were re-prefixed to `sm:col-span-2` so they do not force a two-column-wide element back into a single-column layout.
+
+### DEF-058 — Two icon-only actions had no name a screen reader could announce
+
+**Severity:** Medium. **Status:** Closed, verified against a clean local build; awaiting deploy.
+
+The Deal Room kanban's "ask ZIDA a question" button and the MOU panel's per-field comment button ([components/deal-room/deal-room-kanban.tsx](../components/deal-room/deal-room-kanban.tsx), [components/deal-room/mou-panel.tsx](../components/deal-room/mou-panel.tsx)) each carried a `title` tooltip but no `aria-label`, and rendered nothing but an icon. A `title` is a mouse-hover affordance; it is not reliably exposed as an accessible name. Flagged by an axe-core sweep as a `[critical]` finding on the comment button specifically.
+
+**Fix.** Added `aria-label` to both — a fixed label on the kanban button, and one on the comment button that also reports the unresolved-comment count where there is one, matching what a sighted user already sees from the badge.
+
+### DEF-059 — The hero card's map icon competed with the header logo for the same preload slot
+
+**Severity:** Low. **Status:** Closed, verified against a clean local build; awaiting deploy.
+
+The 64×64 Zimbabwe map icon inside the homepage hero card ([components/sections/gateway-hero-carousel.tsx](../components/sections/gateway-hero-carousel.tsx)) carried `priority`, and so does the header logo — the same 97KB PNG file, requested twice with a preload hint. A page has a limited number of priority preload slots before they stop helping and start competing with genuinely above-the-fold content for bandwidth; this hero icon is not the page's actual LCP candidate (the headline text is), so its `priority` hint was pure waste.
+
+**Fix.** Removed. The header logo keeps its `priority`, this hero copy of the same file does not.
+
+### DEF-060 — Eleven visible labels in the engagement wizard were not attached to their fields
+
+**Severity:** High. **Status:** Closed, verified against a clean local build; awaiting deploy.
+
+Every field in the strategic-partnerships engagement wizard ([components/strategic-partnerships/engagement-wizard.tsx](../components/strategic-partnerships/engagement-wizard.tsx)) rendered a real `<label>` element sitting visually above its input — but the shared `Label` helper never wrote `htmlFor`, so none of the eleven text/select/textarea fields (first/last name, email, organisation, phone, HQ address, business registration ID, website URL, investor type, ministry represented, objective) were programmatically associated with the control they describe. A sighted user sees a labelled form; a screen-reader user hears an input with no name. This is the entry point for an investor applying to engage ZIDA at all — an axe-core sweep caught two of the eleven as a `[critical] label` failure on one page; reading the shared helper showed the same defect on every field the wizard has.
+
+**Fix.** `Label` now accepts and forwards `htmlFor`; all eleven fields gained a matching `id`. The five button-group fields (Engagement Type, Ticket Size, Nature of Engagement, Partnership Type, Sector(s)) were left as-is — a button carries its own accessible name from its own text, and is not subject to the form-label rule to begin with.
+
+### DEF-061 — The hero headline waited on its own entrance animation before it could be measured as painted
+
+**Severity:** Medium. **Status:** Closed, verified against a clean local build; awaiting deploy.
+
+The homepage hero's headline — the page's Largest Contentful Paint candidate — sat inside a `framer-motion` element whose `initial` state was `{ opacity: 0, y: 20 }` on every mount, including the very first one. A browser does not count an element as painted for LCP purposes until it is visible, so the first paint of the platform's most-visited page was gated behind a mount plus an 800ms fade, on every visit, for content that had no reason to animate in the first time it is ever shown.
+
+**Fix.** Added a `hasMounted` flag, false only during the render before any effect has run, and made the first slide's `initial` conditional on it (`false` — i.e. render already-visible — on first paint; the original fade for every slide change after). `framer-motion` reads `initial` once, at an element's own mount, so this does not retroactively animate the already-visible first slide; every subsequent slide transition keeps its intended cross-fade unchanged.
+
+**Verified against a clean local `next build && next start`, comparing three pages before and after so unrelated run-to-run variance would be visible as a control.** Two pages with no code change moved by amounts that set the noise floor for this measurement: strategic-partnerships mobile LCP moved 4,604ms → 4,854ms and projects desktop LCP moved 904ms → 938ms, neither of which involves this component. Home desktop LCP — same page, same fix, far less throttled — moved 1,323ms → 865ms, a 458ms drop more than ten times the ~30ms noise floor seen on desktop elsewhere, which is a real signal the fix is working. Home mobile LCP moved only 5,660ms → 5,536ms, a change inside the ~250ms noise band observed on unrelated mobile pages, so no confident mobile improvement can be claimed from this measurement alone. Full numbers in [docs/audit/lighthouse-summary.md](audit/lighthouse-summary.md), pre-fix numbers preserved in [docs/audit/baseline/](audit/baseline/).
+
+**What this does and does not mean.** The fix is real, correct, and — on the evidence available — helps. It is not, on its own, the reason mobile Lighthouse performance sits at 51–58 rather than the 76 Hostinger reported. Under Lighthouse's throttled mobile CPU/network profile the 800ms this fix removes is a small fraction of a 5+ second LCP; something else is the dominant cost on mobile specifically. The most likely candidate, and the reason it was not chased down here, is the same client-side provider fetch pattern already flagged in DEF-007 and PB-002 — see PB-010, logged rather than fixed, per the standing instruction not to start work on that surface this close to the demo.
+
 ## 4. Open Defects
+
+### DEF-062 — The SDG badge colours the platform must use fail contrast against white text
+
+**Severity:** Low. **Status:** Open, and deliberately so.
+
+An axe-core sweep of the public project registry flagged `[serious] color-contrast` against two SDG badge background colours, repeated across many badge instances on `strategic-alignment` and `projects`. The colours themselves ([lib/data/taxonomies.ts](../lib/data/taxonomies.ts), e.g. `#BF8B2E`, `#FD9D24`) are the United Nations' own standardised SDG programme palette, not a value this platform chose.
+
+It was left alone rather than swept up with the other contrast-adjacent fixes because changing an internationally standardised brand colour is not a contained CSS tweak — it is a decision about whether to deviate from the SDG visual identity, which is not this audit's call to make. Recorded here on the same footing as DEF-047: a real defect, correctly not fixed without the party who owns the decision.
+
+**What closing it requires:** a decision — darken the badge text instead of the SDG colour, add an outline/shadow to the badge, or accept the deviation from the standard palette for accessibility reasons — from ZIDA or Afronovation design, not an implementation detail.
 
 ### DEF-009 — Sign-in page down for real browsers on a pre-fix cached shell
 
@@ -558,6 +636,8 @@ It is a seeding artifact: the account was created directly at the target role ra
 
 Every home page load requests a hero content block and receives a not-found response. The page renders correctly from its built-in default, so there is no visible impact, but it produces a console error on the platform's most-visited page and one an observant stakeholder may notice and report.
 
+**Update, confirmed platform-wide by a console-error crawl of all 90 pages/persona combinations (September 2026).** The same pattern exists for an about-page content block, and — for both blocks — the request fires on every page load regardless of whether that page has anything to do with home or about content, including admin screens like `superadmin/settings`. It appears the CMS-override fetch is wired at a shared layout level rather than only on the pages that actually render the overridable content. Still Low: every instance renders correctly from its built-in default, and the fix (scope the fetch to the pages that use it, or cache the 404 so it is not repeated) is small and contained — it simply was not in scope for this pass, which prioritised defects with a user-visible consequence.
+
 ### DEF-008 — Local development server cannot complete sign-in
 
 **Severity:** Low. **Status:** Open.
@@ -579,7 +659,8 @@ It was left alone rather than swept up with DEF-043 because it is not a label. I
 | Observation | Note |
 | --- | --- |
 | Demo popup, announcement bar and consent banner | Raised to DEF-011 after the popup was found in captured screenshots rather than merely predicted to be a risk. |
-| Sign-in page requests restricted endpoints | The signed-out sign-in page requests engagement and inquiry data, receiving unauthorised responses, then repeats them as a registered user and receives forbidden responses. Correctly refused in both cases, so this is wasted work rather than an exposure. |
+| Sign-in page requests restricted endpoints | **Superseded by the September 2026 console-error crawl below — was not sign-in-page-specific.** |
+| Every persona console requests data it is not entitled to see, and is correctly refused | A console-error crawl of all 90 pages/persona combinations found the same shape of 401/403 on `/api/engagements`, `/api/inquiries`, `/api/audit-logs` and `/api/users` on essentially every authenticated page, not only sign-in — the client-side providers that back the dashboard shell (`SiteSettingsProvider`, `TaxonomyStoreProvider`, `ProjectStoreProvider`, `LeadCaptureProvider`, `DealRoomStoreProvider`) each fetch on mount regardless of whether the signed-in role is entitled to the endpoint, and the server correctly refuses every one. Zero `pageerror`, zero `requestfailed` across all 90 pages — this is wasted work and console noise, not an access-control gap. Logged as PB-010 rather than fixed: the fix touches the same providers `LeadCaptureProvider` depends on, which sits in front of the investor application entry point, too close to the demo to safely change and fully re-verify. |
 
 ## 6. Verification Coverage
 
@@ -591,8 +672,11 @@ It was left alone rather than swept up with DEF-043 because it is not a label. I
 | Fifteen forbidden console navigations are turned away | Browser | Pass |
 | Authorization spine over HTTP | Smoke suite | Pass |
 | Business workflow state | API suite | Not yet built |
+| No horizontal overflow at a mobile viewport, across all 90 page/persona combinations | Browser (`audit-layout`) | Pass |
+| No JS exceptions or failed network requests, across all 90 page/persona combinations | Browser (`audit-errors`) | 90/90 individual pages pass; one aggregate assertion fails on 182 findings, all of which are the already-tracked DEF-007/PB-010 pattern above — see Observations |
+| Zero serious/critical WCAG violations, 15 public pages + one console landing per persona | Browser (`axe-core`) | Pass, after DEF-060/DEF-062 (DEF-062 remains open — see §4) |
 
-The fifteen forbidden-console assertions are the coverage that previously did not exist. The smoke suite could only prove that no console content was served; it could not prove the user was taken somewhere they were entitled to be.
+The fifteen forbidden-console assertions are the coverage that previously did not exist. The smoke suite could only prove that no console content was served; it could not prove the user was taken somewhere they were entitled to be. The three rows above are the September 2026 UI/UX audit's coverage, described in full in [docs/UI-UX-Audit.md](UI-UX-Audit.md).
 
 ## 7. Source Notes
 
@@ -603,6 +687,7 @@ The fifteen forbidden-console assertions are the coverage that previously did no
 | Direct database read of pilot account state | DEF-006 |
 | Platform codebase | Authoritative source for expected roles, routes and transitions |
 | Project Data Standardisation initiative, September 2026 | DEF-048 through DEF-054 — found while auditing the seeded project dataset and the creation wizard against a written data standard, not by browser automation |
+| UI/UX audit crawl, September 2026 | DEF-055 through DEF-062 and the Observations update above — mobile-viewport layout sweep, console/network error crawl, and axe-core accessibility sweep across all 90 page/persona combinations, plus a local Lighthouse before/after for the hero fix. Methodology and full findings in [docs/UI-UX-Audit.md](UI-UX-Audit.md) |
 
 **Important validation note**
 

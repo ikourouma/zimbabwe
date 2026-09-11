@@ -141,9 +141,9 @@ function toWizardPayload(form: FormState, objectiveOverride?: string): InquiryWi
   };
 }
 
-function Label({ children }: { children: React.ReactNode }) {
+function Label({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
   return (
-    <label className="block text-[10px] font-mono tracking-widest uppercase mb-1.5" style={{ color: "var(--color-text-muted)" }}>
+    <label htmlFor={htmlFor} className="block text-[10px] font-mono tracking-widest uppercase mb-1.5" style={{ color: "var(--color-text-muted)" }}>
       {children}
     </label>
   );
@@ -478,8 +478,9 @@ export function EngagementWizard() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label>First Name</Label>
+                <Label htmlFor="ew-first-name">First Name</Label>
                 <input
+                  id="ew-first-name"
                   value={form.firstName}
                   onChange={(e) => update({ firstName: e.target.value })}
                   className={inputClass}
@@ -487,8 +488,9 @@ export function EngagementWizard() {
                 />
               </div>
               <div>
-                <Label>Last Name</Label>
+                <Label htmlFor="ew-last-name">Last Name</Label>
                 <input
+                  id="ew-last-name"
                   value={form.lastName}
                   onChange={(e) => update({ lastName: e.target.value })}
                   className={inputClass}
@@ -499,8 +501,9 @@ export function EngagementWizard() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label>Email</Label>
+                <Label htmlFor="ew-email">Email</Label>
                 <input
+                  id="ew-email"
                   type="email"
                   value={form.email}
                   onChange={(e) => update({ email: e.target.value })}
@@ -510,8 +513,9 @@ export function EngagementWizard() {
                 />
               </div>
               <div>
-                <Label>Organisation</Label>
+                <Label htmlFor="ew-organization">Organisation</Label>
                 <input
+                  id="ew-organization"
                   value={form.organization}
                   onChange={(e) => update({ organization: e.target.value })}
                   placeholder="Fund / Ministry / Firm"
@@ -522,8 +526,9 @@ export function EngagementWizard() {
             </div>
 
             <div>
-              <Label>{form.engagementType === "investor" ? "Phone" : "Phone (optional)"}</Label>
+              <Label htmlFor="ew-phone">{form.engagementType === "investor" ? "Phone" : "Phone (optional)"}</Label>
               <input
+                id="ew-phone"
                 type="tel"
                 value={form.phone}
                 onChange={(e) => update({ phone: e.target.value })}
@@ -541,8 +546,9 @@ export function EngagementWizard() {
                 </p>
                 <div className="space-y-4">
                   <div>
-                    <Label>HQ Address</Label>
+                    <Label htmlFor="ew-hq-address">HQ Address</Label>
                     <input
+                      id="ew-hq-address"
                       value={form.hqAddress}
                       onChange={(e) => update({ hqAddress: e.target.value })}
                       placeholder="Registered headquarters address"
@@ -552,8 +558,9 @@ export function EngagementWizard() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label>Business Registration ID</Label>
+                      <Label htmlFor="ew-business-registration-id">Business Registration ID</Label>
                       <input
+                        id="ew-business-registration-id"
                         value={form.businessRegistrationId}
                         onChange={(e) => update({ businessRegistrationId: e.target.value })}
                         placeholder="Company / fund registration number"
@@ -562,8 +569,9 @@ export function EngagementWizard() {
                       />
                     </div>
                     <div>
-                      <Label>Corporate Website</Label>
+                      <Label htmlFor="ew-website-url">Corporate Website</Label>
                       <input
+                        id="ew-website-url"
                         type="url"
                         value={form.websiteUrl}
                         onChange={(e) => update({ websiteUrl: e.target.value })}
@@ -593,8 +601,9 @@ export function EngagementWizard() {
             {!isProjectLinked && form.engagementType === "investor" && (
               <>
                 <div>
-                  <Label>Investor Profile</Label>
+                  <Label htmlFor="ew-investor-type">Investor Profile</Label>
                   <select
+                    id="ew-investor-type"
                     value={form.investorType}
                     onChange={(e) => update({ investorType: e.target.value })}
                     className={cn(inputClass, "appearance-none")}
@@ -633,8 +642,9 @@ export function EngagementWizard() {
             {!isProjectLinked && form.engagementType === "government_dfi" && (
               <>
                 <div>
-                  <Label>Ministry or Institution Represented</Label>
+                  <Label htmlFor="ew-ministry-represented">Ministry or Institution Represented</Label>
                   <input
+                    id="ew-ministry-represented"
                     value={form.ministryRepresented}
                     onChange={(e) => update({ ministryRepresented: e.target.value })}
                     placeholder="e.g. Ministry of Finance, Economic Development and Investment Promotion"
@@ -716,8 +726,9 @@ export function EngagementWizard() {
         {step === 3 && (
           <div className="space-y-6">
             <div>
-              <Label>Investment / Partnership Objective</Label>
+              <Label htmlFor="ew-objective">Investment / Partnership Objective</Label>
               <textarea
+                id="ew-objective"
                 rows={4}
                 value={form.objective}
                 onChange={(e) => update({ objective: e.target.value })}

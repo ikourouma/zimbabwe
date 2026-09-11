@@ -34,7 +34,16 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg p-6 shadow-2xl focus:outline-none",
+        // Radix locks body scroll while a dialog is open and this panel is `fixed`, so content
+        // taller than the viewport was previously unreachable — no scrollbar, nothing to scroll.
+        // On a phone, a dialog whose content exceeds the viewport (e.g. the NDA gate for a
+        // qualified investor, clauses + KYC fields + accept button) had no way to reach the
+        // controls below the fold. The outer frame stays unscrolled and unpadded — it only holds
+        // the max-height and the close button, which must stay reachable regardless of scroll
+        // position — and the inner div below carries the padding and the scroll. `svh` rather
+        // than `dvh`: `dvh` recalculates as mobile browser chrome hides/shows, which would resize
+        // the dialog mid-scroll on iOS. A dialog that already fits the viewport is unaffected.
+        "fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100svh-2rem)] w-full max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-lg shadow-2xl focus:outline-none",
         className
       )}
       style={{
@@ -43,8 +52,9 @@ const DialogContent = React.forwardRef<
       }}
       {...props}
     >
-      {children}
-      {/* hideClose is used by non-dismissible gates (e.g. the Deal Room NdaGate clickwrap). */}
+      <div className="min-h-0 flex-1 overflow-y-auto p-6">{children}</div>
+      {/* hideClose is used by non-dismissible gates (e.g. the Deal Room NdaGate clickwrap).
+          Sits in the unscrolled outer frame, so it stays reachable at every scroll position. */}
       {!hideClose && (
         <DialogPrimitive.Close
           className="absolute right-4 top-4 rounded-full p-1.5 transition-colors hover:bg-white/10 focus:outline-none"

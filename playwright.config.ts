@@ -42,6 +42,21 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } },
       dependencies: ["setup"],
+      // Audit specs run only on the "mobile" project below. Excluding them here (rather than
+      // relying on the mobile project's testMatch alone) means a future rename can't accidentally
+      // make an audit-*.spec.ts run twice, once at each viewport, silently doubling report noise —
+      // or worse, make a *.spec.ts intended for chromium only start matching "mobile" too.
+      testIgnore: /audit-.*\.spec\.ts/,
+    },
+    {
+      name: "mobile",
+      // Pixel 5 (393x851, touch, deviceScaleFactor 2.75) is the read-only audit viewport. This
+      // project must never match screenshots.spec.ts or workflows.spec.ts (@capture): those write
+      // to docs/screenshots/, which is gitignored and has no git-based undo, and every image in the
+      // stakeholder walkthrough guides was captured at the chromium project's fixed 1440x900.
+      use: { ...devices["Pixel 5"] },
+      dependencies: ["setup"],
+      testMatch: /audit-.*\.spec\.ts/,
     },
   ],
 });
