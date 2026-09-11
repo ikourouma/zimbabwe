@@ -7,6 +7,7 @@ import type { LeadInquiry } from "@/lib/types";
 import { INQUIRY_STATUS_LABELS, INQUIRY_STATUS_ORDER, INQUIRY_TYPE_ORDER } from "@/lib/governance/inquiry-filters";
 import { formatInquiryType, isInquiryKycComplete } from "@/lib/utils/inquiry-display";
 import { DataTable } from "@/components/dashboard/data-table";
+import { MobileStatusBoard } from "@/components/dashboard/mobile-status-board";
 import { cn } from "@/lib/utils";
 
 /** Same status colors the old master-detail page used — kept as the one shared source now that
@@ -84,36 +85,47 @@ export function InquiryKanbanView({ inquiries, selectedId, onCardClick }: Inquir
   );
 
   return (
-    <div className="overflow-x-auto pb-2">
-      <div className="grid grid-cols-4 gap-3 min-w-[880px] lg:min-w-0">
-        {columns.map(({ status, items }) => (
-          <div
-            key={status}
-            className="min-w-[180px] rounded-lg p-3"
-            style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid var(--color-sovereign-border)" }}
-          >
-            <div className="mb-3 flex items-center justify-between gap-1">
-              <p
-                className="text-xs font-semibold uppercase tracking-wide truncate"
-                style={{ color: "var(--color-text-muted)" }}
-                title={INQUIRY_STATUS_LABELS[status]}
-              >
-                {INQUIRY_STATUS_LABELS[status]}
-              </p>
-              <span className="text-xs shrink-0" style={{ color: "var(--color-text-muted)" }}>
-                {items.length}
-              </span>
+    <div>
+      {/* Below `lg`, 4 fixed-width columns don't fit a phone — see MobileStatusBoard. */}
+      <div className="lg:hidden">
+        <MobileStatusBoard
+          columns={columns.map(({ status, items }) => ({ key: status, label: INQUIRY_STATUS_LABELS[status], items }))}
+          getId={(i) => i.id}
+          renderCard={(i) => <InquiryCard inquiry={i} selected={i.id === selectedId} onClick={() => onCardClick(i)} />}
+          emptyLabel="No inquiries in this stage."
+        />
+      </div>
+      <div className="hidden overflow-x-auto pb-2 lg:block">
+        <div className="grid grid-cols-4 gap-3 min-w-0">
+          {columns.map(({ status, items }) => (
+            <div
+              key={status}
+              className="min-w-0 rounded-lg p-3"
+              style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid var(--color-sovereign-border)" }}
+            >
+              <div className="mb-3 flex items-center justify-between gap-1">
+                <p
+                  className="text-xs font-semibold uppercase tracking-wide truncate"
+                  style={{ color: "var(--color-text-muted)" }}
+                  title={INQUIRY_STATUS_LABELS[status]}
+                >
+                  {INQUIRY_STATUS_LABELS[status]}
+                </p>
+                <span className="text-xs shrink-0" style={{ color: "var(--color-text-muted)" }}>
+                  {items.length}
+                </span>
+              </div>
+              <div className="space-y-2 min-h-[80px]">
+                {items.map((i) => (
+                  <InquiryCard key={i.id} inquiry={i} selected={i.id === selectedId} onClick={() => onCardClick(i)} />
+                ))}
+                {items.length === 0 && (
+                  <p className="text-xs italic" style={{ color: "var(--color-text-muted)" }}>None</p>
+                )}
+              </div>
             </div>
-            <div className="space-y-2 min-h-[80px]">
-              {items.map((i) => (
-                <InquiryCard key={i.id} inquiry={i} selected={i.id === selectedId} onClick={() => onCardClick(i)} />
-              ))}
-              {items.length === 0 && (
-                <p className="text-xs italic" style={{ color: "var(--color-text-muted)" }}>None</p>
-              )}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

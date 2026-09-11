@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { MessageCircle } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { ChevronDown, MessageCircle } from "lucide-react";
 import type { InvestmentProject, ProjectStatus } from "@/lib/types";
 import type { WorkflowRole } from "@/lib/governance/project-workflow";
 import { canTransition, STATUS_LABELS } from "@/lib/governance/project-workflow";
 import { formatCapitalHeadline } from "@/lib/utils/capital";
 import { StatusBadge } from "@/components/projects/status-badge";
 import { useTaxonomyStore } from "@/context/taxonomy-store-context";
+import { MobileStatusBoard } from "@/components/dashboard/mobile-status-board";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -61,42 +63,150 @@ export function DealRoomKanban({
   const canDrag = role !== null;
   const columns = showArchived ? BOARD_COLUMNS : BOARD_COLUMNS.filter((c) => c !== "archived");
 
-  const handleDrop = (column: ProjectStatus) => {
-    setDragOverColumn(null);
-    if (!draggedId || !role) return;
-    const project = projects.find((p) => p.id === draggedId);
-    setDraggedId(null);
-    if (!project || project.projectStatus === column) return;
-
-    if (!canTransition(project.projectStatus, column, role)) {
+  /** Shared by the desktop drag-and-drop path and the mobile "Move to" menu — same permission
+   *  check, same toasts, so a move made from a phone can never do anything the drag couldn't. */
+  const moveProject = (project: InvestmentProject, target: ProjectStatus) => {
+    if (!role || project.projectStatus === target) return;
+    if (!canTransition(project.projectStatus, target, role)) {
       toast.error(
-        `Can't move "${project.title.slice(0, 40)}" from ${STATUS_LABELS[project.projectStatus]} to ${STATUS_LABELS[column]} with this role.`
+        `Can't move "${project.title.slice(0, 40)}" from ${STATUS_LABELS[project.projectStatus]} to ${STATUS_LABELS[target]} with this role.`
       );
       return;
     }
-    onStatusChange(project.id, column);
-    toast.success(`${project.title.slice(0, 40)} moved to ${STATUS_LABELS[column]}`);
+    onStatusChange(project.id, target);
+    toast.success(`${project.title.slice(0, 40)} moved to ${STATUS_LABELS[target]}`);
   };
+
+  const handleDrop = (column: ProjectStatus) => {
+    setDragOverColumn(null);
+    if (!draggedId) return;
+    const project = projects.find((p) => p.id === draggedId);
+    setDraggedId(null);
+    if (project) moveProject(project, column);
+  };
+
+  /** Cards on a touchscreen can't drag reliably (and HTML5 drag-and-drop isn't reachable by
+   *  keyboard at all) — this menu is the mobile/keyboard-accessible equivalent of a drag, offering
+   *  only the targets `canTransition` already allows so there is nothing to select that would just
+   *  bounce back with an error toast. */
+  function MoveToMenu({ project }: { project: InvestmentProject }) {
+    if (!role) return null;
+    const targets = columns.filter((c) => c !== project.projectStatus && canTransition(project.projectStatus, c, role));
+    if (targets.length === 0) return null;
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold shrink-0"
+            style={{ color: "var(--color-text-secondary)", backgroundColor: "rgba(255,255,255,0.06)", border: "1px solid var(--color-sovereign-border)" }}
+          >
+            Move to <ChevronDown className="h-3 w-3" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+          {targets.map((target) => (
+            <DropdownMenuItem key={target} onClick={() => moveProject(project, target)}>
+              {STATUS_LABELS[target]}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
+  function ProjectCardBody({ project, moveMenu }: { project: InvestmentProject; moveMenu?: ReactNode }) {
+    return (
+      <>
+        {/* Three lines rather than two, and the full title on hover. At two lines in a
+         *  seven-column grid every card read "Goromonzi Agro…", "Mossfield Crop…",
+         *  "CICADA Macadamia…" — no card on the board showed a complete project name,
+         *  which is the one thing a card exists to communicate. */}
+        <p className="font-medium leading-snug text-white line-clamp-3" title={project.title}>
+          {project.title}
+        </p>
+        <p className="mt-1 text-xs truncate" style={{ color: "var(--color-text-muted)" }}>
+          {(() => {
+            const ministry = getMinistryById(project.primaryBeneficiaryMinistryId);
+            if (!ministry) return "Unassigned";
+            return ministry.representativeTitle ? `${ministry.shortName} · ${ministry.representativeTitle}` : ministry.shortName;
+          })()}
+        </p>
+        {/* The capital requirement gets a line of its own. Appended to the ministry line it was
+         *  always the part that fell off the end of the truncation ("Agriculture · US$36…"), which
+         *  is the wrong half to lose: the figure is the one number released to every tier, and the
+         *  whole reason an investor can size an opportunity before pursuing it. */}
+        {/* The parsed headline figure, not the raw source text — see formatCapitalHeadline for
+         *  why. The full text stays on hover and on the project's own page, where there is room to
+         *  qualify it. */}
+        {formatCapitalHeadline(project.capitalRequired) && (
+          <p className="mt-0.5 text-xs font-medium" style={{ color: "var(--color-gold)" }} title={project.capitalRequired}>
+            {formatCapitalHeadline(project.capitalRequired)}
+          </p>
+        )}
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <StatusBadge status={project.projectStatus} />
+          <div className="flex items-center gap-1.5 shrink-0">
+            {moveMenu}
+            {onMessageClick && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMessageClick(project);
+                }}
+                title="Ask ZIDA a question"
+                aria-label="Ask ZIDA a question"
+                className="rounded-full p-1 hover:bg-white/10 transition-colors shrink-0"
+              >
+                <MessageCircle className="h-3.5 w-3.5" style={{ color: "var(--color-text-muted)" }} />
+              </button>
+            )}
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <div>
-      {/* Fluid 7-up grid at lg+ so every stage is visible without scrolling (see the Phase 6
-       *  "columns cut off" fix) — falls back to a horizontally-scrollable fixed-width row below
-       *  that breakpoint, where 7 comfortably-readable columns can't fit regardless of layout. */}
-      <div className="overflow-x-auto pb-2 lg:overflow-visible">
-        <div
-          className={cn(
-            "grid gap-3 lg:min-w-0",
-            columns.length === 7 ? "grid-cols-7 min-w-[1050px]" : "grid-cols-6 min-w-[900px]"
+      {/* Below `lg`, 7 (or 6) columns can't fit a phone regardless of layout — a horizontally-
+       *  scrollable row of status chips plus a full-width vertical list stands in for them, with a
+       *  "Move to" menu replacing drag (unreliable on touch, and unreachable by keyboard either
+       *  way) on each card. */}
+      <div className="lg:hidden">
+        <MobileStatusBoard
+          columns={columns.map((column) => ({
+            key: column,
+            label: STATUS_LABELS[column],
+            items: projects.filter((p) => p.projectStatus === column),
+          }))}
+          getId={(p) => p.id}
+          renderCard={(project) => (
+            <div
+              onClick={() => onCardClick?.(project)}
+              className={cn("dashboard-panel rounded-md p-3 text-sm", onCardClick && "cursor-pointer")}
+            >
+              <ProjectCardBody project={project} moveMenu={<MoveToMenu project={project} />} />
+            </div>
           )}
-        >
+          emptyLabel="No projects in this stage."
+        />
+      </div>
+
+      {/* Fluid 7-up grid at lg+ so every stage is visible without scrolling (see the Phase 6
+       *  "columns cut off" fix). Drag-and-drop only — the desktop pointer makes it reliable, and
+       *  the mobile "Move to" menu above covers touch/keyboard. */}
+      <div className="hidden lg:block">
+        <div className={cn("grid gap-3", columns.length === 7 ? "grid-cols-7" : "grid-cols-6")}>
           {columns.map((column) => {
             const columnProjects = projects.filter((p) => p.projectStatus === column);
             return (
               <div
                 key={column}
                 className={cn(
-                  "min-w-[140px] lg:min-w-0 rounded-lg p-3 transition-colors",
+                  "min-w-0 rounded-lg p-3 transition-colors",
                   dragOverColumn === column && canDrag && "ring-2 ring-[var(--color-gold)]"
                 )}
                 style={{
@@ -140,56 +250,7 @@ export function DealRoomKanban({
                         onCardClick && "hover:ring-2 hover:ring-[var(--color-gold)]/60 transition-shadow"
                       )}
                     >
-                      {/* Three lines rather than two, and the full title on hover. At two lines in a
-                       *  seven-column grid every card read "Goromonzi Agro…", "Mossfield Crop…",
-                       *  "CICADA Macadamia…" — no card on the board showed a complete project name,
-                       *  which is the one thing a card exists to communicate. */}
-                      <p className="font-medium leading-snug text-white line-clamp-3" title={project.title}>
-                        {project.title}
-                      </p>
-                      <p className="mt-1 text-xs truncate" style={{ color: "var(--color-text-muted)" }}>
-                        {(() => {
-                          const ministry = getMinistryById(project.primaryBeneficiaryMinistryId);
-                          if (!ministry) return "Unassigned";
-                          return ministry.representativeTitle
-                            ? `${ministry.shortName} · ${ministry.representativeTitle}`
-                            : ministry.shortName;
-                        })()}
-                      </p>
-                      {/* The capital requirement gets a line of its own. Appended to the ministry
-                       *  line it was always the part that fell off the end of the truncation
-                       *  ("Agriculture · US$36…"), which is the wrong half to lose: the figure is
-                       *  the one number released to every tier, and the whole reason an investor
-                       *  can size an opportunity before pursuing it. */}
-                      {/* The parsed headline figure, not the raw source text — see
-                       *  formatCapitalHeadline for why. The full text stays on hover and on the
-                       *  project's own page, where there is room to qualify it. */}
-                      {formatCapitalHeadline(project.capitalRequired) && (
-                        <p
-                          className="mt-0.5 text-xs font-medium"
-                          style={{ color: "var(--color-gold)" }}
-                          title={project.capitalRequired}
-                        >
-                          {formatCapitalHeadline(project.capitalRequired)}
-                        </p>
-                      )}
-                      <div className="mt-2 flex items-center justify-between gap-2">
-                        <StatusBadge status={project.projectStatus} />
-                        {onMessageClick && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onMessageClick(project);
-                            }}
-                            title="Ask ZIDA a question"
-                            aria-label="Ask ZIDA a question"
-                            className="rounded-full p-1 hover:bg-white/10 transition-colors shrink-0"
-                          >
-                            <MessageCircle className="h-3.5 w-3.5" style={{ color: "var(--color-text-muted)" }} />
-                          </button>
-                        )}
-                      </div>
+                      <ProjectCardBody project={project} />
                     </div>
                   ))}
                   {columnProjects.length === 0 && (

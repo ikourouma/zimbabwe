@@ -5,6 +5,7 @@ import { ChevronRight } from "lucide-react";
 import type { InvestorEngagement } from "@/lib/types";
 import { EngagementStatusPill } from "@/components/deal-room/engagement-status-pill";
 import { MOU_STAGE_LABELS, MOU_STAGE_ORDER, mouStageOf, type MouStageFilter } from "@/lib/governance/mou-filters";
+import { MobileStatusBoard } from "@/components/dashboard/mobile-status-board";
 
 interface MouViewProps {
   engagements: InvestorEngagement[];
@@ -51,36 +52,47 @@ export function MouKanbanView({ engagements, projectTitleOf, onCardClick }: MouV
   );
 
   return (
-    <div className="overflow-x-auto pb-2">
-      <div className="grid grid-cols-6 gap-3 min-w-[1080px] lg:min-w-0">
-        {columns.map(({ stage, items }) => (
-          <div
-            key={stage}
-            className="min-w-[160px] rounded-lg p-3"
-            style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid var(--color-sovereign-border)" }}
-          >
-            <div className="mb-3 flex items-center justify-between gap-1">
-              <p
-                className="text-xs font-semibold uppercase tracking-wide truncate"
-                style={{ color: "var(--color-text-muted)" }}
-                title={MOU_STAGE_LABELS[stage]}
-              >
-                {MOU_STAGE_LABELS[stage]}
-              </p>
-              <span className="text-xs shrink-0" style={{ color: "var(--color-text-muted)" }}>
-                {items.length}
-              </span>
+    <div>
+      {/* Below `lg`, 6 fixed-width columns don't fit a phone — see MobileStatusBoard. */}
+      <div className="lg:hidden">
+        <MobileStatusBoard
+          columns={columns.map(({ stage, items }) => ({ key: stage, label: MOU_STAGE_LABELS[stage], items }))}
+          getId={(e) => e.id}
+          renderCard={(e) => <MouCard engagement={e} projectTitle={projectTitleOf(e.projectId)} onClick={() => onCardClick(e)} />}
+          emptyLabel="No MOUs in this stage."
+        />
+      </div>
+      <div className="hidden overflow-x-auto pb-2 lg:block">
+        <div className="grid grid-cols-6 gap-3 min-w-0">
+          {columns.map(({ stage, items }) => (
+            <div
+              key={stage}
+              className="min-w-0 rounded-lg p-3"
+              style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid var(--color-sovereign-border)" }}
+            >
+              <div className="mb-3 flex items-center justify-between gap-1">
+                <p
+                  className="text-xs font-semibold uppercase tracking-wide truncate"
+                  style={{ color: "var(--color-text-muted)" }}
+                  title={MOU_STAGE_LABELS[stage]}
+                >
+                  {MOU_STAGE_LABELS[stage]}
+                </p>
+                <span className="text-xs shrink-0" style={{ color: "var(--color-text-muted)" }}>
+                  {items.length}
+                </span>
+              </div>
+              <div className="space-y-2 min-h-[80px]">
+                {items.map((e) => (
+                  <MouCard key={e.id} engagement={e} projectTitle={projectTitleOf(e.projectId)} onClick={() => onCardClick(e)} />
+                ))}
+                {items.length === 0 && (
+                  <p className="text-xs italic" style={{ color: "var(--color-text-muted)" }}>None</p>
+                )}
+              </div>
             </div>
-            <div className="space-y-2 min-h-[80px]">
-              {items.map((e) => (
-                <MouCard key={e.id} engagement={e} projectTitle={projectTitleOf(e.projectId)} onClick={() => onCardClick(e)} />
-              ))}
-              {items.length === 0 && (
-                <p className="text-xs italic" style={{ color: "var(--color-text-muted)" }}>None</p>
-              )}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

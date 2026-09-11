@@ -5,6 +5,7 @@ import { ChevronRight } from "lucide-react";
 import type { InvestorEngagement } from "@/lib/types";
 import { EngagementStatusPill } from "@/components/deal-room/engagement-status-pill";
 import { ENGAGEMENT_STATUS_LABELS, ENGAGEMENT_STATUS_ORDER } from "@/lib/governance/engagement-workflow";
+import { MobileStatusBoard } from "@/components/dashboard/mobile-status-board";
 
 interface EngagementViewProps {
   engagements: InvestorEngagement[];
@@ -59,36 +60,48 @@ export function EngagementKanbanView({ engagements, projectTitleOf, onCardClick 
   );
 
   return (
-    <div className="overflow-x-auto pb-2">
-      <div className="grid grid-cols-5 gap-3 min-w-[900px] lg:min-w-0">
-        {columns.map(({ status, items }) => (
-          <div
-            key={status}
-            className="min-w-[160px] rounded-lg p-3"
-            style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid var(--color-sovereign-border)" }}
-          >
-            <div className="mb-3 flex items-center justify-between gap-1">
-              <p
-                className="text-xs font-semibold uppercase tracking-wide truncate"
-                style={{ color: "var(--color-text-muted)" }}
-                title={ENGAGEMENT_STATUS_LABELS[status]}
-              >
-                {ENGAGEMENT_STATUS_LABELS[status]}
-              </p>
-              <span className="text-xs shrink-0" style={{ color: "var(--color-text-muted)" }}>
-                {items.length}
-              </span>
+    <div>
+      {/* Below `lg`, 5 fixed-width columns don't fit a phone — a horizontally-scrollable row of
+       *  status chips plus one full-width vertical list stands in for them instead. */}
+      <div className="lg:hidden">
+        <MobileStatusBoard
+          columns={columns.map(({ status, items }) => ({ key: status, label: ENGAGEMENT_STATUS_LABELS[status], items }))}
+          getId={(e) => e.id}
+          renderCard={(e) => <EngagementCard engagement={e} projectTitle={projectTitleOf(e.projectId)} onClick={() => onCardClick(e)} />}
+          emptyLabel="No engagements in this stage."
+        />
+      </div>
+      <div className="hidden overflow-x-auto pb-2 lg:block">
+        <div className="grid grid-cols-5 gap-3 min-w-0">
+          {columns.map(({ status, items }) => (
+            <div
+              key={status}
+              className="min-w-0 rounded-lg p-3"
+              style={{ backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid var(--color-sovereign-border)" }}
+            >
+              <div className="mb-3 flex items-center justify-between gap-1">
+                <p
+                  className="text-xs font-semibold uppercase tracking-wide truncate"
+                  style={{ color: "var(--color-text-muted)" }}
+                  title={ENGAGEMENT_STATUS_LABELS[status]}
+                >
+                  {ENGAGEMENT_STATUS_LABELS[status]}
+                </p>
+                <span className="text-xs shrink-0" style={{ color: "var(--color-text-muted)" }}>
+                  {items.length}
+                </span>
+              </div>
+              <div className="space-y-2 min-h-[80px]">
+                {items.map((e) => (
+                  <EngagementCard key={e.id} engagement={e} projectTitle={projectTitleOf(e.projectId)} onClick={() => onCardClick(e)} />
+                ))}
+                {items.length === 0 && (
+                  <p className="text-xs italic" style={{ color: "var(--color-text-muted)" }}>None</p>
+                )}
+              </div>
             </div>
-            <div className="space-y-2 min-h-[80px]">
-              {items.map((e) => (
-                <EngagementCard key={e.id} engagement={e} projectTitle={projectTitleOf(e.projectId)} onClick={() => onCardClick(e)} />
-              ))}
-              {items.length === 0 && (
-                <p className="text-xs italic" style={{ color: "var(--color-text-muted)" }}>None</p>
-              )}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
