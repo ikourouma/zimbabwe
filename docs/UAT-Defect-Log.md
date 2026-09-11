@@ -515,7 +515,7 @@ The Financial Performance panel on the project detail page showed the identical 
 
 ### DEF-055 — The NDA gate had no way to reach its own accept button on a phone
 
-**Severity:** Critical. **Status:** Closed, verified against a clean local build; awaiting deploy.
+**Severity:** Critical. **Status:** Closed in `acab07c`, verified against a clean local build; awaiting deploy.
 
 Radix locks page scroll while a dialog is open, and [components/ui/dialog.tsx](../components/ui/dialog.tsx) positioned its content as a single fixed, padded panel with no `max-height` and no scroll mechanism of its own. Any dialog taller than the viewport simply ran off both edges of the screen with nothing to scroll — and the tallest, most consequential dialog on the platform is the Deal Room's NDA clickwrap: clauses, KYC fields, and the accept button a qualified investor must reach before doing anything else in the Deal Room. On a phone, that button was off-screen and unreachable. This is the gate the whole pilot's confidentiality position rests on, on the device class most external stakeholders will actually use.
 
@@ -523,7 +523,7 @@ Radix locks page scroll while a dialog is open, and [components/ui/dialog.tsx](.
 
 ### DEF-056 — An amendment's own comparison table had no way to be read on a phone
 
-**Severity:** High. **Status:** Closed, verified against a clean local build; awaiting deploy.
+**Severity:** High. **Status:** Closed in `acab07c`, verified against a clean local build; awaiting deploy.
 
 The Current/Proposed comparison table on an amendment card ([components/dashboard/review-queue-view.tsx](../components/dashboard/review-queue-view.tsx)) sat inside a container whose only overflow handling was `overflow-hidden` — there to clip content to the card's rounded border, not to scroll it. The field-name column carried `whitespace-nowrap`. On a narrow viewport the combination simply cut the table off rather than making it scrollable: a reviewer comparing what changed in a governance amendment could not read what the table itself was reporting.
 
@@ -531,7 +531,7 @@ The Current/Proposed comparison table on an amendment card ([components/dashboar
 
 ### DEF-057 — Two-column forms left half their fields unreadable on a phone
 
-**Severity:** Medium. **Status:** Closed, verified against a clean local build; awaiting deploy.
+**Severity:** Medium. **Status:** Closed in `acab07c`, verified against a clean local build; awaiting deploy.
 
 Five `grid-cols-2` layouts — the MOU panel's dual-approval status, content and prose fields, signature display and signature-capture dialog ([components/deal-room/mou-panel.tsx](../components/deal-room/mou-panel.tsx)), the Create User dialog's name and organisation fields ([components/dashboard/create-user-modal.tsx](../components/dashboard/create-user-modal.tsx)), and the project detail drawer's Owner/Location row ([components/dashboard/project-detail-drawer.tsx](../components/dashboard/project-detail-drawer.tsx)) — forced two columns at every viewport width, including a phone. Labels and values that fit comfortably at desktop width were compressed into illegibility below.
 
@@ -539,7 +539,7 @@ Five `grid-cols-2` layouts — the MOU panel's dual-approval status, content and
 
 ### DEF-058 — Two icon-only actions had no name a screen reader could announce
 
-**Severity:** Medium. **Status:** Closed, verified against a clean local build; awaiting deploy.
+**Severity:** Medium. **Status:** Closed in `acab07c`, verified against a clean local build; awaiting deploy.
 
 The Deal Room kanban's "ask ZIDA a question" button and the MOU panel's per-field comment button ([components/deal-room/deal-room-kanban.tsx](../components/deal-room/deal-room-kanban.tsx), [components/deal-room/mou-panel.tsx](../components/deal-room/mou-panel.tsx)) each carried a `title` tooltip but no `aria-label`, and rendered nothing but an icon. A `title` is a mouse-hover affordance; it is not reliably exposed as an accessible name. Flagged by an axe-core sweep as a `[critical]` finding on the comment button specifically.
 
@@ -547,7 +547,7 @@ The Deal Room kanban's "ask ZIDA a question" button and the MOU panel's per-fiel
 
 ### DEF-059 — The hero card's map icon competed with the header logo for the same preload slot
 
-**Severity:** Low. **Status:** Closed, verified against a clean local build; awaiting deploy.
+**Severity:** Low. **Status:** Closed in `acab07c`, verified against a clean local build; awaiting deploy.
 
 The 64×64 Zimbabwe map icon inside the homepage hero card ([components/sections/gateway-hero-carousel.tsx](../components/sections/gateway-hero-carousel.tsx)) carried `priority`, and so does the header logo — the same 97KB PNG file, requested twice with a preload hint. A page has a limited number of priority preload slots before they stop helping and start competing with genuinely above-the-fold content for bandwidth; this hero icon is not the page's actual LCP candidate (the headline text is), so its `priority` hint was pure waste.
 
@@ -555,7 +555,7 @@ The 64×64 Zimbabwe map icon inside the homepage hero card ([components/sections
 
 ### DEF-060 — Eleven visible labels in the engagement wizard were not attached to their fields
 
-**Severity:** High. **Status:** Closed, verified against a clean local build; awaiting deploy.
+**Severity:** High. **Status:** Closed in `acab07c`, verified against a clean local build; awaiting deploy.
 
 Every field in the strategic-partnerships engagement wizard ([components/strategic-partnerships/engagement-wizard.tsx](../components/strategic-partnerships/engagement-wizard.tsx)) rendered a real `<label>` element sitting visually above its input — but the shared `Label` helper never wrote `htmlFor`, so none of the eleven text/select/textarea fields (first/last name, email, organisation, phone, HQ address, business registration ID, website URL, investor type, ministry represented, objective) were programmatically associated with the control they describe. A sighted user sees a labelled form; a screen-reader user hears an input with no name. This is the entry point for an investor applying to engage ZIDA at all — an axe-core sweep caught two of the eleven as a `[critical] label` failure on one page; reading the shared helper showed the same defect on every field the wizard has.
 
@@ -563,7 +563,7 @@ Every field in the strategic-partnerships engagement wizard ([components/strateg
 
 ### DEF-061 — The hero headline waited on its own entrance animation before it could be measured as painted
 
-**Severity:** Medium. **Status:** Closed, verified against a clean local build; awaiting deploy.
+**Severity:** Medium. **Status:** Closed in `acab07c`, verified against a clean local build; awaiting deploy.
 
 The homepage hero's headline — the page's Largest Contentful Paint candidate — sat inside a `framer-motion` element whose `initial` state was `{ opacity: 0, y: 20 }` on every mount, including the very first one. A browser does not count an element as painted for LCP purposes until it is visible, so the first paint of the platform's most-visited page was gated behind a mount plus an 800ms fade, on every visit, for content that had no reason to animate in the first time it is ever shown.
 
