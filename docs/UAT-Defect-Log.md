@@ -100,6 +100,7 @@
 | DEF-060 | Eleven visible labels in the engagement wizard were not attached to their fields | High | Closed |
 | DEF-061 | The hero headline waited on its own entrance animation before it could be measured as painted | Medium | Closed |
 | DEF-062 | The SDG badge colours the platform must use fail contrast against white text | Low | Open (needs a design decision) |
+| DEF-063 | All four Kanban boards were unusable on a phone; drag-and-drop had no substitute | High | Closed |
 
 ## 3. Closed Defects
 
@@ -515,7 +516,7 @@ The Financial Performance panel on the project detail page showed the identical 
 
 ### DEF-055 — The NDA gate had no way to reach its own accept button on a phone
 
-**Severity:** Critical. **Status:** Closed in `acab07c`, verified against a clean local build; awaiting deploy.
+**Severity:** Critical. **Status:** Closed in `acab07c`, deployed, and confirmed live on production via `/api/version`.
 
 Radix locks page scroll while a dialog is open, and [components/ui/dialog.tsx](../components/ui/dialog.tsx) positioned its content as a single fixed, padded panel with no `max-height` and no scroll mechanism of its own. Any dialog taller than the viewport simply ran off both edges of the screen with nothing to scroll — and the tallest, most consequential dialog on the platform is the Deal Room's NDA clickwrap: clauses, KYC fields, and the accept button a qualified investor must reach before doing anything else in the Deal Room. On a phone, that button was off-screen and unreachable. This is the gate the whole pilot's confidentiality position rests on, on the device class most external stakeholders will actually use.
 
@@ -523,7 +524,7 @@ Radix locks page scroll while a dialog is open, and [components/ui/dialog.tsx](.
 
 ### DEF-056 — An amendment's own comparison table had no way to be read on a phone
 
-**Severity:** High. **Status:** Closed in `acab07c`, verified against a clean local build; awaiting deploy.
+**Severity:** High. **Status:** Closed in `acab07c`, deployed, and confirmed live on production via `/api/version`.
 
 The Current/Proposed comparison table on an amendment card ([components/dashboard/review-queue-view.tsx](../components/dashboard/review-queue-view.tsx)) sat inside a container whose only overflow handling was `overflow-hidden` — there to clip content to the card's rounded border, not to scroll it. The field-name column carried `whitespace-nowrap`. On a narrow viewport the combination simply cut the table off rather than making it scrollable: a reviewer comparing what changed in a governance amendment could not read what the table itself was reporting.
 
@@ -531,7 +532,7 @@ The Current/Proposed comparison table on an amendment card ([components/dashboar
 
 ### DEF-057 — Two-column forms left half their fields unreadable on a phone
 
-**Severity:** Medium. **Status:** Closed in `acab07c`, verified against a clean local build; awaiting deploy.
+**Severity:** Medium. **Status:** Closed in `acab07c`, deployed, and confirmed live on production via `/api/version`.
 
 Five `grid-cols-2` layouts — the MOU panel's dual-approval status, content and prose fields, signature display and signature-capture dialog ([components/deal-room/mou-panel.tsx](../components/deal-room/mou-panel.tsx)), the Create User dialog's name and organisation fields ([components/dashboard/create-user-modal.tsx](../components/dashboard/create-user-modal.tsx)), and the project detail drawer's Owner/Location row ([components/dashboard/project-detail-drawer.tsx](../components/dashboard/project-detail-drawer.tsx)) — forced two columns at every viewport width, including a phone. Labels and values that fit comfortably at desktop width were compressed into illegibility below.
 
@@ -539,7 +540,7 @@ Five `grid-cols-2` layouts — the MOU panel's dual-approval status, content and
 
 ### DEF-058 — Two icon-only actions had no name a screen reader could announce
 
-**Severity:** Medium. **Status:** Closed in `acab07c`, verified against a clean local build; awaiting deploy.
+**Severity:** Medium. **Status:** Closed in `acab07c`, deployed, and confirmed live on production via `/api/version`.
 
 The Deal Room kanban's "ask ZIDA a question" button and the MOU panel's per-field comment button ([components/deal-room/deal-room-kanban.tsx](../components/deal-room/deal-room-kanban.tsx), [components/deal-room/mou-panel.tsx](../components/deal-room/mou-panel.tsx)) each carried a `title` tooltip but no `aria-label`, and rendered nothing but an icon. A `title` is a mouse-hover affordance; it is not reliably exposed as an accessible name. Flagged by an axe-core sweep as a `[critical]` finding on the comment button specifically.
 
@@ -547,7 +548,7 @@ The Deal Room kanban's "ask ZIDA a question" button and the MOU panel's per-fiel
 
 ### DEF-059 — The hero card's map icon competed with the header logo for the same preload slot
 
-**Severity:** Low. **Status:** Closed in `acab07c`, verified against a clean local build; awaiting deploy.
+**Severity:** Low. **Status:** Closed in `acab07c`, deployed, and confirmed live on production via `/api/version`.
 
 The 64×64 Zimbabwe map icon inside the homepage hero card ([components/sections/gateway-hero-carousel.tsx](../components/sections/gateway-hero-carousel.tsx)) carried `priority`, and so does the header logo — the same 97KB PNG file, requested twice with a preload hint. A page has a limited number of priority preload slots before they stop helping and start competing with genuinely above-the-fold content for bandwidth; this hero icon is not the page's actual LCP candidate (the headline text is), so its `priority` hint was pure waste.
 
@@ -555,7 +556,7 @@ The 64×64 Zimbabwe map icon inside the homepage hero card ([components/sections
 
 ### DEF-060 — Eleven visible labels in the engagement wizard were not attached to their fields
 
-**Severity:** High. **Status:** Closed in `acab07c`, verified against a clean local build; awaiting deploy.
+**Severity:** High. **Status:** Closed in `acab07c`, deployed, and confirmed live on production via `/api/version`.
 
 Every field in the strategic-partnerships engagement wizard ([components/strategic-partnerships/engagement-wizard.tsx](../components/strategic-partnerships/engagement-wizard.tsx)) rendered a real `<label>` element sitting visually above its input — but the shared `Label` helper never wrote `htmlFor`, so none of the eleven text/select/textarea fields (first/last name, email, organisation, phone, HQ address, business registration ID, website URL, investor type, ministry represented, objective) were programmatically associated with the control they describe. A sighted user sees a labelled form; a screen-reader user hears an input with no name. This is the entry point for an investor applying to engage ZIDA at all — an axe-core sweep caught two of the eleven as a `[critical] label` failure on one page; reading the shared helper showed the same defect on every field the wizard has.
 
@@ -563,7 +564,7 @@ Every field in the strategic-partnerships engagement wizard ([components/strateg
 
 ### DEF-061 — The hero headline waited on its own entrance animation before it could be measured as painted
 
-**Severity:** Medium. **Status:** Closed in `acab07c`, verified against a clean local build; awaiting deploy.
+**Severity:** Medium. **Status:** Closed in `acab07c`, deployed, and confirmed live on production via `/api/version`.
 
 The homepage hero's headline — the page's Largest Contentful Paint candidate — sat inside a `framer-motion` element whose `initial` state was `{ opacity: 0, y: 20 }` on every mount, including the very first one. A browser does not count an element as painted for LCP purposes until it is visible, so the first paint of the platform's most-visited page was gated behind a mount plus an 800ms fade, on every visit, for content that had no reason to animate in the first time it is ever shown.
 
@@ -572,6 +573,18 @@ The homepage hero's headline — the page's Largest Contentful Paint candidate �
 **Verified against a clean local `next build && next start`, comparing three pages before and after so unrelated run-to-run variance would be visible as a control.** Two pages with no code change moved by amounts that set the noise floor for this measurement: strategic-partnerships mobile LCP moved 4,604ms → 4,854ms and projects desktop LCP moved 904ms → 938ms, neither of which involves this component. Home desktop LCP — same page, same fix, far less throttled — moved 1,323ms → 865ms, a 458ms drop more than ten times the ~30ms noise floor seen on desktop elsewhere, which is a real signal the fix is working. Home mobile LCP moved only 5,660ms → 5,536ms, a change inside the ~250ms noise band observed on unrelated mobile pages, so no confident mobile improvement can be claimed from this measurement alone. Full numbers in [docs/audit/lighthouse-summary.md](audit/lighthouse-summary.md), pre-fix numbers preserved in [docs/audit/baseline/](audit/baseline/).
 
 **What this does and does not mean.** The fix is real, correct, and — on the evidence available — helps. It is not, on its own, the reason mobile Lighthouse performance sits at 51–58 rather than the 76 Hostinger reported. Under Lighthouse's throttled mobile CPU/network profile the 800ms this fix removes is a small fraction of a 5+ second LCP; something else is the dominant cost on mobile specifically. The most likely candidate, and the reason it was not chased down here, is the same client-side provider fetch pattern already flagged in DEF-007 and PB-002 — see PB-010, logged rather than fixed, per the standing instruction not to start work on that surface this close to the demo.
+
+### DEF-063 — All four Kanban boards were unusable on a phone; drag-and-drop had no substitute
+
+**Severity:** High. **Status:** Closed in `0724118`, deployed, and confirmed live on production via `/api/version`.
+
+The Deal Room pipeline, Engagements, Inquiries, and MOU Registry boards ([components/deal-room/deal-room-kanban.tsx](../components/deal-room/deal-room-kanban.tsx), [components/dashboard/engagement-views.tsx](../components/dashboard/engagement-views.tsx), [components/dashboard/inquiry-views.tsx](../components/dashboard/inquiry-views.tsx), [components/dashboard/mou-views.tsx](../components/dashboard/mou-views.tsx)) all rendered as a fixed-width, multi-column horizontal-scroll grid with no phone-appropriate layout of their own. Kanban is the default view on several of these routes, and nothing told a mobile visitor that a usable alternative (`*ListView`, reachable via the view switcher) existed one tap away. Worse, on the one board with real functionality behind drag-and-drop — the Deal Room pipeline, where a reviewer or admin moves a project between governance stages — there was no substitute gesture for a touchscreen at all: a government or admin user on a phone could see a project's stage but could not change it.
+
+**Fix.** Built a shared `MobileStatusBoard` component ([components/dashboard/mobile-status-board.tsx](../components/dashboard/mobile-status-board.tsx)): status-chip tabs (each carrying its own count) above a single-column, full-width vertical list of cards for the active status, shown below the `lg` breakpoint on all four boards; the existing multi-column grid is unchanged and still default at `lg` and above. On the Deal Room pipeline specifically, each mobile card gained a "Move to ▾" menu built on the existing `DropdownMenu` primitive, offering only the statuses `canTransition` already permits for the signed-in role — the same governance rule the drag-and-drop path enforces, with no new behaviour introduced. The other three boards are read-only by design (status changes happen through their detail drawers, not the board), so they received the tabs-and-list layout only, with no move menu to add.
+
+Design direction — status tabs plus a vertical list, in preference to a stacked accordion alternative — was confirmed against a static mockup ([docs/audit/mobile-board-mockup.html](audit/mobile-board-mockup.html)) built with the platform's own colour tokens and real status labels before any component code was written.
+
+**Verified** against real, signed-in production sessions at a Pixel 5 viewport across all four boards and both a permissioned (`government`) and read-only (`qualified`) persona: tabs and cards render correctly on every board, no horizontal page overflow, the "Move to" menu appears only for the role/board combination that has a real transition to offer and lists only the valid target status, and the read-only boards correctly show no move menu at all.
 
 ## 4. Open Defects
 
@@ -675,6 +688,7 @@ It was left alone rather than swept up with DEF-043 because it is not a label. I
 | No horizontal overflow at a mobile viewport, across all 90 page/persona combinations | Browser (`audit-layout`) | Pass |
 | No JS exceptions or failed network requests, across all 90 page/persona combinations | Browser (`audit-errors`) | 90/90 individual pages pass; one aggregate assertion fails on 182 findings, all of which are the already-tracked DEF-007/PB-010 pattern above — see Observations |
 | Zero serious/critical WCAG violations, 15 public pages + one console landing per persona | Browser (`axe-core`) | Pass, after DEF-060/DEF-062 (DEF-062 remains open — see §4) |
+| Mobile Kanban-board layout usable and functionally correct, all four boards × permissioned and read-only personas | Browser, signed-in against production, Pixel 5 viewport | Pass, after DEF-063 |
 
 The fifteen forbidden-console assertions are the coverage that previously did not exist. The smoke suite could only prove that no console content was served; it could not prove the user was taken somewhere they were entitled to be. The three rows above are the September 2026 UI/UX audit's coverage, described in full in [docs/UI-UX-Audit.md](UI-UX-Audit.md).
 
@@ -688,6 +702,7 @@ The fifteen forbidden-console assertions are the coverage that previously did no
 | Platform codebase | Authoritative source for expected roles, routes and transitions |
 | Project Data Standardisation initiative, September 2026 | DEF-048 through DEF-054 — found while auditing the seeded project dataset and the creation wizard against a written data standard, not by browser automation |
 | UI/UX audit crawl, September 2026 | DEF-055 through DEF-062 and the Observations update above — mobile-viewport layout sweep, console/network error crawl, and axe-core accessibility sweep across all 90 page/persona combinations, plus a local Lighthouse before/after for the hero fix. Methodology and full findings in [docs/UI-UX-Audit.md](UI-UX-Audit.md) |
+| Phase 4 mockup review and sign-off, September 2026 | DEF-063 — a static HTML/CSS mockup of three candidate mobile board layouts was reviewed and a direction (status tabs + vertical list) approved before implementation; verified afterward against signed-in production sessions across all four boards |
 
 **Important validation note**
 

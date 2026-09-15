@@ -27,7 +27,8 @@ defect log and backlog remain the source of truth for status.
 4. Accessibility: axe-core sweep
 5. Performance: Lighthouse
 6. What was fixed, and what was deliberately not
-7. Open items and next steps
+7. Post-deploy re-verification (Phase 5)
+8. Open items and next steps
 
 ---
 
@@ -183,7 +184,7 @@ way.
 
 ## 6. What was fixed, and what was deliberately not
 
-**Fixed, verified, one deploy pending (build + lint clean, see below):**
+**Fixed, verified, deployed and confirmed live on production (via `/api/version`):**
 
 | Defect | Fix |
 | --- | --- |
@@ -194,10 +195,25 @@ way.
 | DEF-059 (Low) | Removed a duplicate `priority` preload hint on the hero map icon |
 | DEF-060 (High) | Eleven engagement-wizard fields gained real label association |
 | DEF-061 (Medium) | Hero headline no longer waits on its own first-paint animation |
+| DEF-063 (High) | All four Kanban boards gained a phone-appropriate tabs + vertical-list layout; the one board with real drag-and-drop (Deal Room pipeline) gained a "Move to" menu as the touch substitute |
 
 Verified with a clean `npm run build` and `npx eslint` after every batch of changes; two
 pre-existing ESLint warnings (`review-queue-view.tsx` line 421, `mou-panel.tsx` line 12) were
 confirmed via `git diff --stat` to predate this audit and are unrelated to anything touched here.
+
+**Phase 4 (board views at a mobile viewport) — completed, in a second pass.** Unlike DEF-055
+through DEF-061, this had no pre-existing design spec, so before any component code was written a
+static HTML/CSS mockup ([docs/audit/mobile-board-mockup.html](audit/mobile-board-mockup.html)),
+built with the platform's own colour tokens and real status labels, was reviewed against three
+candidate layouts — the current horizontal-scroll board (for contrast), a status-tabs +
+one-column-vertical-list option, and a stacked-accordion option. The tabs + list direction was
+selected and implemented as `MobileStatusBoard`
+([components/dashboard/mobile-status-board.tsx](../components/dashboard/mobile-status-board.tsx)),
+reused across all four boards. A codebase inventory (not assumed from the mockup) found that only
+the Deal Room pipeline board has real drag-and-drop backing an actual status change — the other
+three are read-only displays, with status changes made elsewhere — so the new "Move to" menu was
+built, and permission-gated through the existing `canTransition` rule, only on that one board.
+Filed as DEF-063; full detail in the defect log entry.
 
 **Deliberately not fixed, and why:**
 
@@ -209,9 +225,6 @@ confirmed via `git diff --stat` to predate this audit and are unrelated to anyth
   NDA which is imminent. do not want to start code change and not finish ontime for the demo."*
   This crawl gives that decision empirical backing (confirmed platform-wide, confirmed harmless in
   its current form — zero crashes, correctly refused every time) rather than changing it.
-- **Board views at a mobile viewport (Phase 4 of the original plan)** — no design spec exists for
-  this yet and it is more substantial work than everything above combined. Needs explicit
-  confirmation before starting; not begun.
 
 **Deploy timing.** Every fix above is contained to component-level markup/behaviour, not to
 shared infrastructure like `next.config.ts` or `middleware.ts`. Per the platform's own documented
@@ -221,15 +234,57 @@ genuinely clean build (not a reused `.next` cache) and a fresh-incognito sign-in
 immediately after, days before the demo rather than on the day of it — the standing guardrail
 from the prior risk-review round, unchanged.
 
-## 7. Open items and next steps
+## 7. Post-deploy re-verification (Phase 5)
 
-1. Deploy the Phase 2/3 fixes above (DEF-055 through DEF-061), with the clean-build + post-deploy
-   sign-in check described above.
+All three Playwright-based checks were re-run against production after both deploys (`acab07c`
+and `0724118`, both confirmed live via `/api/version`), to close out the audit rather than rely
+on local-build numbers alone for the final state.
+
+| Check | Result | Compared to baseline |
+| --- | --- | --- |
+| `audit:mobile` (layout) | 88–90/90 individual pages passed across two runs; zero horizontal overflow throughout | Unchanged — see below on the two flakes |
+| `audit:errors` | 90/90 individual pages passed; aggregate failed on exactly 182 findings across the same 8 patterns | Exact match to the pre-fix baseline in §3 — confirms PB-010/DEF-007 is unchanged, not a regression |
+| `audit:a11y` | 28/30 pages passed; the 2 failures are the DEF-062 SDG-badge contrast colours (`#BF8B2E`, `#FD9D24`), exactly as before | Exact match to the open DEF-062 — DEF-060's fix is holding (its page now passes) |
+
+**On the `audit:mobile` flakes.** Two separate full runs surfaced three failures total, on three
+different pages, none of them a board: `Government Reviewer — Saved Projects`, `Registered
+Investor — Overview`, and `Platform Admin — Reports`. All three failed the identical way — a
+`.dashboard-skeleton` that did not clear within a 30–60s timeout — never the same page twice
+across the two runs, and never a page this audit's fixes touched. `/auth/sign-in` briefly
+returned a `504 Gateway Time-out` during one of the setup passes as well. The most likely
+explanation is self-inflicted: this session ran the full 9-persona `setup` project (a burst of
+sign-ins `auth.setup.ts` itself documents as rate-limit-sensitive) five times in under two hours
+while re-verifying the board work, on top of the crawl's own request volume. This was not chased
+further — it is not reproducible on a specific page, it does not touch anything filed in this
+audit, and repeated retries against production this close to the demo carry more risk than the
+signal is worth. Worth a look if it recurs outside of heavy automated load.
+
+**Board verification specifically** (DEF-063) was done separately, against real signed-in
+sessions rather than the generic crawl: all four boards (`deal-room/pipeline`,
+`deal-room/engagements`, `admin/mou`, `admin/inquiries`) render the new tabs + vertical-list
+layout correctly at a Pixel 5 viewport, with zero horizontal overflow, and the "Move to" menu on
+the Deal Room pipeline board appears only for a role with a real transition available and lists
+only the valid target status — confirmed for both a permissioned (`government`) and a read-only
+(`qualified`) persona.
+
+**Conclusion: the audit is closed.** Every fix filed as Closed above (DEF-055–061, DEF-063) is
+deployed, live, and re-confirmed against production, not just against a local build. The two
+remaining open items — DEF-062 (SDG contrast) and PB-010 (provider fetch-storm) — are unchanged
+from what this report already described, each deliberately left for a decision or a moment
+outside the pre-demo window, not because either was missed.
+
+## 8. Open items and next steps
+
+1. ~~Deploy the Phase 2/3 fixes above (DEF-055 through DEF-061), with the clean-build +
+   post-deploy sign-in check described above.~~ Done — commit `acab07c`, confirmed live via
+   `/api/version`.
 2. Get a design decision on DEF-062 (SDG badge contrast) — does not block the demo either way.
-3. Confirm with the user before starting Phase 4 (board views on mobile) — no spec exists yet.
+   Still open.
+3. ~~Confirm with the user before starting Phase 4 (board views on mobile).~~ Done — user
+   reviewed a mockup and approved the tabs + "Move to" menu direction; implemented, deployed
+   (commit `0724118`, confirmed live via `/api/version`), and verified against real signed-in
+   production sessions across all four boards. Filed as DEF-063.
 4. After the demo, and once `LeadCaptureProvider`'s hang risk can be reviewed properly and in
    isolation, pick up PB-010.
-5. Re-run all four audit checks after the Phase 2/3 deploy and record after-numbers here, closing
-   DEF-055 through DEF-061 with commit references at that point (they are marked Closed above
-   based on local verification; the defect log's own status lines are the authoritative record
-   once a commit reference is attached post-deploy).
+5. ~~Re-run all four audit checks now that both deploys are live, and record final after-numbers
+   here to formally close out this audit (Phase 5 of the original plan).~~ Done — see §7 above.
