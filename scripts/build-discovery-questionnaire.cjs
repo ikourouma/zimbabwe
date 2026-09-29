@@ -2,7 +2,7 @@
 // Reusable template: for a new platform, edit the cover details, the Strategic
 // Alignment tables, the sections list and the ALIGN lines, then run:
 //   npm install --no-save docx
-//   node scripts/build-discovery-questionnaire.cjs docs/<Platform>-Pre-Implementation-Discovery-Questionnaire.docx
+//   node scripts/build-discovery-questionnaire.cjs docs/pre-implementation/<Platform>-Pre-Implementation-Discovery-Questionnaire.docx
 
 const fs = require('fs');
 const {
