@@ -190,8 +190,8 @@ const metaRows = [
   ['To', 'Chief Executive Officer, Zimbabwe Investment and Development Agency (ZIDA)'],
   ['Copy', 'Ambassador of the Republic of Zimbabwe to the United States of America; other Government executives as designated by ZIDA'],
   ['From', 'Afronovation'],
-  ['Date', 'September 2026'],
-  ['Responses requested by', '____________________'],
+  ['Date', '8 October 2026'],
+  ['Responses due to Afronovation by', '15 October 2026'],
   ['Classification', 'Confidential — for Government of Zimbabwe and Afronovation use only'],
 ];
 const metaTable = new Table({

@@ -102,7 +102,7 @@ def render_table(t):
     if len(hdr) == 2 and hdr[0] == 'To':  # cover metadata
         data = []
         for k, v in rows:
-            if k == 'Responses requested by':
+            if k.startswith('Responses') and not v.strip('_ '):
                 data.append([Paragraph(f'<b>{k}</b>', cellS), Field('ResponsesRequestedBy', 60 * mm, 15, 'Response date')]); nfields += 1
             else:
                 data.append([Paragraph(f'<b>{k}</b>', cellS), Paragraph(html.escape(v), cellS)])
