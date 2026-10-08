@@ -80,6 +80,14 @@ def render_table(t):
             data.append([Paragraph(f'<b>{no}</b>', cellS), qp, Field(no, cw[2] - 10, max(qh, 46), f'{no}: {q[:200]}')])
             nfields += 1
         tb = Table(data, colWidths=cw, repeatRows=1); tb.setStyle(tstyle()); return tb
+    if hdr[0] == 'Document or process name':  # Annex C
+        data = [[Paragraph(h, headS) for h in hdr]]
+        for i in range(len(rows) - 1):
+            row = []
+            for j in range(len(hdr)):
+                row.append(Field(f'AnnexC.r{i+1}.c{j+1}', cw[j] - 10, 30, f'Annex C row {i+1}: {hdr[j]}')); nfields += 1
+            data.append(row)
+        tb = Table(data, colWidths=cw, repeatRows=1); tb.setStyle(tstyle()); return tb
     if hdr[0] == 'Ministry / Institution':  # Annex A
         cw = [W * x / 9638 for x in [2050, 1600, 1450, 1450, 1888, 1200]]
         data = [[Paragraph(h, headS) for h in hdr]]

@@ -129,6 +129,17 @@ let sections = [
     'Beyond English and French, are other languages required for investors or officials?',
     'Are there reporting needs for Cabinet, the Board or development partners that the platform must produce or feed into?',
   ]],
+  ['', 'Existing Processes, Documents and Workflows',
+    'ZIDA\u2019s existing processes, templates and evaluation criteria represent valuable institutional knowledge. Understanding them allows the platform to digitise what works, strengthen what can be improved, and avoid duplicating effort.', [
+    'What process does ZIDA follow from receiving a project proposal to publishing it? Please list each related document or form in Annex C.',
+    'Does ZIDA use criteria, a scoring model or a checklist to assess, prioritise or rank projects (for example, readiness, bankability or strategic fit)? Who applies it, and who approves the result?',
+    'Which forms, templates or checklists do ministries or project owners complete when submitting a project?',
+    'Which investor-related processes (registration, due diligence, accreditation, licensing, aftercare) currently rely on documents or systems outside the platform?',
+    'Which approval steps, committees or sign-offs does a project or agreement pass through before a decision?',
+    'Which regular reports are produced for the Board, Cabinet or partners, and how are they compiled today?',
+    'Where do current processes cause the most delay, rework or duplication?',
+    'Are any processes under review or planned to change that the platform should anticipate?',
+  ]],
   ['', 'Team Capability, Support and Operating Model',
     'The right operating model depends on the capacity Government already has. These answers determine the support, training and knowledge-transfer components of each option.', [
     'How large is ZIDA’s ICT team, and what skills does it hold today (cloud or server administration, web applications, databases, cybersecurity, service desk)?',
@@ -158,6 +169,7 @@ const ALIGN = {
   'Identity, Access and User Volumes': ['Smart Zimbabwe 2030 / ZIDA mandate', 'secure, verified access for officials and investors builds trust in government digital services and strengthens investor facilitation.'],
   'Security, Privacy and Regulatory Compliance': ['Government digitalisation', 'protecting official and investor information under national law is what allows Government to digitise its systems with confidence.'],
   'Data, Content and Integrations': ['Smart Zimbabwe 2030 / NDAP Interoperability', 'connected, well-governed data avoids new silos and prepares for secure data exchange across institutions.'],
+  'Existing Processes, Documents and Workflows': ['NDS2 / Smart Zimbabwe 2030', 'digitising Government\u2019s proven processes, rather than replacing them, protects institutional knowledge and speeds adoption across ministries.'],
   'Team Capability, Support and Operating Model': ['Vision 2030 / NDAP Capacity Transfer', 'builds local skills so Zimbabwe can sustain and grow its own digital systems.'],
   'Success Measures and Assurance': ['NDS2 / ZIDA mandate', 'ties platform results to measurable investment outcomes that advance Vision 2030.'],
 };
@@ -182,6 +194,11 @@ const annexA = table(AW,
   [['Zimbabwe Investment and Development Agency (ZIDA)', '', '', '', '', ''], ...Array.from({ length: 21 }, () => ['', '', '', '', '', ''])]);
 
 const CW = [2600, 2200, 2200, 2638];
+const DW = [1900, 2300, 1500, 1300, 1438, 1200];
+const annexC = table(DW,
+  ['Document or process name', 'Purpose', 'Lifecycle stage', 'Owner (unit)', 'Current format', 'Sample attached (Y/N)'],
+  Array.from({ length: 15 }, () => ['', '', '', '', '', '']));
+
 const annexB = table(CW, ['Area of responsibility', 'Name', 'Title', 'Email and phone'],
   ['Executive sponsor', 'Accountable business owner', 'ICT lead', 'Information security / Data Protection Officer',
     'Procurement', 'Legal', 'Finance', 'Communications'].map(a => [a, '', '', '']));
@@ -252,15 +269,15 @@ const doc = new Document({
       h1('How to Respond'),
       bullet('Please enter responses in the Response column. Short answers are welcome; supporting documents may be attached.'),
       bullet('“Not yet decided” or “Unknown” is a useful answer. Where another person or institution holds the answer, please name them.'),
-      bullet('Annex A records the official domain and email position of each ministry. Annex B identifies the key contacts for the engagement.'),
+      bullet('Annex A records the official domain and email position of each ministry. Annex B identifies the key contacts for the engagement. Annex C lists ZIDA\u2019s existing processes and documents; blank templates or samples may be attached and are covered by the non-disclosure agreement between ZIDA and Afronovation.'),
       bullet('Afronovation proposes a 90-minute technical workshop with ZIDA’s ICT and security leads to review the responses together.'),
 
       ...sectionBlocks,
 
       h1('Next Steps'),
-      numbered('ZIDA returns the completed questionnaire, Annex A and Annex B by the date shown on the cover page.'),
+      numbered('ZIDA returns the completed questionnaire and Annexes A, B and C by the date shown on the cover page.'),
       numbered('Afronovation and ZIDA hold a 90-minute technical workshop to clarify responses.'),
-      numbered('Afronovation presents costed acquisition options (Managed Service, Hybrid and Government-Operated), with implementation timeline and service levels.'),
+      numbered('Afronovation presents costed acquisition options (Managed Service, Hybrid and Government-Operated), with implementation timeline and service levels, together with a fit-gap summary of the processes and documents listed in Annex C.'),
       numbered('Government selects its preferred option and procurement proceeds under the applicable route.'),
 
       new Paragraph({ children: [new PageBreak()] }),
@@ -270,6 +287,12 @@ const doc = new Document({
 
       h1('Annex B — Key Contacts'),
       annexB,
+
+      new Paragraph({ children: [new PageBreak()] }),
+      h1('Annex C — Process and Document Register'),
+      intro('One row per process, form, template, checklist, scoring model or report. Lifecycle stage: onboarding, scoring, approval, investor, aftercare or reporting. Current format: paper, Word, Excel or system.'),
+      annexC,
+      p([t('Afronovation will review each entry and confirm whether it is already supported by the platform, can be configured, or should be considered for an enhancement or new module. A summary will be shared with the costed options.', { italics: true, color: GREY })], { spacing: { before: 160 } }),
     ],
   }],
 });
