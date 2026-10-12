@@ -1,0 +1,112 @@
+{
+  "title": "ZidaProject",
+  "subtitle": "Implementation Readiness Questionnaire",
+  "tagline": "Version 2.0 — focused on ZIDA’s technical environment for implementation and migration",
+  "meta": [
+    ["To", "Chief Executive Officer, Zimbabwe Investment and Development Agency (ZIDA)"],
+    ["Attention", "ZIDA ICT team"],
+    ["From", "Afronovation"],
+    ["Date", "12 October 2026"],
+    ["Responses due to Afronovation by", "19 October 2026"],
+    ["Classification", "Confidential — for ZIDA and Afronovation use only"]
+  ],
+  "purpose": [
+    "Thank you for your feedback on the first questionnaire. This simplified version focuses only on ZIDA. It asks what Afronovation needs to know to implement ZidaProject and move it from the pilot into ZIDA’s production environment, in support of ZIDA’s mandate and Zimbabwe’s digital agenda."
+  ],
+  "howTo": [
+    "Most questions only need a tick. Type any details in the shaded boxes, then save the file.",
+    "“Not sure” is a perfectly good answer. We will work through open points together in a short workshop.",
+    "Please attach copies of the documents listed in the Attachments checklist, and return everything to Afronovation by the date above."
+  ],
+  "sections": [
+    {
+      "title": "Users and Content",
+      "why": "Tells us how large the platform needs to be.",
+      "questions": [
+        {"q": "Approximately how many people will use the platform in its first year?",
+         "fields": ["ZIDA staff", "Ministry staff", "Investors"]},
+        {"q": "Approximately how many projects and documents will be loaded at launch?",
+         "fields": ["Projects", "Documents"]},
+        {"q": "Where is this project information kept today?", "multi": true,
+         "options": ["Word or PDF files", "Excel spreadsheets", "Another system or database", "Paper files", "Not sure"],
+         "fields": ["If another system, please name it"]}
+      ]
+    },
+    {
+      "title": "Hosting",
+      "why": "Determines where and how the platform will run, and its cost.",
+      "questions": [
+        {"q": "Where are ZIDA’s website and IT systems hosted today?", "multi": true,
+         "options": ["ZIDA’s own server room", "A local hosting provider in Zimbabwe", "A cloud service (e.g. Microsoft, Google, Amazon)", "Not sure"],
+         "fields": ["Provider name, if known"]},
+        {"q": "Where would ZIDA prefer ZidaProject to be hosted?",
+         "options": ["Afronovation hosts and manages it in a secure cloud", "On ZIDA’s own servers", "In ZIDA’s existing cloud account", "No preference — Afronovation to recommend"]},
+        {"q": "Must ZIDA’s data be stored inside Zimbabwe?",
+         "options": ["Yes", "No", "Not sure"]},
+        {"q": "When does the platform need to be available?",
+         "options": ["Office hours (Monday to Friday)", "Every day, 24 hours", "Not sure"]}
+      ]
+    },
+    {
+      "title": "Email, Web Address and Sign-in",
+      "why": "Lets platform emails and staff logins work with ZIDA’s existing accounts.",
+      "questions": [
+        {"q": "Which email service does ZIDA use?",
+         "options": ["Microsoft 365 (Outlook)", "Google Workspace (Gmail)", "ZIDA’s own email server", "Other", "Not sure"],
+         "fields": ["ZIDA email domain (the part after @)"]},
+        {"q": "Which web address should the platform use?",
+         "options": ["Keep zidaproject.com", "A ZIDA web address", "Not sure"],
+         "fields": ["Who manages ZIDA’s web address (domain) today?"]},
+        {"q": "Should ZIDA staff sign in using their existing ZIDA work account?",
+         "options": ["Yes", "No, a separate login is fine", "Not sure"]}
+      ]
+    },
+    {
+      "title": "Connections and Processes",
+      "why": "Shows how ZidaProject fits with ZIDA’s other platforms and ways of working.",
+      "questions": [
+        {"q": "Should ZidaProject connect with other ZIDA-owned platforms, or run independently?",
+         "options": ["Run independently", "Connect with other ZIDA platforms (name them below)", "Not sure"],
+         "fields": ["Platforms to connect (e.g. ZIDA website, investment licensing, CRM)"]},
+        {"q": "Which ZIDA processes should the platform support or reflect?", "multi": true,
+         "options": ["Project intake and onboarding", "Project scoring or ranking", "Project review and approval", "Investor registration and screening", "Reporting to management or the Board", "Other"],
+         "fields": ["Brief description of these processes"],
+         "note": "Please attach copies of the related process documents, forms, templates and scoring sheets."}
+      ]
+    },
+    {
+      "title": "Team, Support and Go-Live",
+      "why": "Determines the support, training and handover ZIDA needs.",
+      "questions": [
+        {"q": "How many people are in ZIDA’s IT team, and what do they look after?", "multi": true,
+         "options": ["Computers and networks", "Servers or cloud", "Websites", "Databases", "Cybersecurity", "No in-house IT team"],
+         "fields": ["Number of IT staff"]},
+        {"q": "Who should run the platform day to day?",
+         "options": ["Afronovation (fully managed)", "Afronovation first, then hand over to ZIDA", "ZIDA’s own team", "Not sure"]},
+        {"q": "What support hours does ZIDA need?",
+         "options": ["Office hours (Central Africa Time)", "Extended hours", "24 hours, 7 days", "Not sure"]},
+        {"q": "How many ZIDA staff need training, and how?", "multi": true,
+         "options": ["On-site in Harare", "Online"],
+         "fields": ["Number of staff"]},
+        {"q": "Is there a target go-live date or event?",
+         "fields": ["Date or event"]}
+      ]
+    }
+  ],
+  "attachments": {
+    "title": "Attachments Checklist",
+    "intro": "Please tick each document attached. Blank templates are enough; all documents are covered by the non-disclosure agreement between ZIDA and Afronovation.",
+    "items": ["Project intake or onboarding form", "Project scoring or evaluation sheet", "Approval process or workflow description", "Investor registration or screening forms", "Report templates", "Other (please describe)"],
+    "field": "Other documents attached"
+  },
+  "contacts": {
+    "title": "ZIDA Contacts",
+    "columns": ["Role", "Name", "Title", "Email and phone"],
+    "roles": ["Main contact for this questionnaire", "ICT lead", "Platform administrator", "Project content owner"]
+  },
+  "nextSteps": [
+    "ZIDA returns the completed questionnaire and attachments by the date above.",
+    "Afronovation and ZIDA hold a short workshop to clarify any open points.",
+    "Afronovation presents the implementation and migration plan, with costed options."
+  ]
+}
