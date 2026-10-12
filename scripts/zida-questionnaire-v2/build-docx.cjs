@@ -23,8 +23,8 @@ kids.push(new Paragraph({ spacing: { before: 400, after: 160 }, children: [new I
 kids.push(p([t(C.title, { size: 52, bold: true, color: GREEN })], { spacing: { after: 40 } }));
 kids.push(p([t(C.subtitle, { size: 34, color: GREEN })], { spacing: { after: 60 } }));
 kids.push(p([t(C.tagline, { color: GREY })], { spacing: { after: 240 }, border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: GOLD, space: 6 } } }));
-kids.push(new Table({ width: { size: W, type: WidthType.DXA }, columnWidths: [3200, W - 3200], layout: TableLayoutType.FIXED,
-  rows: C.meta.map(([k, v]) => new TableRow({ children: [cell(p([t(k, { bold: true, color: GREEN })], { spacing: { after: 0 } }), 3200, LIGHT), cell(p(v, { spacing: { after: 0 } }), W - 3200)] })) }));
+kids.push(new Table({ width: { size: W, type: WidthType.DXA }, columnWidths: [3700, W - 3700], layout: TableLayoutType.FIXED,
+  rows: C.meta.map(([k, v]) => new TableRow({ children: [cell(p([t(k, { bold: true, color: GREEN })], { spacing: { after: 0 } }), 3700, LIGHT), cell(p(v, { spacing: { after: 0 } }), W - 3700)] })) }));
 kids.push(h1('Purpose')); C.purpose.forEach(x => kids.push(p(x)));
 kids.push(h1('How to Respond')); C.howTo.forEach(x => kids.push(new Paragraph({ numbering: { reference: 'b', level: 0 }, spacing: { after: 60 }, children: [t(x)] })));
 let n = 0;
@@ -35,7 +35,7 @@ C.sections.forEach((s, si) => {
     n++;
     kids.push(p([t(`${n}.  `, { bold: true, color: GREEN }), t(q.q, { bold: true }), ...(q.multi ? [t('  (tick all that apply)', { size: 18, color: GREY })] : [])], { spacing: { before: 160, after: 60 }, keepNext: true }));
     (q.options || []).forEach(o => kids.push(p([t('☐  ', { size: 24 }), t(o)], { indent: { left: 500 }, spacing: { after: 30 }, keepNext: true })));
-    (q.fields || []).forEach(f => { kids.push(p([t(f, { size: 19, color: GREY })], { indent: { left: 500 }, spacing: { before: 60, after: 30 }, keepNext: true })); kids.push(box(f.length < 22 ? 340 : 600)); });
+    (q.fields || []).forEach(fd => { const f = fd.label || fd; kids.push(p([t(f, { size: 19, color: GREY })], { indent: { left: 500 }, spacing: { before: 60, after: 30 }, keepNext: true })); kids.push(box(fd.tall ? 1100 : f.length < 22 ? 340 : 600)); });
     if (q.note) kids.push(p([t(q.note, { italics: true, color: GREEN, size: 19 })], { indent: { left: 500 }, spacing: { before: 60 } }));
   });
 });

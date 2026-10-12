@@ -73,13 +73,14 @@ def fields_block(qid, labels, width):
     global nfields
     rows = []
     for j, lab in enumerate(labels):
+        tall = isinstance(lab, dict) and lab.get('tall'); lab = lab['label'] if isinstance(lab, dict) else lab
         short = len(lab) < 22
         lw = 34 * mm if short else width
         if short:
             rows.append([Paragraph(esc(lab), small), TextBox(f'{qid}.f{j+1}', 55 * mm, 17, f'{qid}: {lab}')])
         else:
             rows.append([Paragraph(esc(lab), small), ''])
-            rows.append([TextBox(f'{qid}.f{j+1}', width - 4, 30, f'{qid}: {lab}'), ''])
+            rows.append([TextBox(f'{qid}.f{j+1}', width - 4, 60 if tall else 30, f'{qid}: {lab}'), ''])
         nfields += 1
     st = [('LEFTPADDING', (0, 0), (-1, -1), 0), ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), ('TOPPADDING', (0, 0), (-1, -1), 2),
           ('BOTTOMPADDING', (0, 0), (-1, -1), 2)]
@@ -91,7 +92,7 @@ story = [Spacer(1, 24), Image(LOGO, width=62 * mm, height=12.4 * mm, hAlign='LEF
          Paragraph(esc(C['title']), ParagraphStyle('t', fontName='Helvetica-Bold', fontSize=26, leading=32, textColor=GREEN)),
          Paragraph(esc(C['subtitle']), ParagraphStyle('st', fontName='Helvetica', fontSize=17, leading=22, textColor=GREEN, spaceAfter=4)),
          Paragraph(esc(C['tagline']), ParagraphStyle('tg', parent=body, textColor=GREY)), rule(GOLD, 1.5), Spacer(1, 10)]
-mt = Table([[Paragraph(f'<b>{esc(k)}</b>', small), Paragraph(esc(v), small)] for k, v in C['meta']], colWidths=[58 * mm, W - 58 * mm])
+mt = Table([[Paragraph(f'<b>{esc(k)}</b>', small), Paragraph(esc(v), small)] for k, v in C['meta']], colWidths=[62 * mm, W - 62 * mm])
 mt.setStyle(TableStyle([('GRID', (0, 0), (-1, -1), 0.5, LINE), ('BACKGROUND', (0, 0), (0, -1), LIGHT), ('TEXTCOLOR', (0, 0), (0, -1), GREEN),
                         ('VALIGN', (0, 0), (-1, -1), 'TOP'), ('TOPPADDING', (0, 0), (-1, -1), 4), ('BOTTOMPADDING', (0, 0), (-1, -1), 4)]))
 story += [mt, Paragraph('Purpose', h1), rule()] + [Paragraph(esc(x), body) for x in C['purpose']]
